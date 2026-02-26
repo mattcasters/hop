@@ -75,6 +75,8 @@ The pages nested under this topic contain information on how to use the transfor
 * xref:pipeline/transforms/databasejoin.adoc[Database Join]
 * xref:pipeline/transforms/databaselookup.adoc[Database Lookup]
 * xref:pipeline/transforms/datagrid.adoc[Data Grid]
+* xref:pipeline/transforms/datasetinput.adoc[Dataset Input]
+* xref:pipeline/transforms/dbimpactinput.adoc[Database Impact Input]
 * xref:pipeline/transforms/delay.adoc[Delay row]
 * xref:pipeline/transforms/delete.adoc[Delete]
 * xref:pipeline/transforms/serialize-de-from-file.adoc[De-Serialize From File]
