@@ -94,6 +94,7 @@ public class ConfigGuiOptionsTab {
   private Button wDrawBorderAroundCanvasNames;
   private Button wEnableInfiniteMove;
   private Button wDisableZoomScrolling;
+  private Button wMetricsOnTransforms;
   private Button wHideMenuBar;
   private Button wShowTableViewToolbar;
   private Button wMetricsPanelShowUnits;
@@ -649,6 +650,17 @@ public class ConfigGuiOptionsTab {
             props.isZoomScrollingDisabled(),
             lastCanvasControl,
             margin);
+    lastCanvasControl = wDisableZoomScrolling;
+
+    // Disable zoom scrolling
+    wMetricsOnTransforms =
+        createCheckbox(
+            canvasContent,
+            "EnterOptionsDialog.ShowMetricsOnSelectedTransforms.Label",
+            "EnterOptionsDialog.ShowMetricsOnSelectedTransforms.ToolTip",
+            props.isShowingMetricsAboveRunningTransforms(),
+            lastCanvasControl,
+            margin);
 
     // Create the expand item
     ExpandItem canvasItem = new ExpandItem(canvasExpandBar, SWT.NONE);
@@ -1085,6 +1097,7 @@ public class ConfigGuiOptionsTab {
     props.setDrawBorderAroundCanvasNames(wDrawBorderAroundCanvasNames.getSelection());
     props.setInfiniteCanvasMoveEnabled(wEnableInfiniteMove.getSelection());
     props.setZoomScrollingDisabled(wDisableZoomScrolling.getSelection());
+    props.setShowingMetricsAboveRunningTransforms(wMetricsOnTransforms.getSelection());
     // On macOS (and other non-Windows), dark mode follows system; persist system theme, not
     // checkbox. In Web environment, isSystemDarkTheme() is not available.
     boolean darkMode;

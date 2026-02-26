@@ -332,6 +332,9 @@ public class SwtGc implements IGc {
       case SMALL:
         gc.setFont(GuiResource.getInstance().getFontSmall());
         break;
+      case TINY:
+        gc.setFont(GuiResource.getInstance().getFontTiny());
+        break;
       default:
         break;
     }

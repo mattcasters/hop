@@ -658,13 +658,13 @@ public class GuiResource {
     fontLarge = new ManagedFont(display, largeFontData);
 
     // Create a tiny version of the graph font
-    int tinyFontSize = mediumFontSize - 2;
+    int tinyFontSize = (int) (graphFontSize * 0.50f);
     FontData tinyFontData =
         new FontData(graphFontData.getName(), tinyFontSize, graphFontData.getStyle());
     fontTiny = new ManagedFont(display, tinyFontData);
 
     // Create a small version of the graph font
-    int smallFontSize = mediumFontSize - 1;
+    int smallFontSize = (int) (graphFontSize * 0.75f);
     FontData smallFontData =
         new FontData(graphFontData.getName(), smallFontSize, graphFontData.getStyle());
     fontSmall = new ManagedFont(display, smallFontData);

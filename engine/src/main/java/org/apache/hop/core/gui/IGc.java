@@ -50,6 +50,7 @@ public interface IGc {
     NOTE,
     GRAPH,
     SMALL,
+    TINY,
   }
 
   enum ELineStyle {

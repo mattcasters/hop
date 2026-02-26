@@ -125,6 +125,8 @@ public class SvgGc implements IGc {
 
   private Font fontSmall;
 
+  private Font fontTiny;
+
   private int lineWidth;
   private ELineStyle lineStyle;
 
@@ -255,6 +257,7 @@ public class SvgGc implements IGc {
     fontGraph = new Font(CONST_FREESANS, Font.PLAIN, 10);
     fontNote = new Font(CONST_FREESANS, Font.PLAIN, 10);
     fontSmall = new Font(CONST_FREESANS, Font.PLAIN, 8);
+    fontTiny = new Font(CONST_FREESANS, Font.PLAIN, 6);
 
     gc.setFont(fontGraph);
 
@@ -372,7 +375,7 @@ public class SvgGc implements IGc {
   public void setAlpha(int alpha) {
     this.alpha = alpha;
     AlphaComposite alphaComposite =
-        AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha / 255);
+        AlphaComposite.getInstance(AlphaComposite.SRC_OVER, (float) alpha / 255);
     gc.setComposite(alphaComposite);
   }
 
@@ -421,6 +424,9 @@ public class SvgGc implements IGc {
         break;
       case SMALL:
         gc.setFont(fontSmall);
+        break;
+      case TINY:
+        gc.setFont(fontTiny);
         break;
       default:
         break;

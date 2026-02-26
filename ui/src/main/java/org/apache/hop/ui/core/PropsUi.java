@@ -84,6 +84,7 @@ public class PropsUi extends Props {
   private static final String GRAPH_EXTRA_VIEW_VERTICAL_ORIENTATION =
       "GraphExtraViewVerticalOrientation";
   private static final String DISABLE_ZOOM_SCROLLING = "DisableZoomScrolling";
+  private static final String METRICS_ABOVE_SELECTED_TRANSFORMS = "MetricsAboveSelectedTransforms";
   private static final String ENABLE_INFINITE_CANVAS_MOVE = "EnableInfiniteCanvasMove";
   private static final String USE_ADVANCED_TERMINAL = "UseAdvancedTerminal";
   private static final String RESET_DIALOG_POSITIONS_ON_RESTART = "ResetDialogPositionsOnRestart";
@@ -1328,6 +1329,14 @@ public class PropsUi extends Props {
 
   public void setZoomScrollingDisabled(boolean disabled) {
     setProperty(DISABLE_ZOOM_SCROLLING, disabled ? YES : NO);
+  }
+
+  public boolean isShowingMetricsAboveRunningTransforms() {
+    return YES.equalsIgnoreCase(getProperty(METRICS_ABOVE_SELECTED_TRANSFORMS, YES));
+  }
+
+  public void setShowingMetricsAboveRunningTransforms(boolean enabled) {
+    setProperty(METRICS_ABOVE_SELECTED_TRANSFORMS, enabled ? YES : NO);
   }
 
   public boolean isInfiniteCanvasMoveEnabled() {

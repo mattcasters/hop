@@ -22,6 +22,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.NotePadMeta;
 import org.apache.hop.core.exception.HopException;
@@ -55,6 +57,8 @@ import org.apache.hop.pipeline.transform.stream.IStream;
 import org.apache.hop.pipeline.transform.stream.IStream.StreamType;
 import org.apache.hop.pipeline.transform.stream.StreamIcon;
 
+@Getter
+@Setter
 public class PipelinePainter extends BasePainter<PipelineHopMeta, TransformMeta> {
 
   private static final Class<?> PKG = PipelinePainter.class;
@@ -77,6 +81,7 @@ public class PipelinePainter extends BasePainter<PipelineHopMeta, TransformMeta>
   private boolean slowTransformIndicatorEnabled;
   private Map<String, RowBuffer> outputRowsMap;
   private Map<String, Object> stateMap;
+  private boolean showingSelectedTransformMetrics = true;
 
   public static final String[] magnificationDescriptions =
       new String[] {"1000%", "800%", "600%", "400%", "200%", "150%", "100%", "75%", "50%", "25%"};
@@ -363,8 +368,10 @@ public class PipelinePainter extends BasePainter<PipelineHopMeta, TransformMeta>
     }
 
     // Draw performance table for selected transform(s)
-    for (TransformMeta transformMeta : pipelineMeta.getTransforms()) {
-      drawTransformPerformanceTable(transformMeta);
+    if (showingSelectedTransformMetrics) {
+      for (TransformMeta transformMeta : pipelineMeta.getTransforms()) {
+        drawTransformPerformanceTable(transformMeta);
+      }
     }
 
     // Display a red cross on the indicated location signaling to the user that the transform in
@@ -460,7 +467,6 @@ public class PipelinePainter extends BasePainter<PipelineHopMeta, TransformMeta>
   }
 
   private void drawTransformPerformanceTable(TransformMeta transformMeta) {
-
     if (transformMeta == null) {
       return;
     }
@@ -489,7 +495,7 @@ public class PipelinePainter extends BasePainter<PipelineHopMeta, TransformMeta>
         int popupWidth = 0;
         int popupHeight = 1;
 
-        gc.setFont(EFont.SMALL);
+        gc.setFont(EFont.TINY);
         Point p = gc.textExtent("0000000000");
         int colWidth = p.x + MINI_ICON_MARGIN;
         int rowHeight = p.y + MINI_ICON_MARGIN;

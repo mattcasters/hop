@@ -3650,6 +3650,8 @@ public class HopGuiPipelineGraph extends HopGuiAbstractGraph
       pipelinePainter.setScreenMagnification(magnification);
       pipelinePainter.setShowingNavigationView(!PropsUi.getInstance().isHideViewportEnabled());
       pipelinePainter.setShowOriginBoundary(PropsUi.getInstance().isInfiniteCanvasMoveEnabled());
+      pipelinePainter.setShowingSelectedTransformMetrics(
+          PropsUi.getInstance().isShowingMetricsAboveRunningTransforms());
 
       try {
         pipelinePainter.drawPipelineImage();
