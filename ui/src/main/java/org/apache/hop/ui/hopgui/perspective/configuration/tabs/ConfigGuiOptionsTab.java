@@ -652,7 +652,7 @@ public class ConfigGuiOptionsTab {
             margin);
     lastCanvasControl = wDisableZoomScrolling;
 
-    // Disable zoom scrolling
+    // Show metrics above running transforms?
     wMetricsOnTransforms =
         createCheckbox(
             canvasContent,
