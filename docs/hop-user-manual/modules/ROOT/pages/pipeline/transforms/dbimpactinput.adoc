@@ -1,0 +1,77 @@
+////
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+////
+:documentationPath: /pipeline/transforms/
+:language: en_US
+:description: Read database impact information from pipelines.
+
+= image:images/icons/database.svg[Database Impact Input, role="image-doc-icon"] Database Impact Input
+
+[%noheader,cols="3a,1a", role="table-no-borders" ]
+|===
+|
+== Description
+
+The Database Impact Input transform allows gives you the impact of a pipeline on a database.
+It explains which transforms read, write, update or delete information, in which table, the SQL used, and so on.
+
+IMPORTANT: This transform supports error handling.  You can add an error handling hop to a transform to be informed of the pipelines that throw an error when calculating the database impact. See also: xref:pipeline/errorhandling.adoc[Pipeline error handling].
+
+|
+== Supported Engines
+[%noheader,cols="2,1a",frame=none, role="table-supported-engines"]
+!===
+!Hop Engine! image:check_mark.svg[Supported, 24]
+!Spark! image:check_mark.svg[Supported, 24]
+!Flink! image:check_mark.svg[Supported, 24]
+!Dataflow! image:check_mark.svg[Supported, 24]
+!===
+|===
+
+== Options
+
+[options="header]
+|===
+|Option|Description
+|Transform name
+|Name of the transform.
+This name has to be unique in a single pipeline.
+
+|File name field
+|The name of the field in the transform input which will contain the filenames to analyze the database impact for.
+
+|===
+
+TIP: You can use a xref:pipeline/transforms/getfilenames.adoc[Get File Names] transform as input.  To search for your project pipelines specify folder `${PROJECT_HOME}` with wildcard `.*\.hpl$`.
+
+== Output fields
+
+[options="header]
+|===
+|Fieldname|Type
+|Type|String
+|PipelineName|String
+|PipelineFileName|String
+|TransformName|String
+|DatabaseName|String
+|DatabaseTable|String
+|TableField|String
+|FieldName|String
+|FieldOrigin|String
+|SQL|String
+|Remark|String
+
+|===

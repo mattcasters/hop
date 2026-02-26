@@ -251,7 +251,7 @@ public interface ITransformMeta {
    * @return The fields used by this transform, this is being used for the Impact analyses.
    * @param variables
    */
-  IRowMeta getTableFields(IVariables variables);
+  IRowMeta getTableFields(IVariables variables) throws HopDatabaseException;
 
   /** This method is added to exclude certain transforms from layout checking. */
   boolean excludeFromRowLayoutVerification();

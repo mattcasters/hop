@@ -242,7 +242,7 @@ public class BaseTransformMeta<Main extends ITransform, Data extends ITransformD
    * @return the table fields
    * @param variables
    */
-  public IRowMeta getTableFields(IVariables variables) {
+  public IRowMeta getTableFields(IVariables variables) throws HopDatabaseException {
     return null;
   }
 

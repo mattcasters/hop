@@ -361,7 +361,7 @@ public class DatabaseLookupMeta extends BaseTransformMeta<DatabaseLookup, Databa
   }
 
   @Override
-  public IRowMeta getTableFields(IVariables variables) {
+  public IRowMeta getTableFields(IVariables variables) throws HopDatabaseException {
     IRowMeta fields = null;
     DatabaseMeta databaseMeta =
         getParentTransformMeta().getParentPipelineMeta().findDatabase(connection, variables);
@@ -375,10 +375,11 @@ public class DatabaseLookupMeta extends BaseTransformMeta<DatabaseLookup, Databa
                 variables, lookup.getSchemaName(), lookup.getTableName());
         fields = db.getTableFields(schemaTable);
 
-      } catch (HopDatabaseException dbe) {
-        logError(
+      } catch (Throwable dbe) {
+        throw new HopDatabaseException(
             BaseMessages.getString(PKG, "DatabaseLookupMeta.ERROR0004.ErrorGettingTableFields")
-                + dbe.getMessage());
+                + dbe.getMessage(),
+            dbe);
       }
     }
     return fields;
@@ -439,7 +440,8 @@ public class DatabaseLookupMeta extends BaseTransformMeta<DatabaseLookup, Databa
       }
     } catch (HopException e) {
       throw new HopTransformException(
-          "Unable to get databaseMeta for connection: " + Const.CR + variables.resolve(connection));
+          "Unable to get databaseMeta for connection: " + Const.CR + variables.resolve(connection),
+          e);
     }
   }
 

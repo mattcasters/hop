@@ -53,6 +53,7 @@
         <module>databasejoin</module>
         <module>databaselookup</module>
         <module>datagrid</module>
+        <module>dbimpact</module>
         <module>dbproc</module>
         <module>delay</module>
         <module>delete</module>

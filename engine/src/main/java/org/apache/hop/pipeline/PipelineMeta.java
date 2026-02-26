@@ -1087,7 +1087,7 @@ public class PipelineMeta extends AbstractMeta
 
     for (TransformMeta meta : transformMeta) {
       IRowMeta flds = getTransformFields(variables, meta);
-      if (flds != null) {
+      if (flds != null && meta != null) {
         fields.mergeRowMeta(flds, meta.getName());
       }
     }
@@ -1387,10 +1387,15 @@ public class PipelineMeta extends AbstractMeta
     IRowMeta[] infoRowMeta;
     TransformMeta[] lu = getInfoTransform(transformMeta);
     if (Utils.isEmpty(lu)) {
-      infoRowMeta =
-          new IRowMeta[] {
-            iTransformMeta.getTableFields(variables),
-          };
+      try {
+        infoRowMeta =
+            new IRowMeta[] {
+              iTransformMeta.getTableFields(variables),
+            };
+      } catch (HopDatabaseException dbe) {
+        throw new HopTransformException(
+            "Error getting table fields in transform " + transformMeta.getName(), dbe);
+      }
     } else {
       infoRowMeta = new IRowMeta[lu.length];
       for (int i = 0; i < lu.length; i++) {
@@ -2632,7 +2637,12 @@ public class PipelineMeta extends AbstractMeta
       if (lu != null) {
         infoRowMeta = getTransformFields(variables, lu);
       } else {
-        infoRowMeta = iTransformMeta.getTableFields(variables);
+        try {
+          infoRowMeta = iTransformMeta.getTableFields(variables);
+        } catch (HopDatabaseException dbe) {
+          throw new HopTransformException(
+              "Error getting table fields from in transform " + transformMeta.getName(), dbe);
+        }
       }
 
       iTransformMeta.analyseImpact(
