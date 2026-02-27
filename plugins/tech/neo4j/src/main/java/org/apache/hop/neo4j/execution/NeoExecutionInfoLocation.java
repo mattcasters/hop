@@ -21,6 +21,9 @@ package org.apache.hop.neo4j.execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -44,6 +47,7 @@ import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.JsonRowMeta;
 import org.apache.hop.core.row.RowBuffer;
 import org.apache.hop.core.row.RowMeta;
+import org.apache.hop.core.row.value.ValueMetaJson;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.execution.Execution;
 import org.apache.hop.execution.ExecutionBuilder;
@@ -639,13 +643,13 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
               .withLabelAndKey(EL_EXECUTION, EP_ID, state.getId())
               .withValue(EP_STATUS_DESCRIPTION, state.getStatusDescription())
               .withValue(EP_LOGGING_TEXT, state.getLoggingText())
+              .withValue(EP_EXECUTION_TYPE, state.getExecutionType().name())
               .withValue(EP_UPDATE_TIME, state.getUpdateTime())
               .withValue(EP_CHILD_IDS, state.getChildIds())
               .withValue(EP_FAILED, state.isFailed())
               .withValue(EP_DETAILS, state.getDetails())
               .withValue(EP_CONTAINER_ID, state.getContainerId())
               .withValue(EP_EXECUTION_END_DATE, state.getExecutionEndDate());
-
       transaction.run(stateCypherBuilder.cypher(), stateCypherBuilder.parameters());
 
       // Save the metrics as well...
@@ -1369,12 +1373,34 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
       }
       case IValueMeta.TYPE_BOOLEAN -> value.asBoolean();
       case IValueMeta.TYPE_NUMBER -> value.asDouble();
-      default -> {
-        log.logError(
-            "Data type not yet supported : "
-                + valueMeta.getTypeDesc()
-                + " (non-fatal, returning null)");
-        yield null;
+      case IValueMeta.TYPE_BIGNUMBER -> new BigDecimal(value.asString());
+      case IValueMeta.TYPE_TIMESTAMP -> {
+        try {
+          yield Timestamp.valueOf(value.asString());
+        } catch (Exception pe) {
+          yield pe.getMessage();
+        }
+      }
+      case IValueMeta.TYPE_JSON -> {
+        // We get the String version
+        // Convert to type JsonNode
+        //
+        try {
+          yield ((ValueMetaJson) valueMeta).convertStringToJson(value.asString());
+        } catch (Exception e) {
+          yield e.getMessage();
+        }
+      }
+      default ->
+      // Convert from String
+      //
+      {
+        try {
+          yield valueMeta.convertBinaryStringToNativeType(
+              value.asString().getBytes(StandardCharsets.UTF_8));
+        } catch (HopException ve) {
+          yield null;
+        }
       }
     };
   }

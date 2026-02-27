@@ -91,7 +91,7 @@ public abstract class NeoExecutionViewerTabBase {
         + Const.CR
         + "WHERE child.failed "
         + Const.CR
-        + "AND   size((child)-[:EXECUTES]->())=0 "
+        + "AND   child.id <> $executionId "
         + Const.CR
         + "RETURN p "
         + Const.CR
