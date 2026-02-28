@@ -647,25 +647,25 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
     // Can we push down some selector parameters?
     //
     boolean firstCondition = true;
-    if (selector.isSelectingParents()) {
+    if (selector.selectingParents()) {
       builder.withWhereIsNull(firstCondition, "n", EP_PARENT_ID);
       firstCondition = false;
     }
-    if (selector.isSelectingFailed()) {
+    if (selector.selectingFailed()) {
       builder.withWhereEquals(firstCondition, "n", EP_FAILED, "pFailed", true);
       firstCondition = false;
     }
-    if (selector.isSelectingRunning()) {
+    if (selector.selectingRunning()) {
       builder.withWhereEquals(firstCondition, "n", EP_STATUS_DESCRIPTION, "pStatus", "Running");
       firstCondition = false;
     }
-    if (selector.isSelectingFinished()) {
+    if (selector.selectingFinished()) {
       builder.withWhereContains(firstCondition, "n", EP_STATUS_DESCRIPTION, "pStatus", "Finished");
       firstCondition = false;
     }
-    if (selector.isSelectingWorkflows()) {
+    if (selector.selectingWorkflows()) {
       builder.withWhereEquals(firstCondition, "n", EP_EXECUTION_TYPE, "pType", "Workflow");
-    } else if (selector.isSelectingPipelines()) {
+    } else if (selector.selectingPipelines()) {
       builder.withWhereEquals(firstCondition, "n", EP_EXECUTION_TYPE, "pType", "Pipeline");
     } else {
       if (firstCondition) {
