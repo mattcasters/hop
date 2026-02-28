@@ -31,7 +31,7 @@ public record DefaultExecutionSelector(
     boolean selectingWorkflows,
     boolean selectingPipelines,
     String filterText,
-    IExecutionDateFilter startDateFilter)
+    LastPeriod startDateFilter)
     implements IExecutionSelector {
   public static final SimpleDateFormat START_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm");
 
@@ -67,10 +67,8 @@ public record DefaultExecutionSelector(
         return false;
       }
     }
-    if (startDateFilter != null) {
-      if (!startDateFilter.isChosenDate(execution.getExecutionStartDate())) {
-        return false;
-      }
+    if (startDateFilter != null && execution.getExecutionStartDate() != null) {
+      return startDateFilter.matches(execution.getExecutionStartDate());
     }
     return true;
   }

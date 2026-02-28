@@ -41,7 +41,6 @@ import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.logging.LogChannel;
 import org.apache.hop.core.util.ExecutorUtil;
 import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.execution.DefaultExecutionSelector;
 import org.apache.hop.execution.Execution;
 import org.apache.hop.execution.ExecutionData;
 import org.apache.hop.execution.ExecutionInfoLocation;
@@ -113,7 +112,8 @@ public abstract class BaseCachingExecutionInfoLocation implements IExecutionInfo
 
   protected abstract void deleteCacheEntry(CacheEntry cacheEntry) throws HopException;
 
-  protected abstract void retrieveIds(boolean includeChildren, Set<DatedId> ids, int limit)
+  protected abstract void retrieveIds(
+      boolean includeChildren, Set<DatedId> ids, int limit, IExecutionSelector selector)
       throws HopException;
 
   @Override
@@ -222,7 +222,7 @@ public abstract class BaseCachingExecutionInfoLocation implements IExecutionInfo
 
     // Get all the IDs from disk if we don't have it in the cache.
     //
-    retrieveIds(includeChildren, ids, limit);
+    retrieveIds(includeChildren, ids, limit, null);
 
     // Reverse sort the IDs by date
     //
@@ -247,8 +247,64 @@ public abstract class BaseCachingExecutionInfoLocation implements IExecutionInfo
   }
 
   @Override
-  public List<String> findExecutionIDs(IExecutionSelector pruner) throws HopException {
-    return DefaultExecutionSelector.findExecutionIDs(this, pruner);
+  public List<String> findExecutionIDs(IExecutionSelector selector) throws HopException {
+    Set<DatedId> dateIds = new HashSet<>();
+
+    // The data in the cache is the most recent, so we start with that.
+    //
+    getExecutionIdsFromCache(dateIds, selector);
+
+    // Get all the IDs from disk if we don't have it in the cache.
+    //
+    retrieveIds(!selector.selectingParents(), dateIds, 500, selector);
+
+    // Reverse sort the IDs by date
+    //
+    List<DatedId> datedIds = new ArrayList<>(dateIds);
+    datedIds.sort(Comparator.comparing(DatedId::getDate));
+    Collections.reverse(datedIds); // Newest first
+
+    // Take only the first from the list
+    //
+    int iLimit = datedIds.size();
+    List<String> list = new ArrayList<>();
+    for (int i = 0; i < iLimit; i++) {
+      list.add(datedIds.get(i).getId());
+    }
+    return list;
+  }
+
+  public List<String> findExecu(boolean includeChildren, int limit) throws HopException {
+    Set<DatedId> ids = new HashSet<>();
+
+    // The data in the cache is the most recent, so we start with that.
+    //
+    getExecutionIdsFromCache(ids, includeChildren);
+
+    // Get all the IDs from disk if we don't have it in the cache.
+    //
+    retrieveIds(includeChildren, ids, limit, null);
+
+    // Reverse sort the IDs by date
+    //
+    List<DatedId> datedIds = new ArrayList<>(ids);
+    datedIds.sort(Comparator.comparing(DatedId::getDate));
+    Collections.reverse(datedIds); // Newest first
+
+    // Take only the first from the list
+    //
+    int iLimit;
+    if (limit > 0) {
+      iLimit = Math.min(limit, datedIds.size());
+    } else {
+      iLimit = datedIds.size();
+    }
+
+    List<String> list = new ArrayList<>();
+    for (int i = 0; i < iLimit; i++) {
+      list.add(datedIds.get(i).getId());
+    }
+    return list;
   }
 
   /**
@@ -442,11 +498,33 @@ public abstract class BaseCachingExecutionInfoLocation implements IExecutionInfo
     }
   }
 
+  protected static void addChildIds(
+      CacheEntry entry, Set<DatedId> ids, IExecutionSelector selector) {
+    for (String childId : entry.getChildIds()) {
+      Execution childExecution = entry.getChildExecution(childId);
+      ExecutionState childExecutionState = entry.getChildExecutionState(childId);
+      if (selector.isSelected(childExecution, childExecutionState)) {
+        ids.add(new DatedId(childExecution.getId(), childExecution.getRegistrationDate()));
+      }
+    }
+  }
+
   protected void getExecutionIdsFromCache(Set<DatedId> ids, boolean includeChildren) {
     for (CacheEntry cacheEntry : cache.values()) {
       ids.add(new DatedId(cacheEntry.getId(), cacheEntry.getExecution().getRegistrationDate()));
       if (includeChildren) {
         addChildIds(cacheEntry, ids);
+      }
+    }
+  }
+
+  protected void getExecutionIdsFromCache(Set<DatedId> ids, IExecutionSelector selector) {
+    for (CacheEntry cacheEntry : cache.values()) {
+      if (selector.isSelected(cacheEntry.getExecution(), cacheEntry.getExecutionState())) {
+        ids.add(new DatedId(cacheEntry.getId(), cacheEntry.getExecution().getRegistrationDate()));
+      }
+      if (!selector.selectingParents()) {
+        addChildIds(cacheEntry, ids, selector);
       }
     }
   }

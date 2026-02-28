@@ -32,7 +32,7 @@ public interface IExecutionSelector {
 
   String filterText();
 
-  IExecutionDateFilter startDateFilter();
+  LastPeriod startDateFilter();
 
   boolean isSelected(Execution execution, ExecutionState executionState);
 }

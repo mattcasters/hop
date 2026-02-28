@@ -62,6 +62,7 @@ import org.apache.hop.execution.ExecutionType;
 import org.apache.hop.execution.IExecutionInfoLocation;
 import org.apache.hop.execution.IExecutionMatcher;
 import org.apache.hop.execution.IExecutionSelector;
+import org.apache.hop.execution.LastPeriod;
 import org.apache.hop.execution.plugin.ExecutionInfoLocationPlugin;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
@@ -670,10 +671,21 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
     } else {
       if (firstCondition) {
         builder.withExtraClause(" WHERE ");
+        firstCondition = false;
       } else {
         builder.withExtraClause(" AND ");
       }
       builder.withExtraClause("n." + EP_EXECUTION_TYPE + " IN [ 'Workflow', 'Pipeline' ]");
+    }
+    if (selector.startDateFilter() != LastPeriod.NONE) {
+      if (firstCondition) {
+        builder.withExtraClause(" WHERE ");
+        firstCondition = false;
+      } else {
+        builder.withExtraClause(" AND ");
+      }
+      builder.withExtraClause("n." + EP_EXECUTION_START_DATE + " >= $fromStartDate ");
+      builder.parameters().put("fromStartDate", selector.startDateFilter().calculateStartDate());
     }
 
     // The properties to return

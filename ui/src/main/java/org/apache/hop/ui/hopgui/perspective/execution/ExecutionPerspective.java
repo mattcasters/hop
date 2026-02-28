@@ -44,11 +44,13 @@ import org.apache.hop.execution.ExecutionInfoLocation;
 import org.apache.hop.execution.ExecutionState;
 import org.apache.hop.execution.ExecutionType;
 import org.apache.hop.execution.IExecutionInfoLocation;
+import org.apache.hop.execution.LastPeriod;
 import org.apache.hop.history.AuditManager;
 import org.apache.hop.history.AuditState;
 import org.apache.hop.history.AuditStateMap;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.metadata.api.HopMetadataBase;
+import org.apache.hop.metadata.api.IEnumHasCode;
 import org.apache.hop.metadata.api.IHopMetadata;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.metadata.api.IHopMetadataSerializer;
@@ -87,6 +89,7 @@ import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
@@ -130,6 +133,8 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
       "ExecutionPerspective-Toolbar-10500-SelectPipelines";
   public static final String TOOLBAR_ITEM_SELECT_WORKFLOWS =
       "ExecutionPerspective-Toolbar-10600-SelectWorkflows";
+  public static final String TOOLBAR_ITEM_TIME_FILTER =
+      "ExecutionPerspective-Toolbar-10700-TimeFilter";
   public static final String TOOLBAR_ITEM_CLEAR_FILTERS =
       "ExecutionPerspective-Toolbar-80000-ClearFilters";
   public static final String TOOLBAR_ITEM_FILTER_TEXT =
@@ -152,6 +157,7 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
   private static final String AUDIT_ONLY_WORKFLOWS = "only-workflows";
   private static final String AUDIT_ONLY_PIPELINES = "only-pipelines";
   private static final String AUDIT_FILTER_TEXT = "filter-text";
+  private static final String AUDIT_TIME_FILTER = "time-filter";
 
   @Getter private static ExecutionPerspective instance;
 
@@ -162,6 +168,7 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
   private boolean onlyShowingWorkflows;
   private boolean onlyShowingPipelines;
   private String filterText;
+  private LastPeriod timeFilter = LastPeriod.ONE_DAY;
 
   private HopGui hopGui;
   private SashForm sash;
@@ -568,6 +575,14 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
       item.setImage(GuiResource.getInstance().getImagePipelineDisabled());
     }
 
+    // Time filter
+    item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_TIME_FILTER);
+    ((Combo) item.getControl()).setText(timeFilter.getDescription());
+
+    // Filter string
+    item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_FILTER_TEXT);
+    ((Text) item.getControl()).setText(Const.NVL(filterText, ""));
+
     final IHopFileTypeHandler activeHandler = getActiveFileTypeHandler();
     hopGui
         .getDisplay()
@@ -640,8 +655,7 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
                         onlyShowingWorkflows,
                         onlyShowingPipelines,
                         filterText,
-                        // We can add quick buttons for "Last week, Today, ..."
-                        null));
+                        timeFilter));
             // Display the executions
             //
             for (String id : ids) {
@@ -780,6 +794,31 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
   public void selectWorkflows() {
     this.onlyShowingWorkflows = !this.onlyShowingWorkflows;
     this.onlyShowingPipelines = false;
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
+  }
+
+  public List<String> getLastPeriodDescriptions() {
+    List<String> descriptions = new ArrayList<>();
+    for (LastPeriod period : LastPeriod.values()) {
+      descriptions.add(period.getDescription());
+    }
+    return descriptions;
+  }
+
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_TIME_FILTER,
+      type = GuiToolbarElementType.COMBO,
+      extraWidth = -100, // make less wide
+      comboValuesMethod = "getLastPeriodDescriptions",
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.TimeFilter.Tooltip")
+  public void selectTimeFilter() {
+    ToolItem item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_TIME_FILTER);
+    String lastPeriodDescription = ((Combo) item.getControl()).getText();
+    this.timeFilter = LastPeriod.lookupDescription(lastPeriodDescription);
+
     // Update the icon && apply the filter
     updateGui();
     refresh();
@@ -1006,13 +1045,22 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
           new AuditState(
               AUDIT_EXECUTION_TOOLBAR,
               Map.of(
-                  AUDIT_ONLY_PARENTS, onlyShowingParents,
-                  AUDIT_ONLY_FAILED, onlyShowingFailed,
-                  AUDIT_ONLY_RUNNING, onlyShowingRunning,
-                  AUDIT_ONLY_FINISHED, onlyShowingFinished,
-                  AUDIT_ONLY_WORKFLOWS, onlyShowingWorkflows,
-                  AUDIT_ONLY_PIPELINES, onlyShowingPipelines,
-                  AUDIT_FILTER_TEXT, Const.NVL(filterText, ""))));
+                  AUDIT_ONLY_PARENTS,
+                  onlyShowingParents,
+                  AUDIT_ONLY_FAILED,
+                  onlyShowingFailed,
+                  AUDIT_ONLY_RUNNING,
+                  onlyShowingRunning,
+                  AUDIT_ONLY_FINISHED,
+                  onlyShowingFinished,
+                  AUDIT_ONLY_WORKFLOWS,
+                  onlyShowingWorkflows,
+                  AUDIT_ONLY_PIPELINES,
+                  onlyShowingPipelines,
+                  AUDIT_FILTER_TEXT,
+                  Const.NVL(filterText, ""),
+                  AUDIT_TIME_FILTER,
+                  timeFilter.getCode())));
 
       int[] sashWeights = sash.getWeights();
       stateMap.add(
@@ -1043,6 +1091,8 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
       onlyShowingWorkflows = toolbarState.extractBoolean(AUDIT_ONLY_WORKFLOWS, false);
       onlyShowingPipelines = toolbarState.extractBoolean(AUDIT_ONLY_PIPELINES, false);
       filterText = toolbarState.extractString(AUDIT_FILTER_TEXT, "");
+      String timeFilterName = toolbarState.extractString(AUDIT_TIME_FILTER, "");
+      timeFilter = IEnumHasCode.lookupCode(LastPeriod.class, timeFilterName, LastPeriod.ONE_DAY);
 
       AuditState sashState = stateMap.get(AUDIT_SASH_WEIGHTS);
       if (sashState == null) {
