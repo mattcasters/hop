@@ -160,6 +160,7 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
   public static final String R_HAS_METADATA = "HAS_METADATA";
   public static final String R_HAS_DATASET = "HAS_DATASET";
   public static final String R_HAS_ROW = "HAS_ROW";
+  public static final String R_HAS_METRIC = "HAS_METRIC";
   public static final String CONST_ERROR_GETTING_EXECUTION_FROM_NEO_4_J =
       "Error getting execution from Neo4j";
 
@@ -659,17 +660,23 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
           // Save all the metrics in this map in there...
           //
           for (String metricKey : metric.getMetrics().keySet()) {
+            Map<String, Object> metricKeys =
+                Map.of(
+                    CP_ID, state.getId(),
+                    CP_NAME, metric.getComponentName(),
+                    CP_COPY_NR, metric.getComponentCopy(),
+                    CP_METRIC_KEY, metricKey);
             CypherCreateBuilder metricBuilder =
                 CypherCreateBuilder.of()
-                    .withLabelAndKeys(
-                        CL_EXECUTION_METRIC,
-                        Map.of(
-                            CP_ID, state.getId(),
-                            CP_NAME, metric.getComponentName(),
-                            CP_COPY_NR, metric.getComponentCopy(),
-                            CP_METRIC_KEY, metricKey))
+                    .withLabelAndKeys(CL_EXECUTION_METRIC, metricKeys)
                     .withValue(CP_METRIC_VALUE, metric.getMetrics().get(metricKey));
             execute(transaction, metricBuilder);
+            CypherRelationshipBuilder relationshipBuilder =
+                CypherRelationshipBuilder.of()
+                    .withMatch(EL_EXECUTION, "e", EP_ID, state.getId())
+                    .withMatch(CL_EXECUTION_METRIC, "m", metricKeys)
+                    .withCreate("e", "m", R_HAS_METRIC);
+            execute(transaction, relationshipBuilder);
           }
         }
       }
