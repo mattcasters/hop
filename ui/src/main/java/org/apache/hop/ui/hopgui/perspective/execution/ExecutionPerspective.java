@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.Props;
 import org.apache.hop.core.exception.HopException;
@@ -39,11 +38,15 @@ import org.apache.hop.core.search.ISearchable;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.core.variables.Variables;
 import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.execution.DefaultExecutionSelector;
 import org.apache.hop.execution.Execution;
 import org.apache.hop.execution.ExecutionInfoLocation;
 import org.apache.hop.execution.ExecutionState;
 import org.apache.hop.execution.ExecutionType;
 import org.apache.hop.execution.IExecutionInfoLocation;
+import org.apache.hop.history.AuditManager;
+import org.apache.hop.history.AuditState;
+import org.apache.hop.history.AuditStateMap;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.metadata.api.HopMetadataBase;
 import org.apache.hop.metadata.api.IHopMetadata;
@@ -56,6 +59,7 @@ import org.apache.hop.ui.core.dialog.ErrorDialog;
 import org.apache.hop.ui.core.dialog.MessageBox;
 import org.apache.hop.ui.core.gui.GuiResource;
 import org.apache.hop.ui.core.gui.GuiToolbarWidgets;
+import org.apache.hop.ui.core.gui.HopNamespace;
 import org.apache.hop.ui.core.gui.IToolbarContainer;
 import org.apache.hop.ui.core.metadata.MetadataEditor;
 import org.apache.hop.ui.core.metadata.MetadataManager;
@@ -114,6 +118,8 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
       "ExecutionPerspective-Toolbar-10030-Duplicate";
   public static final String TOOLBAR_ITEM_DELETE = "ExecutionPerspective-Toolbar-10040-Delete";
   public static final String TOOLBAR_ITEM_REFRESH = "ExecutionPerspective-Toolbar-10100-Refresh";
+  public static final String TOOLBAR_ITEM_SELECT_PARENTS =
+      "ExecutionPerspective-Toolbar-10150-SelectParents";
   public static final String TOOLBAR_ITEM_SELECT_FAILED =
       "ExecutionPerspective-Toolbar-10200-SelectFailed";
   public static final String TOOLBAR_ITEM_SELECT_RUNNING =
@@ -134,8 +140,22 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
   public static final String CONST_ERROR1 = "Error";
   public static final String FILTER_NAME_DATE_ID = "name - date - ID";
 
+  private static final String EXECUTION_AUDIT_TYPE = "execution-perspective-gui";
+  private static final String AUDIT_SASH_WEIGHTS = "sash-weights";
+  private static final String AUDIT_SASH_LEFT = "sash-left";
+  private static final String AUDIT_SASH_RIGHT = "sash-right";
+  private static final String AUDIT_EXECUTION_TOOLBAR = "toolbar";
+  private static final String AUDIT_ONLY_PARENTS = "only-parents";
+  private static final String AUDIT_ONLY_FAILED = "only-failed";
+  private static final String AUDIT_ONLY_RUNNING = "only-running";
+  private static final String AUDIT_ONLY_FINISHED = "only-finished";
+  private static final String AUDIT_ONLY_WORKFLOWS = "only-workflows";
+  private static final String AUDIT_ONLY_PIPELINES = "only-pipelines";
+  private static final String AUDIT_FILTER_TEXT = "filter-text";
+
   @Getter private static ExecutionPerspective instance;
 
+  private boolean onlyShowingParents = true;
   private boolean onlyShowingFailed;
   private boolean onlyShowingRunning;
   private boolean onlyShowingFinished;
@@ -154,7 +174,7 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
 
   private Map<String, ExecutionInfoLocation> locationMap;
 
-  private static final SimpleDateFormat startDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+  public static final SimpleDateFormat START_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm");
 
   public ExecutionPerspective() {
     instance = this;
@@ -198,6 +218,8 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
     createTabFolder(sash);
 
     sash.setWeights(new int[] {30, 70});
+
+    restoreState();
 
     this.refresh();
 
@@ -498,9 +520,16 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
 
     // Update the filter icons in the toolbar
     //
+    // Only showing parent executions
+    ToolItem item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_SELECT_PARENTS);
+    if (onlyShowingParents) {
+      item.setImage(GuiResource.getInstance().getImageUp());
+    } else {
+      item.setImage(GuiResource.getInstance().getImageUpDisabled());
+    }
 
     // Failed
-    ToolItem item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_SELECT_FAILED);
+    item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_SELECT_FAILED);
     if (onlyShowingFailed) {
       item.setImage(GuiResource.getInstance().getImageError());
     } else {
@@ -601,17 +630,24 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
           try {
             // Get the data in the location
             //
-            List<String> ids = iLocation.getExecutionIds(false, 200);
-
+            List<String> ids =
+                iLocation.findExecutionIDs(
+                    new DefaultExecutionSelector(
+                        onlyShowingParents,
+                        onlyShowingFailed,
+                        onlyShowingRunning,
+                        onlyShowingFinished,
+                        onlyShowingWorkflows,
+                        onlyShowingPipelines,
+                        filterText,
+                        // We can add quick buttons for "Last week, Today, ..."
+                        null));
             // Display the executions
             //
             for (String id : ids) {
               try {
                 Execution execution = iLocation.getExecution(id);
                 if (execution != null) {
-                  if (notShowing(iLocation, execution)) {
-                    continue;
-                  }
                   TreeItem executionItem = new TreeItem(locationItem, SWT.NONE);
                   switch (execution.getExecutionType()) {
                     case Pipeline:
@@ -669,53 +705,17 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
     }
   }
 
-  //
-  private boolean notShowing(IExecutionInfoLocation iLocation, Execution execution)
-      throws HopException {
-    try {
-      if (onlyShowingPipelines && execution.getExecutionType() != ExecutionType.Pipeline) {
-        return true;
-      }
-      if (onlyShowingWorkflows && execution.getExecutionType() != ExecutionType.Workflow) {
-        return true;
-      }
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_SELECT_PARENTS,
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.SelectParents.Tooltip",
+      image = "ui/images/up.svg")
+  public void selectParents() {
+    this.onlyShowingParents = !this.onlyShowingParents;
 
-      // Check the filters...
-      //
-      boolean loadState = onlyShowingFailed || onlyShowingFinished || onlyShowingRunning;
-      ExecutionState state = iLocation.getExecutionState(execution.getId());
-      if (state == null) {
-        // Always return true: entry not worth showing if we don't know its state.
-        return true;
-      }
-      if (onlyShowingFailed && !state.isFailed()) {
-        return true;
-      }
-      if (onlyShowingRunning && !"Running".equalsIgnoreCase(state.getStatusDescription())) {
-        return true;
-      }
-      if (onlyShowingFinished
-          && !state.getStatusDescription().toLowerCase().startsWith("finished")) {
-        return true;
-      }
-
-      if (StringUtils.isNotEmpty(filterText)) {
-        boolean match = execution.getName().toLowerCase().contains(filterText.toLowerCase());
-        match = match || execution.getId().contains(filterText);
-        if (execution.getExecutionStartDate() != null) {
-          String startDateString = startDateFormat.format(execution.getExecutionStartDate());
-          match = match || startDateString.contains(filterText);
-        }
-        if (!match) {
-          return true;
-        }
-      }
-
-      return false;
-    } catch (HopException e) {
-      throw new HopException(
-          "Error checking the state of execution with id " + execution.getId(), e);
-    }
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
   }
 
   @GuiToolbarElement(
@@ -791,6 +791,7 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
       toolTip = "i18n::ExecutionPerspective.ToolbarElement.ClearFilters.Tooltip",
       image = "ui/images/clear.svg")
   public void clearFilters() {
+    this.onlyShowingParents = true;
     this.onlyShowingPipelines = false;
     this.onlyShowingWorkflows = false;
     this.onlyShowingFinished = false;
@@ -826,7 +827,7 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
       executionItem.setImage(GuiResource.getInstance().getImagePipeline());
 
       String label = execution.getName();
-      label += " - " + startDateFormat.format(execution.getExecutionStartDate());
+      label += " - " + START_DATE_FORMAT.format(execution.getExecutionStartDate());
       executionItem.setText(label);
       executionItem.setData(execution);
     } catch (Exception e) {
@@ -996,5 +997,65 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
   @Override
   public CTabFolder getTabFolder() {
     return tabFolder;
+  }
+
+  public void saveState() {
+    try {
+      AuditStateMap stateMap = new AuditStateMap();
+      stateMap.add(
+          new AuditState(
+              AUDIT_EXECUTION_TOOLBAR,
+              Map.of(
+                  AUDIT_ONLY_PARENTS, onlyShowingParents,
+                  AUDIT_ONLY_FAILED, onlyShowingFailed,
+                  AUDIT_ONLY_RUNNING, onlyShowingRunning,
+                  AUDIT_ONLY_FINISHED, onlyShowingFinished,
+                  AUDIT_ONLY_WORKFLOWS, onlyShowingWorkflows,
+                  AUDIT_ONLY_PIPELINES, onlyShowingPipelines,
+                  AUDIT_FILTER_TEXT, Const.NVL(filterText, ""))));
+
+      int[] sashWeights = sash.getWeights();
+      stateMap.add(
+          new AuditState(
+              AUDIT_SASH_WEIGHTS,
+              Map.of(AUDIT_SASH_LEFT, sashWeights[0], AUDIT_SASH_RIGHT, sashWeights[1])));
+      AuditManager.getActive()
+          .saveAuditStateMap(HopNamespace.getNamespace(), EXECUTION_AUDIT_TYPE, stateMap);
+    } catch (Exception e) {
+      hopGui.getLog().logError("Error saving execution perspective state", e);
+    }
+  }
+
+  /** Restore the state of this perspective. */
+  public void restoreState() {
+    try {
+      AuditStateMap stateMap =
+          AuditManager.getActive()
+              .loadAuditStateMap(HopNamespace.getNamespace(), EXECUTION_AUDIT_TYPE);
+      AuditState toolbarState = stateMap.get(AUDIT_EXECUTION_TOOLBAR);
+      if (toolbarState == null) {
+        toolbarState = new AuditState();
+      }
+      onlyShowingParents = toolbarState.extractBoolean(AUDIT_ONLY_PARENTS, true);
+      onlyShowingFailed = toolbarState.extractBoolean(AUDIT_ONLY_FAILED, false);
+      onlyShowingFinished = toolbarState.extractBoolean(AUDIT_ONLY_FINISHED, false);
+      onlyShowingRunning = toolbarState.extractBoolean(AUDIT_ONLY_RUNNING, false);
+      onlyShowingWorkflows = toolbarState.extractBoolean(AUDIT_ONLY_WORKFLOWS, false);
+      onlyShowingPipelines = toolbarState.extractBoolean(AUDIT_ONLY_PIPELINES, false);
+      filterText = toolbarState.extractString(AUDIT_FILTER_TEXT, "");
+
+      AuditState sashState = stateMap.get(AUDIT_SASH_WEIGHTS);
+      if (sashState == null) {
+        sashState = new AuditState();
+      }
+      int left = sashState.extractInteger(AUDIT_SASH_LEFT, 30);
+      int right = sashState.extractInteger(AUDIT_SASH_RIGHT, 70);
+      sash.setWeights(left, right);
+
+      updateGui();
+      refresh();
+    } catch (Exception e) {
+      hopGui.getLog().logError("Error restoring explorer perspective state", e);
+    }
   }
 }

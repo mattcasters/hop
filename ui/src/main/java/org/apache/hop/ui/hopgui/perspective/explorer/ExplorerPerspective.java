@@ -217,7 +217,9 @@ public class ExplorerPerspective implements IHopPerspective, TabClosable, IFileD
   private final List<TabItemHandler> items;
   private boolean showingHiddenFiles;
 
-  private boolean fileExplorerPanelVisible = true;
+  // true if the file explorer panel is visible, false otherwise
+  @Getter private boolean fileExplorerPanelVisible = true;
+
   @Getter private String rootFolder;
   @Getter private String rootName;
   private String dragFile;
@@ -2661,15 +2663,6 @@ public class ExplorerPerspective implements IHopPerspective, TabClosable, IFileD
       // Hide the file explorer panel - maximize the tab folder area
       sash.setMaximizedControl(tabFolderWrapper);
     }
-  }
-
-  /**
-   * Check if the file explorer panel is currently visible.
-   *
-   * @return true if the file explorer panel is visible, false otherwise
-   */
-  public boolean isFileExplorerPanelVisible() {
-    return fileExplorerPanelVisible;
   }
 
   /** Save the file explorer panel visibility state so it persists across restarts. */

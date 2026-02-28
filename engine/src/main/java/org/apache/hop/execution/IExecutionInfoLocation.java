@@ -187,6 +187,17 @@ public interface IExecutionInfoLocation extends Cloneable {
   List<Execution> findExecutions(IExecutionMatcher matcher) throws HopException;
 
   /**
+   * Find execution IDs of pipelines and workflows. This method accepts a selector which will allow
+   * implementations to be more efficient with the retrieval of execution IDs. For example, it would
+   * be possible to look at states first to limit the list of IDs.
+   *
+   * @param selector The selection condition to apply to all available executions
+   * @return The list of selected execution IDs.
+   * @throws HopException In case something goes wrong
+   */
+  List<String> findExecutionIDs(IExecutionSelector selector) throws HopException;
+
+  /**
    * Get execution data for transforms or an action. The parent ID would typically be a pipeline ID,
    * and you'd get data for all the transforms. You can also get the execution data for specific
    * actions in a workflow (when finished).

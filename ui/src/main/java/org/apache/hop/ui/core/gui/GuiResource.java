@@ -259,6 +259,7 @@ public class GuiResource {
   @Getter private Image imageUndo;
   @Getter private Image imageUnselectAll;
   @Getter private Image imageUp;
+  @Getter private Image imageUpDisabled;
   @Getter private Image imageUser;
   @Getter private Image imageView;
 
@@ -555,6 +556,7 @@ public class GuiResource {
     disposeImage(imageUndo);
     disposeImage(imageUnselectAll);
     disposeImage(imageUp);
+    disposeImage(imageUpDisabled);
     disposeImage(imageUser);
     disposeImage(imageView);
 
@@ -800,6 +802,7 @@ public class GuiResource {
     imageView = loadAsResource(display, "ui/images/view.svg", ConstUi.SMALL_ICON_SIZE);
     imageDown = loadAsResource(display, "ui/images/down.svg", ConstUi.SMALL_ICON_SIZE);
     imageUp = loadAsResource(display, "ui/images/up.svg", ConstUi.SMALL_ICON_SIZE);
+    imageUpDisabled = loadAsResource(display, "ui/images/up-disabled.svg", ConstUi.SMALL_ICON_SIZE);
     imageLocation = loadAsResource(display, "ui/images/location.svg", ConstUi.SMALL_ICON_SIZE);
     imageOptions = loadAsResource(display, "ui/images/options.svg", ConstUi.SMALL_ICON_SIZE);
     imageUndo = loadAsResource(display, "ui/images/undo.svg", ConstUi.SMALL_ICON_SIZE);

@@ -41,6 +41,7 @@ import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.logging.LogChannel;
 import org.apache.hop.core.util.ExecutorUtil;
 import org.apache.hop.core.variables.IVariables;
+import org.apache.hop.execution.DefaultExecutionSelector;
 import org.apache.hop.execution.Execution;
 import org.apache.hop.execution.ExecutionData;
 import org.apache.hop.execution.ExecutionInfoLocation;
@@ -48,6 +49,7 @@ import org.apache.hop.execution.ExecutionState;
 import org.apache.hop.execution.ExecutionType;
 import org.apache.hop.execution.IExecutionInfoLocation;
 import org.apache.hop.execution.IExecutionMatcher;
+import org.apache.hop.execution.IExecutionSelector;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 
@@ -242,6 +244,11 @@ public abstract class BaseCachingExecutionInfoLocation implements IExecutionInfo
       list.add(datedIds.get(i).getId());
     }
     return list;
+  }
+
+  @Override
+  public List<String> findExecutionIDs(IExecutionSelector pruner) throws HopException {
+    return DefaultExecutionSelector.findExecutionIDs(this, pruner);
   }
 
   /**

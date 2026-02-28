@@ -61,6 +61,7 @@ import org.apache.hop.execution.ExecutionStateComponentMetrics;
 import org.apache.hop.execution.ExecutionType;
 import org.apache.hop.execution.IExecutionInfoLocation;
 import org.apache.hop.execution.IExecutionMatcher;
+import org.apache.hop.execution.IExecutionSelector;
 import org.apache.hop.execution.plugin.ExecutionInfoLocationPlugin;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
@@ -82,6 +83,7 @@ import org.apache.hop.ui.hopgui.HopGui;
 import org.apache.hop.ui.hopgui.file.workflow.delegates.HopGuiWorkflowClipboardDelegate;
 import org.apache.hop.workflow.action.ActionMeta;
 import org.eclipse.swt.SWT;
+import org.jetbrains.annotations.NotNull;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
@@ -569,6 +571,10 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
     }
     org.neo4j.driver.Record record = result.next();
 
+    return buildExecution(executionId, record);
+  }
+
+  private @NotNull Execution buildExecution(String executionId, org.neo4j.driver.Record record) {
     return ExecutionBuilder.of()
         .withId(executionId)
         .withParentId(getString(record, EP_PARENT_ID))
@@ -617,6 +623,96 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
       org.neo4j.driver.Record record = result.next();
       ids.add(getString(record, EP_ID));
     }
+    return ids;
+  }
+
+  @Override
+  public List<String> findExecutionIDs(IExecutionSelector selector) throws HopException {
+    synchronized (this) {
+      try {
+        return session.executeRead(transaction -> findNeo4jExecutionIDs(transaction, selector));
+      } catch (Exception e) {
+        throw new HopException(CONST_ERROR_GETTING_EXECUTION_FROM_NEO_4_J, e);
+      }
+    }
+  }
+
+  public List<String> findNeo4jExecutionIDs(
+      TransactionContext transaction, IExecutionSelector selector) {
+    List<String> ids = new ArrayList<>();
+
+    CypherQueryBuilder builder =
+        CypherQueryBuilder.of().withLabelAndKeys("n", EL_EXECUTION, Map.of());
+
+    // Can we push down some selector parameters?
+    //
+    boolean firstCondition = true;
+    if (selector.isSelectingParents()) {
+      builder.withWhereIsNull(firstCondition, "n", EP_PARENT_ID);
+      firstCondition = false;
+    }
+    if (selector.isSelectingFailed()) {
+      builder.withWhereEquals(firstCondition, "n", EP_FAILED, "pFailed", true);
+      firstCondition = false;
+    }
+    if (selector.isSelectingRunning()) {
+      builder.withWhereEquals(firstCondition, "n", EP_STATUS_DESCRIPTION, "pStatus", "Running");
+      firstCondition = false;
+    }
+    if (selector.isSelectingFinished()) {
+      builder.withWhereContains(firstCondition, "n", EP_STATUS_DESCRIPTION, "pStatus", "Finished");
+      firstCondition = false;
+    }
+    if (selector.isSelectingWorkflows()) {
+      builder.withWhereEquals(firstCondition, "n", EP_EXECUTION_TYPE, "pType", "Workflow");
+    } else if (selector.isSelectingPipelines()) {
+      builder.withWhereEquals(firstCondition, "n", EP_EXECUTION_TYPE, "pType", "Pipeline");
+    } else {
+      if (firstCondition) {
+        builder.withExtraClause(" WHERE ");
+      } else {
+        builder.withExtraClause(" AND ");
+      }
+      builder.withExtraClause("n." + EP_EXECUTION_TYPE + " IN [ 'Workflow', 'Pipeline' ]");
+    }
+
+    // The properties to return
+    builder.withReturnValues(
+        "n",
+        EP_ID,
+        EP_NAME,
+        EP_COPY_NR,
+        EP_FILENAME,
+        EP_PARENT_ID,
+        EP_EXECUTION_TYPE,
+        EP_EXECUTOR_XML,
+        EP_METADATA_JSON,
+        EP_RUN_CONFIG_NAME,
+        EP_LOG_LEVEL,
+        EP_REGISTRATION_DATE,
+        EP_EXECUTION_START_DATE,
+        EP_STATUS_DESCRIPTION,
+        EP_UPDATE_TIME,
+        EP_CHILD_IDS,
+        EP_FAILED,
+        EP_DETAILS,
+        EP_CONTAINER_ID,
+        EP_EXECUTION_END_DATE);
+
+    // ORDER BY executionStartDate DESC
+    builder.withOrderBy("n", EP_EXECUTION_START_DATE, false);
+
+    Result result = transaction.run(builder.cypher(), builder.parameters());
+    while (result.hasNext()) {
+      org.neo4j.driver.Record record = result.next();
+      String executionId = getString(record, EP_ID);
+      Execution execution = buildExecution(executionId, record);
+      ExecutionState state = buildExecutionState(executionId, record, "");
+      if (selector.isSelected(execution, state)) {
+        ids.add(executionId);
+      }
+    }
+
     return ids;
   }
 
@@ -742,21 +838,7 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
       loggingText = getString(record, EP_LOGGING_TEXT);
     }
 
-    ExecutionStateBuilder stateBuilder =
-        ExecutionStateBuilder.of()
-            .withId(executionId)
-            .withName(getString(record, EP_NAME))
-            .withCopyNr(getString(record, EP_COPY_NR))
-            .withParentId(getString(record, EP_PARENT_ID))
-            .withLoggingText(loggingText)
-            .withExecutionType(ExecutionType.valueOf(getString(record, EP_EXECUTION_TYPE)))
-            .withStatusDescription(getString(record, EP_STATUS_DESCRIPTION))
-            .withUpdateTime(getDate(record, EP_UPDATE_TIME))
-            .withChildIds(getList(record, EP_CHILD_IDS))
-            .withFailed(getBoolean(record, EP_FAILED))
-            .withDetails(getMap(record, EP_DETAILS))
-            .withContainerId(getString(record, EP_CONTAINER_ID))
-            .withExecutionEndDate(getDate(record, EP_EXECUTION_END_DATE));
+    ExecutionState state = buildExecutionState(executionId, record, loggingText);
 
     // Add the metrics to the state...
     //
@@ -789,9 +871,28 @@ public class NeoExecutionInfoLocation implements IExecutionInfoLocation {
       }
     }
 
-    stateBuilder.withMetrics(new ArrayList(metricsMap.values()));
+    state.setMetrics(new ArrayList<>(metricsMap.values()));
 
-    return stateBuilder.build();
+    return state;
+  }
+
+  private @NotNull ExecutionState buildExecutionState(
+      String executionId, org.neo4j.driver.Record record, String loggingText) {
+    return ExecutionStateBuilder.of()
+        .withId(executionId)
+        .withName(getString(record, EP_NAME))
+        .withCopyNr(getString(record, EP_COPY_NR))
+        .withParentId(getString(record, EP_PARENT_ID))
+        .withLoggingText(loggingText)
+        .withExecutionType(ExecutionType.valueOf(getString(record, EP_EXECUTION_TYPE)))
+        .withStatusDescription(getString(record, EP_STATUS_DESCRIPTION))
+        .withUpdateTime(getDate(record, EP_UPDATE_TIME))
+        .withChildIds(getList(record, EP_CHILD_IDS))
+        .withFailed(getBoolean(record, EP_FAILED))
+        .withDetails(getMap(record, EP_DETAILS))
+        .withContainerId(getString(record, EP_CONTAINER_ID))
+        .withExecutionEndDate(getDate(record, EP_EXECUTION_END_DATE))
+        .build();
   }
 
   @Override
