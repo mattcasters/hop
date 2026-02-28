@@ -68,6 +68,8 @@ public class CypherCreateBuilder extends BaseCypherBuilder {
     }
     cypher.append("n.").append(property).append("=$").append(property).append(" ");
 
+    value = mapTypes(value);
+
     addParameter(property, value);
 
     return this;

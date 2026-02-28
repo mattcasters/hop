@@ -311,7 +311,7 @@ public class HistoryResult {
     cmd.append("   , p=shortestpath((top)-[:EXECUTES*]-(err)) ").append(Const.CR);
     cmd.append("WHERE top.registrationDate IS NOT NULL ").append(Const.CR);
     cmd.append("  AND err.errors > 0 ").append(Const.CR);
-    cmd.append("  AND size((err)-[:EXECUTES]->())=0 ").append(Const.CR);
+    cmd.append("  AND err.id <> '").append(getId()).append("'").append(Const.CR);
     cmd.append("RETURN p ").append(Const.CR);
     cmd.append("ORDER BY size(RELATIONSHIPS(p)) DESC ").append(Const.CR);
     cmd.append("LIMIT 5").append(Const.CR);

@@ -18,11 +18,17 @@
 
 package org.apache.hop.neo4j.execution.builder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.hop.core.json.HopJson;
 
 public abstract class BaseCypherBuilder implements ICypherBuilder {
   protected StringBuilder cypher;
@@ -57,5 +63,29 @@ public abstract class BaseCypherBuilder implements ICypherBuilder {
 
   public Map<String, Object> parameters() {
     return parameters;
+  }
+
+  public static SimpleDateFormat timestampFormat =
+      new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSSSSS");
+
+  protected Object mapTypes(Object value) {
+    Object result = value;
+    if (value instanceof BigDecimal) {
+      result = value.toString();
+    }
+    if (value instanceof Timestamp) {
+      result = timestampFormat.format((Timestamp) value);
+    }
+    if (value instanceof Map) {
+      try {
+        result = HopJson.newMapper().writeValueAsString(value);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException("Error converting Map to a JSON String", e);
+      }
+    }
+    if (value instanceof JsonNode node) {
+      result = node.toPrettyString();
+    }
+    return result;
   }
 }
