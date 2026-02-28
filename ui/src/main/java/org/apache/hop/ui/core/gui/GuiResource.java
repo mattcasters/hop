@@ -144,8 +144,10 @@ public class GuiResource {
   private SwtUniversalImage imageDeprecated;
   private SwtUniversalImage imageVariable;
   private SwtUniversalImage imagePipeline;
+  private SwtUniversalImage imagePipelineDisabled;
   private SwtUniversalImage imagePartitionSchema;
   private SwtUniversalImage imageWorkflow;
+  private SwtUniversalImage imageWorkflowDisabled;
   private SwtUniversalImage imageArrowDefault;
   private SwtUniversalImage imageArrowTrue;
   private SwtUniversalImage imageArrowFalse;
@@ -162,6 +164,10 @@ public class GuiResource {
   private SwtUniversalImage imageSuccess;
   private SwtUniversalImage imageError;
   private SwtUniversalImage imageErrorDisabled;
+  private SwtUniversalImage imageRunningIcon;
+  private SwtUniversalImage imageRunningIconDisabled;
+  private SwtUniversalImage imageFinishedIcon;
+  private SwtUniversalImage imageFinishedIconDisabled;
   private SwtUniversalImage imageInfo;
   private SwtUniversalImage imageInfoDisabled;
   private SwtUniversalImage imageWarning;
@@ -438,12 +444,18 @@ public class GuiResource {
     imageMissing.dispose();
     imageVariable.dispose();
     imagePipeline.dispose();
+    imagePipelineDisabled.dispose();
     imagePartitionSchema.dispose();
     imageWorkflow.dispose();
+    imageWorkflowDisabled.dispose();
     imageCopyRows.dispose();
     imageCopyRowsDisabled.dispose();
     imageError.dispose();
     imageErrorDisabled.dispose();
+    imageRunningIcon.dispose();
+    imageRunningIconDisabled.dispose();
+    imageFinishedIcon.dispose();
+    imageFinishedIconDisabled.dispose();
     imageInfo.dispose();
     imageInfoDisabled.dispose();
     imageWarning.dispose();
@@ -801,7 +813,11 @@ public class GuiResource {
     //
     imageLogo = SwtSvgImageUtil.getImageAsResource(display, "ui/images/logo_icon.svg");
     imagePipeline = SwtSvgImageUtil.getImageAsResource(display, "ui/images/pipeline.svg");
+    imagePipelineDisabled =
+        SwtSvgImageUtil.getImageAsResource(display, "ui/images/pipeline-disabled.svg");
     imageWorkflow = SwtSvgImageUtil.getImageAsResource(display, "ui/images/workflow.svg");
+    imageWorkflowDisabled =
+        SwtSvgImageUtil.getImageAsResource(display, "ui/images/workflow-disabled.svg");
     imageServer = SwtSvgImageUtil.getImageAsResource(display, "ui/images/server.svg");
     imagePreview = SwtSvgImageUtil.getImageAsResource(display, "ui/images/preview.svg");
     imageTrue = SwtSvgImageUtil.getImageAsResource(display, "ui/images/true.svg");
@@ -828,6 +844,12 @@ public class GuiResource {
     imageError = SwtSvgImageUtil.getImageAsResource(display, "ui/images/error.svg");
     imageErrorDisabled =
         SwtSvgImageUtil.getImageAsResource(display, "ui/images/error-disabled.svg");
+    imageRunningIcon = SwtSvgImageUtil.getImageAsResource(display, "ui/images/running-icon.svg");
+    imageRunningIconDisabled =
+        SwtSvgImageUtil.getImageAsResource(display, "ui/images/running-icon-disabled.svg");
+    imageFinishedIcon = SwtSvgImageUtil.getImageAsResource(display, "ui/images/finished-icon.svg");
+    imageFinishedIconDisabled =
+        SwtSvgImageUtil.getImageAsResource(display, "ui/images/finished-icon-disabled.svg");
     imageInfo = SwtSvgImageUtil.getImageAsResource(display, "ui/images/info.svg");
     imageInfoDisabled = SwtSvgImageUtil.getImageAsResource(display, "ui/images/info-disabled.svg");
     imageWarning = SwtSvgImageUtil.getImageAsResource(display, "ui/images/warning.svg");
@@ -1168,6 +1190,11 @@ public class GuiResource {
         imagePipeline, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
   }
 
+  public Image getImagePipelineDisabled() {
+    return getZoomedImaged(
+        imagePipelineDisabled, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
+  }
+
   @Deprecated
   public Image getImageClosePanel() {
     return imageClose;
@@ -1187,6 +1214,11 @@ public class GuiResource {
   public Image getImageWorkflow() {
     return getZoomedImaged(
         imageWorkflow, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
+  }
+
+  public Image getImageWorkflowDisabled() {
+    return getZoomedImaged(
+        imageWorkflowDisabled, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
   }
 
   /**
@@ -1277,6 +1309,31 @@ public class GuiResource {
 
   public Image getImageError() {
     return getZoomedImaged(imageError, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
+  }
+
+  public Image getImageErrorDisabled() {
+    return getZoomedImaged(
+        imageErrorDisabled, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
+  }
+
+  public Image getImageRunningIcon() {
+    return getZoomedImaged(
+        imageRunningIcon, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
+  }
+
+  public Image getImageRunningIconDisabled() {
+    return getZoomedImaged(
+        imageRunningIconDisabled, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
+  }
+
+  public Image getImageFinishedIcon() {
+    return getZoomedImaged(
+        imageFinishedIcon, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
+  }
+
+  public Image getImageFinishedIconDisabled() {
+    return getZoomedImaged(
+        imageFinishedIconDisabled, display, ConstUi.SMALL_ICON_SIZE, ConstUi.SMALL_ICON_SIZE);
   }
 
   public SwtUniversalImage getSwtImageError() {

@@ -24,6 +24,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.Props;
 import org.apache.hop.core.exception.HopException;
@@ -31,6 +33,7 @@ import org.apache.hop.core.gui.plugin.GuiPlugin;
 import org.apache.hop.core.gui.plugin.key.GuiKeyboardShortcut;
 import org.apache.hop.core.gui.plugin.key.GuiOsxKeyboardShortcut;
 import org.apache.hop.core.gui.plugin.toolbar.GuiToolbarElement;
+import org.apache.hop.core.gui.plugin.toolbar.GuiToolbarElementType;
 import org.apache.hop.core.metadata.SerializableMetadataProvider;
 import org.apache.hop.core.search.ISearchable;
 import org.apache.hop.core.variables.IVariables;
@@ -83,6 +86,7 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Tree;
@@ -110,16 +114,34 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
       "ExecutionPerspective-Toolbar-10030-Duplicate";
   public static final String TOOLBAR_ITEM_DELETE = "ExecutionPerspective-Toolbar-10040-Delete";
   public static final String TOOLBAR_ITEM_REFRESH = "ExecutionPerspective-Toolbar-10100-Refresh";
+  public static final String TOOLBAR_ITEM_SELECT_FAILED =
+      "ExecutionPerspective-Toolbar-10200-SelectFailed";
+  public static final String TOOLBAR_ITEM_SELECT_RUNNING =
+      "ExecutionPerspective-Toolbar-10300-SelectRunning";
+  public static final String TOOLBAR_ITEM_SELECT_FINISHED =
+      "ExecutionPerspective-Toolbar-10400-SelectFinished";
+  public static final String TOOLBAR_ITEM_SELECT_PIPELINES =
+      "ExecutionPerspective-Toolbar-10500-SelectPipelines";
+  public static final String TOOLBAR_ITEM_SELECT_WORKFLOWS =
+      "ExecutionPerspective-Toolbar-10600-SelectWorkflows";
+  public static final String TOOLBAR_ITEM_CLEAR_FILTERS =
+      "ExecutionPerspective-Toolbar-80000-ClearFilters";
+  public static final String TOOLBAR_ITEM_FILTER_TEXT =
+      "ExecutionPerspective-Toolbar-90000-FilterText";
 
   public static final String KEY_HELP = "Help";
   public static final String CONST_ERROR = "error";
   public static final String CONST_ERROR1 = "Error";
+  public static final String FILTER_NAME_DATE_ID = "name - date - ID";
 
-  private static ExecutionPerspective instance;
+  @Getter private static ExecutionPerspective instance;
 
-  public static ExecutionPerspective getInstance() {
-    return instance;
-  }
+  private boolean onlyShowingFailed;
+  private boolean onlyShowingRunning;
+  private boolean onlyShowingFinished;
+  private boolean onlyShowingWorkflows;
+  private boolean onlyShowingPipelines;
+  private String filterText;
 
   private HopGui hopGui;
   private SashForm sash;
@@ -131,6 +153,8 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
   private List<IExecutionViewer> viewers = new ArrayList<>();
 
   private Map<String, ExecutionInfoLocation> locationMap;
+
+  private static final SimpleDateFormat startDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
 
   public ExecutionPerspective() {
     instance = this;
@@ -173,7 +197,7 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
     createTree(sash);
     createTabFolder(sash);
 
-    sash.setWeights(new int[] {20, 80});
+    sash.setWeights(new int[] {35, 65});
 
     this.refresh();
 
@@ -471,6 +495,50 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
     if (hopGui == null || toolBarWidgets == null || toolBar == null || toolBar.isDisposed()) {
       return;
     }
+
+    // Update the filter icons in the toolbar
+    //
+
+    // Failed
+    ToolItem item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_SELECT_FAILED);
+    if (onlyShowingFailed) {
+      item.setImage(GuiResource.getInstance().getImageError());
+    } else {
+      item.setImage(GuiResource.getInstance().getImageErrorDisabled());
+    }
+
+    // Running
+    item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_SELECT_RUNNING);
+    if (onlyShowingRunning) {
+      item.setImage(GuiResource.getInstance().getImageRunningIcon());
+    } else {
+      item.setImage(GuiResource.getInstance().getImageRunningIconDisabled());
+    }
+
+    // Finished
+    item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_SELECT_FINISHED);
+    if (onlyShowingFinished) {
+      item.setImage(GuiResource.getInstance().getImageFinishedIcon());
+    } else {
+      item.setImage(GuiResource.getInstance().getImageFinishedIconDisabled());
+    }
+
+    // Workflows
+    item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_SELECT_WORKFLOWS);
+    if (onlyShowingWorkflows) {
+      item.setImage(GuiResource.getInstance().getImageWorkflow());
+    } else {
+      item.setImage(GuiResource.getInstance().getImageWorkflowDisabled());
+    }
+
+    // Pipelines
+    item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_SELECT_PIPELINES);
+    if (onlyShowingPipelines) {
+      item.setImage(GuiResource.getInstance().getImagePipeline());
+    } else {
+      item.setImage(GuiResource.getInstance().getImagePipelineDisabled());
+    }
+
     final IHopFileTypeHandler activeHandler = getActiveFileTypeHandler();
     hopGui
         .getDisplay()
@@ -531,10 +599,9 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
           locationItem.setData(location);
 
           try {
-
             // Get the data in the location
             //
-            List<String> ids = iLocation.getExecutionIds(false, 100);
+            List<String> ids = iLocation.getExecutionIds(false, 200);
 
             // Display the executions
             //
@@ -542,6 +609,9 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
               try {
                 Execution execution = iLocation.getExecution(id);
                 if (execution != null) {
+                  if (notShowing(iLocation, execution)) {
+                    continue;
+                  }
                   TreeItem executionItem = new TreeItem(locationItem, SWT.NONE);
                   switch (execution.getExecutionType()) {
                     case Pipeline:
@@ -599,14 +669,164 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
     }
   }
 
+  //
+  private boolean notShowing(IExecutionInfoLocation iLocation, Execution execution)
+      throws HopException {
+    try {
+      if (onlyShowingPipelines && execution.getExecutionType() != ExecutionType.Pipeline) {
+        return true;
+      }
+      if (onlyShowingWorkflows && execution.getExecutionType() != ExecutionType.Workflow) {
+        return true;
+      }
+
+      // Check the filters...
+      //
+      boolean loadState = onlyShowingFailed || onlyShowingFinished || onlyShowingRunning;
+      ExecutionState state = iLocation.getExecutionState(execution.getId());
+      if (state == null) {
+        // Always return true: entry not worth showing if we don't know its state.
+        return true;
+      }
+      if (onlyShowingFailed && !state.isFailed()) {
+        return true;
+      }
+      if (onlyShowingRunning && !"Running".equalsIgnoreCase(state.getStatusDescription())) {
+        return true;
+      }
+      if (onlyShowingFinished
+          && !state.getStatusDescription().toLowerCase().startsWith("finished")) {
+        return true;
+      }
+
+      if (StringUtils.isNotEmpty(filterText)) {
+        boolean match = execution.getName().toLowerCase().contains(filterText.toLowerCase());
+        match = match || execution.getId().contains(filterText);
+        if (execution.getExecutionStartDate() != null) {
+          String startDateString = startDateFormat.format(execution.getExecutionStartDate());
+          match = match || startDateString.contains(filterText);
+        }
+        if (!match) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (HopException e) {
+      throw new HopException(
+          "Error checking the state of execution with id " + execution.getId(), e);
+    }
+  }
+
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_SELECT_FAILED,
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.SelectFailed.Tooltip",
+      image = "ui/images/error-disabled.svg")
+  public void selectFailed() {
+    this.onlyShowingFailed = !this.onlyShowingFailed;
+
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
+  }
+
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_SELECT_RUNNING,
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.SelectRunning.Tooltip",
+      image = "ui/images/running-icon-disabled.svg")
+  public void selectRunning() {
+    this.onlyShowingRunning = !this.onlyShowingRunning;
+    this.onlyShowingFinished = false;
+    this.onlyShowingFailed = false;
+
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
+  }
+
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_SELECT_FINISHED,
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.SelectFinished.Tooltip",
+      image = "ui/images/finished-icon-disabled.svg")
+  public void selectFinished() {
+    this.onlyShowingFinished = !this.onlyShowingFinished;
+    this.onlyShowingRunning = false;
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
+  }
+
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_SELECT_PIPELINES,
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.SelectPipelines.Tooltip",
+      image = "ui/images/pipeline-disabled.svg")
+  public void selectPipelines() {
+    this.onlyShowingPipelines = !this.onlyShowingPipelines;
+    this.onlyShowingWorkflows = false;
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
+  }
+
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_SELECT_WORKFLOWS,
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.SelectWorkflows.Tooltip",
+      image = "ui/images/workflow-disabled.svg")
+  public void selectWorkflows() {
+    this.onlyShowingWorkflows = !this.onlyShowingWorkflows;
+    this.onlyShowingPipelines = false;
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
+  }
+
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_CLEAR_FILTERS,
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.ClearFilters.Tooltip",
+      image = "ui/images/clear.svg")
+  public void clearFilters() {
+    this.onlyShowingPipelines = false;
+    this.onlyShowingWorkflows = false;
+    this.onlyShowingFinished = false;
+    this.onlyShowingRunning = false;
+    this.onlyShowingFailed = false;
+    this.filterText = "";
+
+    ToolItem item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_FILTER_TEXT);
+    ((Text) item.getControl()).setText(FILTER_NAME_DATE_ID);
+
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
+  }
+
+  @GuiToolbarElement(
+      root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
+      id = TOOLBAR_ITEM_FILTER_TEXT,
+      toolTip = "i18n::ExecutionPerspective.ToolbarElement.FilterText.Tooltip",
+      type = GuiToolbarElementType.TEXT,
+      defaultText = FILTER_NAME_DATE_ID)
+  public void selectTextFilter() {
+    ToolItem item = toolBarWidgets.findToolItem(TOOLBAR_ITEM_FILTER_TEXT);
+    this.filterText = ((Text) item.getControl()).getText();
+
+    // Update the icon && apply the filter
+    updateGui();
+    refresh();
+  }
+
   private void decoratePipelineTreeItem(TreeItem executionItem, Execution execution) {
     try {
       executionItem.setImage(GuiResource.getInstance().getImagePipeline());
 
       String label = execution.getName();
-      label +=
-          " - "
-              + new SimpleDateFormat("yyyy/MM/dd HH:mm").format(execution.getExecutionStartDate());
+      label += " - " + startDateFormat.format(execution.getExecutionStartDate());
       executionItem.setText(label);
       executionItem.setData(execution);
     } catch (Exception e) {
