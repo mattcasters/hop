@@ -197,7 +197,7 @@ public class ExecutionPerspective implements IHopPerspective, TabClosable {
     createTree(sash);
     createTabFolder(sash);
 
-    sash.setWeights(new int[] {35, 65});
+    sash.setWeights(new int[] {30, 70});
 
     this.refresh();
 
