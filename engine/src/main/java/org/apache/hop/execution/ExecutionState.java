@@ -31,7 +31,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class  ExecutionState {
+public class ExecutionState {
 
   /** The type of execution to update */
   private ExecutionType executionType;
