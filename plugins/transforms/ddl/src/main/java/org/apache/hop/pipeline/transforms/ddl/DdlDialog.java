@@ -44,13 +44,10 @@ public class DdlDialog extends BaseTransformDialog {
 
     buildButtonBar().ok(e -> ok()).cancel(e -> cancel()).build();
 
-    // Add the widgets from metadata...
-    //
-    widgets = new GuiCompositeWidgets(variables);
-    widgets.createCompositeWidgets(
-        input, null, shell, DdlMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, wTransformName);
-    widgets.setWidgetsContents(input, shell, DdlMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
-
+    // Add the widgets from metadata.
+    widgets =
+        GuiCompositeWidgets.addScrolledComposite(
+            shell, variables, wTransformName, wOk, DdlMeta.GUI_PLUGIN_ELEMENT_PARENT_ID, input);
     setFieldNamesOnComboWidgets();
 
     focusTransformName();
