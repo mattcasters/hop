@@ -24,7 +24,7 @@ import org.apache.http.NameValuePair;
 
 @SuppressWarnings("java:S1104")
 public class HttpData extends BaseTransformData implements ITransformData {
-  public int[] argnrs;
+  public int[] argNrs;
   public IRowMeta outputRowMeta;
   public IRowMeta inputRowMeta;
   public int indexOfUrlField;
