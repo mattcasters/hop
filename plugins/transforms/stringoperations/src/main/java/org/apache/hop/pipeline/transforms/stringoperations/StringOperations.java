@@ -20,8 +20,8 @@ package org.apache.hop.pipeline.transforms.stringoperations;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopTransformException;
-import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
+import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.ValueDataUtil;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.i18n.BaseMessages;
@@ -29,8 +29,9 @@ import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
 import org.apache.hop.pipeline.transform.TransformMeta;
+import org.jetbrains.annotations.Nullable;
 
-/** Apply certain operations too string. */
+/** Apply certain operations to string. */
 public class StringOperations extends BaseTransform<StringOperationsMeta, StringOperationsData> {
   private static final Class<?> PKG = StringOperationsMeta.class;
 
@@ -44,170 +45,127 @@ public class StringOperations extends BaseTransform<StringOperationsMeta, String
     super(transformMeta, meta, data, copyNr, pipelineMeta, pipeline);
   }
 
-  private String processString(
-      String string,
-      int trimType,
-      int lowerUpper,
-      int padType,
-      String padChar,
-      int padLen,
-      int iniCap,
-      int maskHTML,
-      int digits,
-      int removeSpecialCharacters) {
-    String rcode = string;
+  private String processString(String string, StringOperationsMeta.StringOperation operation) {
+    String processed = processStringTrim(operation.getTrimType(), string);
+    processed = processStringLowerUpper(operation.getLowerUpper(), processed);
+    processed =
+        processStringPadding(
+            operation.getPaddingType(),
+            operation.getPadChar(),
+            Const.toInt(operation.getPadLen(), -1),
+            processed);
+    processed = processStringInitCap(operation.getInitCap(), processed);
+    processed = processStringMaskXml(operation.getMaskXml(), processed);
+    processed = processStringDigits(operation.getDigits(), processed);
+    processed = processStringRemoveSpecialCharacters(operation.getRemoveSpecialChars(), processed);
 
-    // Trim ?
-    if (!Utils.isEmpty(rcode)) {
-      switch (trimType) {
-        case StringOperationsMeta.TRIM_RIGHT:
-          rcode = Const.rtrim(rcode);
-          break;
-        case StringOperationsMeta.TRIM_LEFT:
-          rcode = Const.ltrim(rcode);
-          break;
-        case StringOperationsMeta.TRIM_BOTH:
-          rcode = Const.trim(rcode);
-          break;
-        default:
-          break;
-      }
-    }
-    // Lower/Upper ?
-    if (!Utils.isEmpty(rcode)) {
-      switch (lowerUpper) {
-        case StringOperationsMeta.LOWER_UPPER_LOWER:
-          rcode = rcode.toLowerCase();
-          break;
-        case StringOperationsMeta.LOWER_UPPER_UPPER:
-          rcode = rcode.toUpperCase();
-          break;
-        default:
-          break;
-      }
-    }
-
-    // pad String?
-    if (!Utils.isEmpty(rcode)) {
-      switch (padType) {
-        case StringOperationsMeta.PADDING_LEFT:
-          rcode = Const.lpad(rcode, padChar, padLen);
-          break;
-        case StringOperationsMeta.PADDING_RIGHT:
-          rcode = Const.rpad(rcode, padChar, padLen);
-          break;
-        default:
-          break;
-      }
-    }
-
-    // InitCap ?
-    if (!Utils.isEmpty(rcode)) {
-      switch (iniCap) {
-        case StringOperationsMeta.INIT_CAP_NO:
-          break;
-        case StringOperationsMeta.INIT_CAP_YES:
-          rcode = ValueDataUtil.initCap(rcode);
-          break;
-        default:
-          break;
-      }
-    }
-
-    // escape ?
-    if (!Utils.isEmpty(rcode)) {
-      switch (maskHTML) {
-        case StringOperationsMeta.MASK_ESCAPE_XML:
-          rcode = Const.escapeXml(rcode);
-          break;
-        case StringOperationsMeta.MASK_CDATA:
-          rcode = Const.protectXmlCdata(rcode);
-          break;
-        case StringOperationsMeta.MASK_UNESCAPE_XML:
-          rcode = Const.unEscapeXml(rcode);
-          break;
-        case StringOperationsMeta.MASK_ESCAPE_HTML:
-          rcode = Const.escapeHtml(rcode);
-          break;
-        case StringOperationsMeta.MASK_UNESCAPE_HTML:
-          rcode = Const.unEscapeHtml(rcode);
-          break;
-        case StringOperationsMeta.MASK_ESCAPE_SQL:
-          rcode = Const.escapeSql(rcode);
-          break;
-        default:
-          break;
-      }
-    }
-
-    // digits only or remove digits ?
-    if (!Utils.isEmpty(rcode)) {
-      switch (digits) {
-        case StringOperationsMeta.DIGITS_NONE:
-          break;
-        case StringOperationsMeta.DIGITS_ONLY:
-          rcode = Const.getDigitsOnly(rcode);
-          break;
-        case StringOperationsMeta.DIGITS_REMOVE:
-          rcode = Const.removeDigits(rcode);
-          break;
-        default:
-          break;
-      }
-    }
-
-    // remove special characters ?
-    if (!Utils.isEmpty(rcode)) {
-      switch (removeSpecialCharacters) {
-        case StringOperationsMeta.REMOVE_SPECIAL_CHARACTERS_NONE:
-          break;
-        case StringOperationsMeta.REMOVE_SPECIAL_CHARACTERS_CR:
-          rcode = Const.removeCR(rcode);
-          break;
-        case StringOperationsMeta.REMOVE_SPECIAL_CHARACTERS_LF:
-          rcode = Const.removeLF(rcode);
-          break;
-        case StringOperationsMeta.REMOVE_SPECIAL_CHARACTERS_CRLF:
-          rcode = Const.removeCRLF(rcode);
-          break;
-        case StringOperationsMeta.REMOVE_SPECIAL_CHARACTERS_TAB:
-          rcode = Const.removeTAB(rcode);
-          break;
-        case StringOperationsMeta.REMOVE_SPECIAL_CHARACTERS_ESPACE:
-          rcode = rcode.replace(" ", "");
-          break;
-        default:
-          break;
-      }
-    }
-
-    return rcode;
+    return processed;
   }
 
-  private Object[] processRow(IRowMeta rowMeta, Object[] row) throws HopException {
+  private static @Nullable String processStringRemoveSpecialCharacters(
+      StringOperationsMeta.RemoveSpecialChars removeSpecialCharacters, String string) {
 
-    Object[] rowData = new Object[data.outputRowMeta.size()];
-    // Copy the input fields.
-    System.arraycopy(row, 0, rowData, 0, rowMeta.size());
+    if (!Utils.isEmpty(string)) {
+      return switch (removeSpecialCharacters) {
+        case NONE -> string;
+        case CR -> Const.removeCR(string);
+        case LF -> Const.removeLF(string);
+        case CRLF -> Const.removeCRLF(string);
+        case TAB -> Const.removeTAB(string);
+        case SPACE -> string.replace(" ", "");
+      };
+    }
+    return string;
+  }
+
+  private static @Nullable String processStringDigits(
+      StringOperationsMeta.Digits digits, String string) {
+    if (!Utils.isEmpty(string)) {
+      return switch (digits) {
+        case NONE -> string;
+        case DIGITS_ONLY -> Const.getDigitsOnly(string);
+        case DIGITS_REMOVE -> Const.removeDigits(string);
+      };
+    }
+    return string;
+  }
+
+  private static @Nullable String processStringMaskXml(
+      StringOperationsMeta.MaskXml maskXml, String string) {
+    if (!Utils.isEmpty(string)) {
+      return switch (maskXml) {
+        case NONE -> string;
+        case ESCAPE_XML -> Const.escapeXml(string);
+        case CDATA -> Const.protectXmlCdata(string);
+        case UNESCAPE_XML -> Const.unEscapeXml(string);
+        case ESCAPE_HTML -> Const.escapeHtml(string);
+        case UNESCAPE_HTML -> Const.unEscapeHtml(string);
+        case ESCAPE_SQL -> Const.escapeSql(string);
+      };
+    }
+    return string;
+  }
+
+  private static @Nullable String processStringInitCap(
+      StringOperationsMeta.InitCap iniCap, String string) {
+    if (!Utils.isEmpty(string)) {
+      return switch (iniCap) {
+        case NO -> string;
+        case YES -> ValueDataUtil.initCap(string);
+      };
+    }
+    return string;
+  }
+
+  private static @Nullable String processStringPadding(
+      StringOperationsMeta.Padding padType, String padChar, int padLen, String string) {
+    if (!Utils.isEmpty(string)) {
+      return switch (padType) {
+        case LEFT -> Const.lpad(string, padChar, padLen);
+        case RIGHT -> Const.rpad(string, padChar, padLen);
+        case NONE -> string;
+      };
+    }
+    return string;
+  }
+
+  private static @Nullable String processStringLowerUpper(
+      StringOperationsMeta.LowerUpper lowerUpper, String string) {
+    if (!Utils.isEmpty(string)) {
+      return switch (lowerUpper) {
+        case NONE -> string;
+        case LOWER -> string.toLowerCase();
+        case UPPER -> string.toUpperCase();
+      };
+    }
+    return string;
+  }
+
+  private static @Nullable String processStringTrim(
+      StringOperationsMeta.TrimType trimType, String string) {
+    if (!Utils.isEmpty(string)) {
+      return switch (trimType) {
+        case RIGHT -> Const.rtrim(string);
+        case LEFT -> Const.ltrim(string);
+        case BOTH -> Const.trim(string);
+        case NONE -> string;
+      };
+    }
+    return string;
+  }
+
+  private Object[] performStringOperations(Object[] row) throws HopException {
+    Object[] rowData = RowDataUtil.createResizedCopy(row, data.outputRowMeta.size());
+
     int j = 0; // Index into "new fields" area, past the first {data.inputFieldsNr} records
-    for (int i = 0; i < data.nrFieldsInStream; i++) {
+    for (int i = 0; i < meta.getOperations().size(); i++) {
+      StringOperationsMeta.StringOperation operation = meta.getOperations().get(i);
       if (data.inStreamNrs[i] >= 0) {
         // Get source value
         String value = getInputRowMeta().getString(row, data.inStreamNrs[i]);
         // Apply String operations and return result value
-        value =
-            processString(
-                value,
-                data.trimOperators[i],
-                data.lowerUpperOperators[i],
-                data.padType[i],
-                data.padChar[i],
-                data.padLen[i],
-                data.initCap[i],
-                data.maskHTML[i],
-                data.digits[i],
-                data.removeSpecialCharacters[i]);
-        if (Utils.isEmpty(data.outStreamNrs[i])) {
+        value = processString(value, operation);
+        if (Utils.isEmpty(operation.getFieldOutStream())) {
           // Update field
           rowData[data.inStreamNrs[i]] = value;
           data.outputRowMeta
@@ -215,7 +173,7 @@ public class StringOperations extends BaseTransform<StringOperationsMeta, String
               .setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
         } else {
           // create a new Field
-          rowData[data.inputFieldsNr + j] = value;
+          rowData[getInputRowMeta().size() + j] = value;
           j++;
         }
       }
@@ -225,7 +183,6 @@ public class StringOperations extends BaseTransform<StringOperationsMeta, String
 
   @Override
   public boolean processRow() throws HopException {
-
     Object[] r = getRow(); // Get row from input rowset & set row busy!
     if (r == null) {
       // no more input to be expected...
@@ -235,90 +192,11 @@ public class StringOperations extends BaseTransform<StringOperationsMeta, String
 
     if (first) {
       first = false;
-
-      // What's the format of the output row?
-      data.outputRowMeta = getInputRowMeta().clone();
-      data.inputFieldsNr = data.outputRowMeta.size();
-      meta.getFields(data.outputRowMeta, getTransformName(), null, null, this, metadataProvider);
-      data.nrFieldsInStream = meta.getFieldInStream().length;
-      data.inStreamNrs = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.inStreamNrs[i] = getInputRowMeta().indexOfValue(meta.getFieldInStream()[i]);
-        if (data.inStreamNrs[i] < 0) { // couldn't find field!
-
-          throw new HopTransformException(
-              BaseMessages.getString(
-                  PKG, "StringOperations.Exception.FieldRequired", meta.getFieldInStream()[i]));
-        }
-        // check field type
-        if (!getInputRowMeta().getValueMeta(data.inStreamNrs[i]).isString()) {
-          throw new HopTransformException(
-              BaseMessages.getString(
-                  PKG,
-                  "StringOperations.Exception.FieldTypeNotString",
-                  meta.getFieldInStream()[i]));
-        }
-      }
-
-      data.outStreamNrs = new String[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.outStreamNrs[i] = meta.getFieldOutStream()[i];
-      }
-
-      // Keep track of the trim operators locally for a very small
-      // optimization.
-      data.trimOperators = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.trimOperators[i] = meta.getTrimType()[i];
-      }
-      // lower Upper
-      data.lowerUpperOperators = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.lowerUpperOperators[i] = meta.getLowerUpper()[i];
-      }
-
-      // padding type?
-      data.padType = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.padType[i] = meta.getPaddingType()[i];
-      }
-
-      // padding char
-      data.padChar = new String[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.padChar[i] = resolve(meta.getPadChar()[i]);
-      }
-
-      // padding len
-      data.padLen = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.padLen[i] = Const.toInt(resolve(meta.getPadLen()[i]), 0);
-      }
-      // InitCap?
-      data.initCap = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.initCap[i] = meta.getInitCap()[i];
-      }
-      // MaskXML?
-      data.maskHTML = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.maskHTML[i] = meta.getMaskXML()[i];
-      }
-      // digits?
-      data.digits = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.digits[i] = meta.getDigits()[i];
-      }
-      // remove special characters?
-      data.removeSpecialCharacters = new int[data.nrFieldsInStream];
-      for (int i = 0; i < meta.getFieldInStream().length; i++) {
-        data.removeSpecialCharacters[i] = meta.getRemoveSpecialCharacters()[i];
-      }
-    } // end if first
+      firstProcessRow();
+    }
 
     try {
-      Object[] output = processRow(getInputRowMeta(), r);
-
+      Object[] output = performStringOperations(r);
       putRow(data.outputRowMeta, output);
 
       if (checkFeedback(getLinesRead()) && isDetailed()) {
@@ -326,12 +204,9 @@ public class StringOperations extends BaseTransform<StringOperationsMeta, String
             BaseMessages.getString(PKG, "StringOperations.Log.LineNumber") + getLinesRead());
       }
     } catch (HopException e) {
-
-      boolean sendToErrorRow = false;
-      String errorMessage = null;
+      String errorMessage;
 
       if (getTransformMeta().isDoingErrorHandling()) {
-        sendToErrorRow = true;
         errorMessage = e.toString();
       } else {
         logError(
@@ -341,28 +216,33 @@ public class StringOperations extends BaseTransform<StringOperationsMeta, String
         setOutputDone(); // signal end to receiver(s)
         return false;
       }
-      if (sendToErrorRow) {
-        // Simply add this row to the error row
-        putError(getInputRowMeta(), r, 1, errorMessage, null, "StringOperations001");
-      }
+      // Simply add this row to the error row
+      putError(getInputRowMeta(), r, 1, errorMessage, null, "StringOperations001");
     }
     return true;
   }
 
-  @Override
-  public boolean init() {
-    boolean rCode = true;
-
-    if (super.init()) {
-
-      return rCode;
+  private void firstProcessRow() throws HopTransformException {
+    // What's the format of the output row?
+    data.outputRowMeta = getInputRowMeta().clone();
+    meta.getFields(data.outputRowMeta, getTransformName(), null, null, this, metadataProvider);
+    data.inStreamNrs = new int[meta.getOperations().size()];
+    for (int i = 0; i < meta.getOperations().size(); i++) {
+      StringOperationsMeta.StringOperation operation = meta.getOperations().get(i);
+      data.inStreamNrs[i] = getInputRowMeta().indexOfValue(operation.getFieldInStream());
+      if (data.inStreamNrs[i] < 0) { // couldn't find field!
+        throw new HopTransformException(
+            BaseMessages.getString(
+                PKG, "StringOperations.Exception.FieldRequired", operation.getFieldInStream()));
+      }
+      // check field type
+      if (!getInputRowMeta().getValueMeta(data.inStreamNrs[i]).isString()) {
+        throw new HopTransformException(
+            BaseMessages.getString(
+                PKG,
+                "StringOperations.Exception.FieldTypeNotString",
+                operation.getFieldInStream()));
+      }
     }
-    return false;
-  }
-
-  @Override
-  public void dispose() {
-
-    super.dispose();
   }
 }

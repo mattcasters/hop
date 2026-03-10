@@ -18,136 +18,151 @@
 package org.apache.hop.pipeline.transforms.stringoperations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.hop.core.HopEnvironment;
-import org.apache.hop.core.exception.HopException;
-import org.apache.hop.core.plugins.PluginRegistry;
-import org.apache.hop.core.row.IRowMeta;
-import org.apache.hop.core.row.IValueMeta;
-import org.apache.hop.core.row.RowMeta;
-import org.apache.hop.core.row.value.ValueMetaString;
-import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.junit.rules.RestoreHopEngineEnvironmentExtension;
-import org.apache.hop.pipeline.transform.ITransformMeta;
-import org.apache.hop.pipeline.transforms.loadsave.LoadSaveTester;
-import org.apache.hop.pipeline.transforms.loadsave.initializer.IInitializer;
-import org.apache.hop.pipeline.transforms.loadsave.validator.ArrayLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.IFieldLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.IntLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.PrimitiveIntArrayLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.StringLoadSaveValidator;
-import org.junit.jupiter.api.BeforeEach;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
+import org.apache.commons.lang.StringUtils;
+import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
+import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
+import org.apache.hop.pipeline.transform.TransformMeta;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** User: Dzmitry Stsiapanau Date: 2/3/14 Time: 5:41 PM */
-class StringOperationsMetaTest implements IInitializer<ITransformMeta> {
-  LoadSaveTester loadSaveTester;
-  Class<StringOperationsMeta> testMetaClass = StringOperationsMeta.class;
-
-  @RegisterExtension
-  static RestoreHopEngineEnvironmentExtension env = new RestoreHopEngineEnvironmentExtension();
-
-  @BeforeEach
-  void setUpLoadSave() throws Exception {
-    HopEnvironment.init();
-    PluginRegistry.init();
-    List<String> attributes =
-        Arrays.asList(
-            "padLen",
-            "padChar",
-            "fieldInStream",
-            "fieldOutStream",
-            "trimType",
-            "lowerUpper",
-            "initCap",
-            "maskXML",
-            "digits",
-            "removeSpecialCharacters",
-            "paddingType");
-
-    IFieldLoadSaveValidator<String[]> stringArrayLoadSaveValidator =
-        new ArrayLoadSaveValidator<>(new StringLoadSaveValidator(), 5);
-
-    Map<String, IFieldLoadSaveValidator<?>> attrValidatorMap = new HashMap<>();
-    attrValidatorMap.put("padLen", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("padChar", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("fieldInStream", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("fieldOutStream", stringArrayLoadSaveValidator);
-    attrValidatorMap.put(
-        "trimType", new PrimitiveIntArrayLoadSaveValidator(new IntLoadSaveValidator(4), 5));
-    attrValidatorMap.put(
-        "lowerUpper",
-        new PrimitiveIntArrayLoadSaveValidator(
-            new IntLoadSaveValidator(StringOperationsMeta.lowerUpperCode.length), 5));
-    attrValidatorMap.put(
-        "initCap",
-        new PrimitiveIntArrayLoadSaveValidator(
-            new IntLoadSaveValidator(StringOperationsMeta.initCapCode.length), 5));
-    attrValidatorMap.put(
-        "maskXML",
-        new PrimitiveIntArrayLoadSaveValidator(
-            new IntLoadSaveValidator(StringOperationsMeta.maskXMLCode.length), 5));
-    attrValidatorMap.put(
-        "digits",
-        new PrimitiveIntArrayLoadSaveValidator(
-            new IntLoadSaveValidator(StringOperationsMeta.digitsCode.length), 5));
-    attrValidatorMap.put(
-        "removeSpecialCharacters",
-        new PrimitiveIntArrayLoadSaveValidator(
-            new IntLoadSaveValidator(StringOperationsMeta.removeSpecialCharactersCode.length), 5));
-    attrValidatorMap.put(
-        "paddingType",
-        new PrimitiveIntArrayLoadSaveValidator(
-            new IntLoadSaveValidator(StringOperationsMeta.paddingCode.length), 5));
-
-    Map<String, IFieldLoadSaveValidator<?>> typeValidatorMap = new HashMap<>();
-
-    loadSaveTester =
-        new LoadSaveTester(
-            testMetaClass,
-            attributes,
-            new HashMap<>(),
-            new HashMap<>(),
-            attrValidatorMap,
-            typeValidatorMap,
-            this);
-  }
-
-  // Call the allocate method on the LoadSaveTester meta class
-  @Override
-  public void modify(ITransformMeta someMeta) {
-    if (someMeta instanceof StringOperationsMeta) {
-      ((StringOperationsMeta) someMeta).allocate(5);
-    }
-  }
-
+class StringOperationsMetaTest {
   @Test
-  void testSerialization() throws HopException {
-    loadSaveTester.testSerialization();
-  }
-
-  @Test
-  void testGetFields() throws Exception {
+  void testLoadSave() throws Exception {
+    Path path = Paths.get(Objects.requireNonNull(getClass().getResource("/transform.xml")).toURI());
+    String xml = Files.readString(path);
     StringOperationsMeta meta = new StringOperationsMeta();
-    meta.allocate(1);
-    meta.setFieldInStream(new String[] {"field1"});
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xml, TransformMeta.XML_TAG),
+        StringOperationsMeta.class,
+        meta,
+        new MemoryMetadataProvider());
 
-    IRowMeta iRowMeta = new RowMeta();
-    IValueMeta valueMeta = new ValueMetaString("field1");
-    valueMeta.setStorageMetadata(new ValueMetaString("field1"));
-    valueMeta.setStorageType(IValueMeta.STORAGE_TYPE_BINARY_STRING);
-    iRowMeta.addValueMeta(valueMeta);
+    validate(meta);
 
-    IVariables variables = mock(IVariables.class);
-    meta.getFields(iRowMeta, "STRING_OPERATIONS", null, null, variables, null);
-    IRowMeta expectedRowMeta = new RowMeta();
-    expectedRowMeta.addValueMeta(new ValueMetaString("field1"));
-    assertEquals(expectedRowMeta.toString(), iRowMeta.toString());
+    // Do a round trip:
+    //
+    String xmlCopy =
+        XmlHandler.openTag(TransformMeta.XML_TAG)
+            + XmlMetadataUtil.serializeObjectToXml(meta)
+            + XmlHandler.closeTag(TransformMeta.XML_TAG);
+    StringOperationsMeta metaCopy = new StringOperationsMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xmlCopy, TransformMeta.XML_TAG),
+        StringOperationsMeta.class,
+        metaCopy,
+        new MemoryMetadataProvider());
+    validate(metaCopy);
+  }
+
+  private static void validate(StringOperationsMeta meta) {
+    assertNotNull(meta.getOperations());
+    assertFalse(meta.getOperations().isEmpty());
+    assertEquals(4, meta.getOperations().size());
+    StringOperationsMeta.StringOperation o1 = meta.getOperations().get(0);
+    assertEquals("desc_t", o1.getFieldInStream());
+    assertEquals("desc_trimmed", o1.getFieldOutStream());
+    assertEquals(StringOperationsMeta.TrimType.BOTH, o1.getTrimType());
+    assertEquals(StringOperationsMeta.LowerUpper.NONE, o1.getLowerUpper());
+    assertEquals(StringOperationsMeta.Padding.NONE, o1.getPaddingType());
+    assertTrue(StringUtils.isEmpty(o1.getPadChar()));
+    assertTrue(StringUtils.isEmpty(o1.getPadLen()));
+    assertEquals(StringOperationsMeta.InitCap.NO, o1.getInitCap());
+    assertEquals(StringOperationsMeta.MaskXml.NONE, o1.getMaskXml());
+    assertEquals(StringOperationsMeta.Digits.NONE, o1.getDigits());
+    assertEquals(StringOperationsMeta.RemoveSpecialChars.NONE, o1.getRemoveSpecialChars());
+
+    StringOperationsMeta.StringOperation o2 = meta.getOperations().get(1);
+    assertEquals("desc_u", o2.getFieldInStream());
+    assertEquals("desc_upper", o2.getFieldOutStream());
+    assertEquals(StringOperationsMeta.TrimType.NONE, o2.getTrimType());
+    assertEquals(StringOperationsMeta.LowerUpper.UPPER, o2.getLowerUpper());
+    assertEquals(StringOperationsMeta.Padding.NONE, o2.getPaddingType());
+    assertTrue(StringUtils.isEmpty(o2.getPadChar()));
+    assertTrue(StringUtils.isEmpty(o2.getPadLen()));
+    assertEquals(StringOperationsMeta.InitCap.NO, o2.getInitCap());
+    assertEquals(StringOperationsMeta.MaskXml.NONE, o2.getMaskXml());
+    assertEquals(StringOperationsMeta.Digits.NONE, o2.getDigits());
+    assertEquals(StringOperationsMeta.RemoveSpecialChars.NONE, o2.getRemoveSpecialChars());
+
+    StringOperationsMeta.StringOperation o3 = meta.getOperations().get(2);
+    assertEquals("desc_p", o3.getFieldInStream());
+    assertEquals("desc_padded", o3.getFieldOutStream());
+    assertEquals(StringOperationsMeta.TrimType.NONE, o3.getTrimType());
+    assertEquals(StringOperationsMeta.LowerUpper.NONE, o3.getLowerUpper());
+    assertEquals(StringOperationsMeta.Padding.LEFT, o3.getPaddingType());
+    assertEquals("#", o3.getPadChar());
+    assertEquals("25", o3.getPadLen());
+    assertEquals(StringOperationsMeta.InitCap.NO, o3.getInitCap());
+    assertEquals(StringOperationsMeta.MaskXml.NONE, o3.getMaskXml());
+    assertEquals(StringOperationsMeta.Digits.NONE, o3.getDigits());
+    assertEquals(StringOperationsMeta.RemoveSpecialChars.NONE, o3.getRemoveSpecialChars());
+
+    StringOperationsMeta.StringOperation o4 = meta.getOperations().get(3);
+    assertEquals("desc_i", o4.getFieldInStream());
+    assertEquals("desc_initcapped", o4.getFieldOutStream());
+    assertEquals(StringOperationsMeta.TrimType.NONE, o4.getTrimType());
+    assertEquals(StringOperationsMeta.LowerUpper.NONE, o4.getLowerUpper());
+    assertEquals(StringOperationsMeta.Padding.NONE, o4.getPaddingType());
+    assertTrue(StringUtils.isEmpty(o2.getPadChar()));
+    assertTrue(StringUtils.isEmpty(o2.getPadLen()));
+    assertEquals(StringOperationsMeta.InitCap.YES, o4.getInitCap());
+    assertEquals(StringOperationsMeta.MaskXml.NONE, o4.getMaskXml());
+    assertEquals(StringOperationsMeta.Digits.NONE, o4.getDigits());
+    assertEquals(StringOperationsMeta.RemoveSpecialChars.NONE, o4.getRemoveSpecialChars());
+  }
+
+  @Test
+  void testLoadSave2() throws Exception {
+    Path path =
+        Paths.get(Objects.requireNonNull(getClass().getResource("/transform2.xml")).toURI());
+    String xml = Files.readString(path);
+    StringOperationsMeta meta = new StringOperationsMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xml, TransformMeta.XML_TAG),
+        StringOperationsMeta.class,
+        meta,
+        new MemoryMetadataProvider());
+
+    validate2(meta);
+
+    // Do a round trip:
+    //
+    String xmlCopy =
+        XmlHandler.openTag(TransformMeta.XML_TAG)
+            + XmlMetadataUtil.serializeObjectToXml(meta)
+            + XmlHandler.closeTag(TransformMeta.XML_TAG);
+    StringOperationsMeta metaCopy = new StringOperationsMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xmlCopy, TransformMeta.XML_TAG),
+        StringOperationsMeta.class,
+        metaCopy,
+        new MemoryMetadataProvider());
+    validate2(metaCopy);
+  }
+
+  private void validate2(StringOperationsMeta meta) {
+    assertNotNull(meta.getOperations());
+    assertFalse(meta.getOperations().isEmpty());
+    assertEquals(1, meta.getOperations().size());
+    StringOperationsMeta.StringOperation o1 = meta.getOperations().get(0);
+    assertEquals("in_field", o1.getFieldInStream());
+    assertEquals("out_field", o1.getFieldOutStream());
+    assertEquals(StringOperationsMeta.TrimType.BOTH, o1.getTrimType());
+    assertEquals(StringOperationsMeta.LowerUpper.UPPER, o1.getLowerUpper());
+    assertEquals(StringOperationsMeta.Padding.RIGHT, o1.getPaddingType());
+    assertEquals(" ", o1.getPadChar());
+    assertEquals("20", o1.getPadLen());
+    assertEquals(StringOperationsMeta.InitCap.YES, o1.getInitCap());
+    assertEquals(StringOperationsMeta.MaskXml.UNESCAPE_XML, o1.getMaskXml());
+    assertEquals(StringOperationsMeta.Digits.DIGITS_REMOVE, o1.getDigits());
+    assertEquals(StringOperationsMeta.RemoveSpecialChars.CRLF, o1.getRemoveSpecialChars());
   }
 }

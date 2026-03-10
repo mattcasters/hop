@@ -17,27 +17,32 @@
 
 package org.apache.hop.pipeline.transforms.stringoperations;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.CheckResult;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.ICheckResult;
 import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopTransformException;
-import org.apache.hop.core.exception.HopXmlException;
-import org.apache.hop.core.injection.Injection;
 import org.apache.hop.core.injection.InjectionSupported;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
+import org.apache.hop.core.row.value.ValueMetaBase;
 import org.apache.hop.core.row.value.ValueMetaString;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.metadata.api.HopMetadataProperty;
+import org.apache.hop.metadata.api.IEnumHasCodeAndDescription;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.w3c.dom.Node;
+import org.jetbrains.annotations.NotNull;
 
 @Transform(
     id = "StringOperations",
@@ -48,476 +53,34 @@ import org.w3c.dom.Node;
     keywords = "i18n::StringOperationsMeta.keyword",
     documentationUrl = "/pipeline/transforms/stringoperations.html")
 @InjectionSupported(localizationPrefix = "StringOperationsDialog.Injection.")
+@Getter
+@Setter
 public class StringOperationsMeta
     extends BaseTransformMeta<StringOperations, StringOperationsData> {
 
   private static final Class<?> PKG = StringOperationsMeta.class;
   public static final String CONST_SPACES = "        ";
 
-  /** which field in input stream to compare with? */
-  @Injection(name = "SOURCEFIELDS")
-  private String[] fieldInStream;
-
-  /** output field */
-  @Injection(name = "TARGETFIELDS")
-  private String[] fieldOutStream;
-
-  /** Trim type */
-  @Injection(name = "TRIMTYPE")
-  private int[] trimType;
-
-  /** Lower/Upper type */
-  @Injection(name = "LOWERUPPER")
-  private int[] lowerUpper;
-
-  /** InitCap */
-  @Injection(name = "INITCAP")
-  private int[] initCap;
-
-  @Injection(name = "MASKXML")
-  private int[] maskXML;
-
-  @Injection(name = "DIGITS")
-  private int[] digits;
-
-  @Injection(name = "SPECIALCHARS")
-  private int[] remove_special_characters;
-
-  /** padding type */
-  @Injection(name = "PADDING")
-  private int[] paddingType;
-
-  /** Pad length */
-  @Injection(name = "PADLEN")
-  private String[] padLen;
-
-  @Injection(name = "PADCHAR")
-  private String[] padChar;
-
-  /** The trim type codes */
-  public static final String[] trimTypeCode = {"none", "left", "right", "both"};
-
-  public static final int TRIM_NONE = 0;
-
-  public static final int TRIM_LEFT = 1;
-
-  public static final int TRIM_RIGHT = 2;
-
-  public static final int TRIM_BOTH = 3;
-
-  /** The trim description */
-  public static final String[] trimTypeDesc = {
-    BaseMessages.getString(PKG, "StringOperationsMeta.TrimType.None"),
-    BaseMessages.getString(PKG, "StringOperationsMeta.TrimType.Left"),
-    BaseMessages.getString(PKG, "StringOperationsMeta.TrimType.Right"),
-    BaseMessages.getString(PKG, "StringOperationsMeta.TrimType.Both")
-  };
-
-  /** The lower upper codes */
-  public static final String[] lowerUpperCode = {"none", "lower", "upper"};
-
-  public static final int LOWER_UPPER_NONE = 0;
-
-  public static final int LOWER_UPPER_LOWER = 1;
-
-  public static final int LOWER_UPPER_UPPER = 2;
-
-  /** The lower upper description */
-  public static final String[] lowerUpperDesc = {
-    BaseMessages.getString(PKG, "StringOperationsMeta.LowerUpper.None"),
-    BaseMessages.getString(PKG, "StringOperationsMeta.LowerUpper.Lower"),
-    BaseMessages.getString(PKG, "StringOperationsMeta.LowerUpper.Upper")
-  };
-
-  public static final String[] initCapDesc =
-      new String[] {
-        BaseMessages.getString(PKG, "System.Combo.No"),
-        BaseMessages.getString(PKG, "System.Combo.Yes")
-      };
-
-  public static final String[] initCapCode = {"no", "yes"};
-
-  public static final int INIT_CAP_NO = 0;
-
-  public static final int INIT_CAP_YES = 1;
-
-  // digits
-  public static final String[] digitsCode = {"none", "digits_only", "remove_digits"};
-
-  public static final int DIGITS_NONE = 0;
-
-  public static final int DIGITS_ONLY = 1;
-
-  public static final int DIGITS_REMOVE = 2;
-
-  public static final String[] digitsDesc =
-      new String[] {
-        BaseMessages.getString(PKG, "StringOperationsMeta.Digits.None"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.Digits.Only"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.Digits.Remove")
-      };
-
-  // mask XML
-
-  public static final String[] maskXMLDesc =
-      new String[] {
-        BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.None"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.EscapeXML"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.CDATA"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.UnEscapeXML"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.EscapeSQL"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.EscapeHTML"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.UnEscapeHTML"),
-      };
-
-  public static final String[] maskXMLCode = {
-    "none", "escapexml", "cdata", "unescapexml", "escapesql", "escapehtml", "unescapehtml"
-  };
-
-  public static final int MASK_NONE = 0;
-  public static final int MASK_ESCAPE_XML = 1;
-  public static final int MASK_CDATA = 2;
-  public static final int MASK_UNESCAPE_XML = 3;
-  public static final int MASK_ESCAPE_SQL = 4;
-  public static final int MASK_ESCAPE_HTML = 5;
-  public static final int MASK_UNESCAPE_HTML = 6;
-
-  // remove special characters
-  public static final String[] removeSpecialCharactersCode = {
-    "none", "cr", "lf", "crlf", "tab", "espace"
-  };
-
-  public static final int REMOVE_SPECIAL_CHARACTERS_NONE = 0;
-
-  public static final int REMOVE_SPECIAL_CHARACTERS_CR = 1;
-
-  public static final int REMOVE_SPECIAL_CHARACTERS_LF = 2;
-
-  public static final int REMOVE_SPECIAL_CHARACTERS_CRLF = 3;
-
-  public static final int REMOVE_SPECIAL_CHARACTERS_TAB = 4;
-
-  public static final int REMOVE_SPECIAL_CHARACTERS_ESPACE = 5;
-
-  public static final String[] removeSpecialCharactersDesc =
-      new String[] {
-        BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.None"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.CR"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.LF"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.CRLF"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.TAB"),
-        BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.Space")
-      };
-
-  /** The padding description */
-  public static final String[] paddingDesc = {
-    BaseMessages.getString(PKG, "StringOperationsMeta.Padding.None"),
-    BaseMessages.getString(PKG, "StringOperationsMeta.Padding.Left"),
-    BaseMessages.getString(PKG, "StringOperationsMeta.Padding.Right")
-  };
-
-  public static final String[] paddingCode = {"none", "left", "right"};
-
-  public static final int PADDING_NONE = 0;
-
-  public static final int PADDING_LEFT = 1;
-
-  public static final int PADDING_RIGHT = 2;
+  @HopMetadataProperty(
+      groupKey = "fields",
+      key = "field",
+      injectionGroupKey = "FIELDS",
+      injectionKey = "FIELD")
+  private List<StringOperation> operations;
 
   public StringOperationsMeta() {
-    super(); // allocate BaseTransformMeta
+    super();
+    this.operations = new ArrayList<>();
   }
 
-  /**
-   * @return Returns the fieldInStream.
-   */
-  public String[] getFieldInStream() {
-    return fieldInStream;
-  }
-
-  /**
-   * @param keyStream The fieldInStream to set.
-   */
-  public void setFieldInStream(String[] keyStream) {
-    this.fieldInStream = keyStream;
-  }
-
-  /**
-   * @return Returns the fieldOutStream.
-   */
-  public String[] getFieldOutStream() {
-    return fieldOutStream;
-  }
-
-  /**
-   * @param keyStream The fieldOutStream to set.
-   */
-  public void setFieldOutStream(String[] keyStream) {
-    this.fieldOutStream = keyStream;
-  }
-
-  public String[] getPadLen() {
-    return padLen;
-  }
-
-  public void setPadLen(String[] value) {
-    padLen = value;
-  }
-
-  public String[] getPadChar() {
-    return padChar;
-  }
-
-  public void setPadChar(String[] value) {
-    padChar = value;
-  }
-
-  public int[] getTrimType() {
-    return trimType;
-  }
-
-  public void setTrimType(int[] trimType) {
-    this.trimType = trimType;
-  }
-
-  public int[] getLowerUpper() {
-    return lowerUpper;
-  }
-
-  public void setLowerUpper(int[] lowerUpper) {
-    this.lowerUpper = lowerUpper;
-  }
-
-  public int[] getInitCap() {
-    return initCap;
-  }
-
-  public void setInitCap(int[] value) {
-    initCap = value;
-  }
-
-  public int[] getMaskXML() {
-    return maskXML;
-  }
-
-  public void setMaskXML(int[] value) {
-    maskXML = value;
-  }
-
-  public int[] getDigits() {
-    return digits;
-  }
-
-  public void setDigits(int[] value) {
-    digits = value;
-  }
-
-  public int[] getRemoveSpecialCharacters() {
-    return remove_special_characters;
-  }
-
-  public void setRemoveSpecialCharacters(int[] value) {
-    remove_special_characters = value;
-  }
-
-  public int[] getPaddingType() {
-    return paddingType;
-  }
-
-  public void setPaddingType(int[] value) {
-    paddingType = value;
-  }
-
-  @Override
-  public void loadXml(Node transformNode, IHopMetadataProvider metadataProvider)
-      throws HopXmlException {
-    readData(transformNode, metadataProvider);
-  }
-
-  public void allocate(int nrkeys) {
-    fieldInStream = new String[nrkeys];
-    fieldOutStream = new String[nrkeys];
-    trimType = new int[nrkeys];
-    lowerUpper = new int[nrkeys];
-    paddingType = new int[nrkeys];
-    padChar = new String[nrkeys];
-    padLen = new String[nrkeys];
-    initCap = new int[nrkeys];
-    maskXML = new int[nrkeys];
-    digits = new int[nrkeys];
-    remove_special_characters = new int[nrkeys];
+  public StringOperationsMeta(StringOperationsMeta m) {
+    this();
+    m.operations.forEach(op -> this.operations.add(new StringOperation(op)));
   }
 
   @Override
   public Object clone() {
-    StringOperationsMeta retval = (StringOperationsMeta) super.clone();
-    int nrkeys = fieldInStream.length;
-
-    retval.allocate(nrkeys);
-    System.arraycopy(fieldInStream, 0, retval.fieldInStream, 0, nrkeys);
-    System.arraycopy(fieldOutStream, 0, retval.fieldOutStream, 0, nrkeys);
-    System.arraycopy(trimType, 0, retval.trimType, 0, nrkeys);
-    System.arraycopy(lowerUpper, 0, retval.lowerUpper, 0, nrkeys);
-    System.arraycopy(paddingType, 0, retval.paddingType, 0, nrkeys);
-    System.arraycopy(padChar, 0, retval.padChar, 0, nrkeys);
-    System.arraycopy(padLen, 0, retval.padLen, 0, nrkeys);
-    System.arraycopy(initCap, 0, retval.initCap, 0, nrkeys);
-    System.arraycopy(maskXML, 0, retval.maskXML, 0, nrkeys);
-    System.arraycopy(digits, 0, retval.digits, 0, nrkeys);
-    System.arraycopy(remove_special_characters, 0, retval.remove_special_characters, 0, nrkeys);
-
-    return retval;
-  }
-
-  private void readData(Node transformNode, IHopMetadataProvider metadataProvider)
-      throws HopXmlException {
-    try {
-      int nrkeys;
-
-      Node lookup = XmlHandler.getSubNode(transformNode, "fields");
-      nrkeys = XmlHandler.countNodes(lookup, "field");
-      allocate(nrkeys);
-
-      for (int i = 0; i < nrkeys; i++) {
-        Node fnode = XmlHandler.getSubNodeByNr(lookup, "field", i);
-
-        fieldInStream[i] = Const.NVL(XmlHandler.getTagValue(fnode, "in_stream_name"), "");
-        fieldOutStream[i] = Const.NVL(XmlHandler.getTagValue(fnode, "out_stream_name"), "");
-
-        trimType[i] = getTrimTypeByCode(Const.NVL(XmlHandler.getTagValue(fnode, "trim_type"), ""));
-        lowerUpper[i] =
-            getLowerUpperByCode(Const.NVL(XmlHandler.getTagValue(fnode, "lower_upper"), ""));
-        paddingType[i] =
-            getPaddingByCode(Const.NVL(XmlHandler.getTagValue(fnode, "padding_type"), ""));
-        padChar[i] = Const.NVL(XmlHandler.getTagValue(fnode, "pad_char"), "");
-        padLen[i] = Const.NVL(XmlHandler.getTagValue(fnode, "pad_len"), "");
-        initCap[i] = getInitCapByCode(Const.NVL(XmlHandler.getTagValue(fnode, "init_cap"), ""));
-        maskXML[i] = getMaskXMLByCode(Const.NVL(XmlHandler.getTagValue(fnode, "mask_xml"), ""));
-        digits[i] = getDigitsByCode(Const.NVL(XmlHandler.getTagValue(fnode, "digits"), ""));
-        remove_special_characters[i] =
-            getRemoveSpecialCharactersByCode(
-                Const.NVL(XmlHandler.getTagValue(fnode, "remove_special_characters"), ""));
-      }
-    } catch (Exception e) {
-      throw new HopXmlException(
-          BaseMessages.getString(
-              PKG, "StringOperationsMeta.Exception.UnableToReadTransformMetaFromXML"),
-          e);
-    }
-  }
-
-  @Override
-  public void setDefault() {
-    fieldInStream = null;
-    fieldOutStream = null;
-    allocate(0);
-  }
-
-  @Override
-  public String getXml() {
-    StringBuilder retval = new StringBuilder(500);
-
-    retval.append("    <fields>").append(Const.CR);
-
-    for (int i = 0; i < fieldInStream.length; i++) {
-      // defaults when not present
-      String lPadChar = (padChar.length == 0 || padChar.length <= i) ? "" : padChar[i];
-      String lPadLen = (padLen.length == 0 || padLen.length <= i) ? "" : padLen[i];
-
-      retval.append("      <field>").append(Const.CR);
-      retval
-          .append(CONST_SPACES)
-          .append(XmlHandler.addTagValue("in_stream_name", fieldInStream[i]));
-
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "out_stream_name",
-                  (fieldOutStream == null
-                          || fieldOutStream.length == 0
-                          || fieldOutStream.length <= i)
-                      ? ""
-                      : !Utils.isEmpty(fieldOutStream[i]) ? fieldOutStream[i] : ""));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "trim_type",
-                  (trimType == null || trimType.length == 0 || trimType.length <= i)
-                      ? ""
-                      : getTrimTypeCode(trimType[i])));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "lower_upper",
-                  (lowerUpper == null || lowerUpper.length == 0 || lowerUpper.length <= i)
-                      ? ""
-                      : getLowerUpperCode(lowerUpper[i])));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "padding_type",
-                  (paddingType == null || paddingType.length == 0 || paddingType.length <= i)
-                      ? ""
-                      : getPaddingCode(paddingType[i])));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "pad_char",
-                  (padChar == null || padChar.length == 0 || padChar.length <= i)
-                      ? ""
-                      : padChar[i]));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "pad_len",
-                  (padLen == null || padLen.length == 0 || padLen.length <= i) ? "" : padLen[i]));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "init_cap",
-                  (initCap == null || initCap.length == 0 || initCap.length <= i)
-                      ? ""
-                      : getInitCapCode(initCap[i])));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "mask_xml",
-                  (maskXML == null || maskXML.length == 0 || maskXML.length <= i)
-                      ? ""
-                      : getMaskXMLCode(maskXML[i])));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "digits",
-                  (digits == null || digits.length == 0 || digits.length <= i)
-                      ? ""
-                      : getDigitsCode(digits[i])));
-      retval
-          .append(CONST_SPACES)
-          .append(
-              XmlHandler.addTagValue(
-                  "remove_special_characters",
-                  (remove_special_characters == null
-                          || remove_special_characters.length == 0
-                          || remove_special_characters.length <= i)
-                      ? ""
-                      : getRemoveSpecialCharactersCode(remove_special_characters[i])));
-
-      retval.append("      </field>").append(Const.CR);
-    }
-
-    retval.append("    </fields>").append(Const.CR);
-
-    return retval.toString();
+    return new StringOperationsMeta(this);
   }
 
   @Override
@@ -530,9 +93,9 @@ public class StringOperationsMeta
       IHopMetadataProvider metadataProvider)
       throws HopTransformException {
     // Add new field?
-    for (int i = 0; i < fieldOutStream.length; i++) {
+    for (StringOperation operation : operations) {
       IValueMeta v;
-      String outputField = variables.resolve(fieldOutStream[i]);
+      String outputField = variables.resolve(operation.fieldOutStream);
       if (!Utils.isEmpty(outputField)) {
         // Add a new field
         v = new ValueMetaString(outputField);
@@ -540,14 +103,13 @@ public class StringOperationsMeta
         v.setOrigin(name);
         inputRowMeta.addValueMeta(v);
       } else {
-        v = inputRowMeta.searchValueMeta(fieldInStream[i]);
+        v = inputRowMeta.searchValueMeta(operation.fieldInStream);
         if (v == null) {
           continue;
         }
         v.setStorageType(IValueMeta.STORAGE_TYPE_NORMAL);
-        int paddingType = getPaddingType()[i];
-        if (paddingType == PADDING_LEFT || paddingType == PADDING_RIGHT) {
-          int padLen = Const.toInt(variables.resolve(getPadLen()[i]), 0);
+        if (operation.paddingType == Padding.LEFT || operation.paddingType == Padding.RIGHT) {
+          int padLen = Const.toInt(variables.resolve(operation.padLen), 0);
           if (padLen > v.getLength()) {
             // alter meta data
             v.setLength(padLen);
@@ -561,7 +123,7 @@ public class StringOperationsMeta
   public void check(
       List<ICheckResult> remarks,
       PipelineMeta pipelineMeta,
-      TransformMeta transforminfo,
+      TransformMeta transformMeta,
       IRowMeta prev,
       String[] input,
       String[] output,
@@ -569,103 +131,139 @@ public class StringOperationsMeta
       IVariables variables,
       IHopMetadataProvider metadataProvider) {
 
+    if (checkNoInputReceived(remarks, transformMeta, prev)) {
+      return;
+    }
+    StringBuilder errorMessage = checkMissingFields(remarks, transformMeta, prev);
+    checkAllFieldsAreStrings(remarks, transformMeta, prev, errorMessage);
+    checkMissingInputFields(remarks, transformMeta);
+    checkDistinctInputFields(remarks, transformMeta);
+  }
+
+  private static boolean checkNoInputReceived(
+      List<ICheckResult> remarks, TransformMeta transformMeta, IRowMeta prev) {
     CheckResult cr;
-    String errorMessage = "";
-    boolean first = true;
-    boolean errorFound = false;
-
     if (prev == null) {
-
-      errorMessage +=
-          BaseMessages.getString(PKG, "StringOperationsMeta.CheckResult.NoInputReceived")
-              + Const.CR;
-      cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transforminfo);
+      cr =
+          new CheckResult(
+              ICheckResult.TYPE_RESULT_ERROR,
+              BaseMessages.getString(PKG, "StringOperationsMeta.CheckResult.NoInputReceived")
+                  + Const.CR,
+              transformMeta);
       remarks.add(cr);
-    } else {
+      // Nothing more to do.
+      //
+      return true;
+    }
+    return false;
+  }
 
-      for (String field : fieldInStream) {
-        IValueMeta v = prev.searchValueMeta(field);
-        if (v == null) {
-          if (first) {
-            first = false;
-            errorMessage +=
-                BaseMessages.getString(
-                        PKG, "StringOperationsMeta.CheckResult.MissingInStreamFields")
-                    + Const.CR;
-          }
-          errorFound = true;
-          errorMessage += "\t\t" + field + Const.CR;
-        }
-      }
-      if (errorFound) {
-        cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transforminfo);
-      } else {
+  private void checkDistinctInputFields(List<ICheckResult> remarks, TransformMeta transformMeta) {
+    CheckResult cr;
+    // Check if all input fields are distinct.
+    Set<String> inFields = new HashSet<>();
+    for (StringOperation operation : operations) {
+      if (inFields.contains(operation.fieldInStream)) {
         cr =
             new CheckResult(
-                ICheckResult.TYPE_RESULT_OK,
-                BaseMessages.getString(PKG, "StringOperationsMeta.CheckResult.FoundInStreamFields"),
-                transforminfo);
-      }
-      remarks.add(cr);
-
-      // Check whether all are strings
-      first = true;
-      errorFound = false;
-      for (String field : fieldInStream) {
-        IValueMeta v = prev.searchValueMeta(field);
-        if (v != null && v.getType() != IValueMeta.TYPE_STRING) {
-          if (first) {
-            first = false;
-            errorMessage +=
+                ICheckResult.TYPE_RESULT_ERROR,
                 BaseMessages.getString(
-                        PKG, "StringOperationsMeta.CheckResult.OperationOnNonStringFields")
-                    + Const.CR;
-          }
-          errorFound = true;
-          errorMessage += "\t\t" + field + Const.CR;
-        }
+                    PKG,
+                    "StringOperationsMeta.CheckResult.FieldInputError",
+                    operation.fieldInStream),
+                transformMeta);
+        remarks.add(cr);
       }
-      if (errorFound) {
-        cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transforminfo);
-      } else {
+      inFields.add(operation.fieldInStream);
+    }
+  }
+
+  private void checkMissingInputFields(List<ICheckResult> remarks, TransformMeta transformMeta) {
+    CheckResult cr;
+    int idx = 1;
+    for (StringOperation operation : operations) {
+      if (Utils.isEmpty(operation.fieldInStream)) {
         cr =
             new CheckResult(
-                ICheckResult.TYPE_RESULT_OK,
+                ICheckResult.TYPE_RESULT_ERROR,
                 BaseMessages.getString(
-                    PKG, "StringOperationsMeta.CheckResult.AllOperationsOnStringFields"),
-                transforminfo);
+                    PKG,
+                    "StringOperationsMeta.CheckResult.InStreamFieldMissing",
+                    Integer.toString(idx)),
+                transformMeta);
+        remarks.add(cr);
       }
-      remarks.add(cr);
+      idx++;
+    }
+  }
 
-      if (fieldInStream.length > 0) {
-        for (int idx = 0; idx < fieldInStream.length; idx++) {
-          if (Utils.isEmpty(fieldInStream[idx])) {
-            cr =
-                new CheckResult(
-                    ICheckResult.TYPE_RESULT_ERROR,
-                    BaseMessages.getString(
-                        PKG,
-                        "StringOperationsMeta.CheckResult.InStreamFieldMissing",
-                        Integer.toString(idx + 1)),
-                    transforminfo);
-            remarks.add(cr);
-          }
+  private void checkAllFieldsAreStrings(
+      List<ICheckResult> remarks,
+      TransformMeta transformMeta,
+      IRowMeta prev,
+      StringBuilder errorMessage) {
+    boolean first;
+    boolean errorFound;
+    CheckResult cr;
+    // Check whether all are strings
+    first = true;
+    errorFound = false;
+    for (StringOperation operation : operations) {
+      IValueMeta v = prev.searchValueMeta(operation.fieldInStream);
+      if (v != null && v.getType() != IValueMeta.TYPE_STRING) {
+        if (first) {
+          first = false;
+          errorMessage
+              .append(
+                  BaseMessages.getString(
+                      PKG, "StringOperationsMeta.CheckResult.OperationOnNonStringFields"))
+              .append(Const.CR);
         }
-      }
-
-      // Check if all input fields are distinct.
-      for (int idx = 0; idx < fieldInStream.length; idx++) {
-        for (int jdx = 0; jdx < fieldInStream.length; jdx++) {
-          if (fieldInStream[idx].equals(fieldInStream[jdx]) && idx != jdx && idx < jdx) {
-            errorMessage =
-                BaseMessages.getString(
-                    PKG, "StringOperationsMeta.CheckResult.FieldInputError", fieldInStream[idx]);
-            cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transforminfo);
-            remarks.add(cr);
-          }
-        }
+        errorFound = true;
+        errorMessage.append("\t\t").append(operation.fieldInStream).append(Const.CR);
       }
     }
+    if (errorFound) {
+      cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta);
+    } else {
+      cr =
+          new CheckResult(
+              ICheckResult.TYPE_RESULT_OK,
+              BaseMessages.getString(
+                  PKG, "StringOperationsMeta.CheckResult.AllOperationsOnStringFields"),
+              transformMeta);
+    }
+    remarks.add(cr);
+  }
+
+  private @NotNull StringBuilder checkMissingFields(
+      List<ICheckResult> remarks, TransformMeta transformMeta, IRowMeta prev) {
+    CheckResult cr;
+    boolean errorFound = false;
+    StringBuilder errorMessage = new StringBuilder();
+    for (StringOperation operation : operations) {
+      IValueMeta v = prev.searchValueMeta(operation.fieldInStream);
+      if (v == null) {
+        errorMessage
+            .append(
+                BaseMessages.getString(
+                    PKG, "StringOperationsMeta.CheckResult.MissingInStreamFields"))
+            .append(Const.CR);
+      }
+      errorFound = true;
+      errorMessage.append("\t\t").append(operation.fieldInStream).append(Const.CR);
+    }
+    if (errorFound) {
+      cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta);
+    } else {
+      cr =
+          new CheckResult(
+              ICheckResult.TYPE_RESULT_OK,
+              BaseMessages.getString(PKG, "StringOperationsMeta.CheckResult.FoundInStreamFields"),
+              transformMeta);
+    }
+    remarks.add(cr);
+    return errorMessage;
   }
 
   @Override
@@ -673,297 +271,288 @@ public class StringOperationsMeta
     return true;
   }
 
-  private static String getTrimTypeCode(int i) {
-    if (i < 0 || i >= trimTypeCode.length) {
-      return trimTypeCode[0];
+  @Getter
+  @Setter
+  public static class StringOperation {
+    /** which field in input stream to compare with? */
+    @HopMetadataProperty(
+        key = "in_stream_name",
+        injectionKey = "SOURCEFIELDS",
+        injectionKeyDescription = "StringOperationsDialog.Injection.SOURCEFIELDS")
+    private String fieldInStream;
+
+    /** output field */
+    @HopMetadataProperty(
+        key = "out_stream_name",
+        injectionKey = "TARGETFIELDS",
+        injectionKeyDescription = "StringOperationsDialog.Injection.TARGETFIELDS")
+    private String fieldOutStream;
+
+    /** Trim type */
+    @HopMetadataProperty(
+        key = "trim_type",
+        storeWithCode = true,
+        injectionKey = "TRIMTYPE",
+        injectionKeyDescription = "StringOperationsDialog.Injection.TRIMTYPE")
+    private TrimType trimType;
+
+    /** Lower/Upper type */
+    @HopMetadataProperty(
+        key = "lower_upper",
+        storeWithCode = true,
+        injectionKey = "LOWERUPPER",
+        injectionKeyDescription = "StringOperationsDialog.Injection.LOWERUPPER")
+    private LowerUpper lowerUpper;
+
+    /** InitCap */
+    @HopMetadataProperty(
+        key = "init_cap",
+        storeWithCode = true,
+        injectionKey = "INITCAP",
+        injectionKeyDescription = "StringOperationsDialog.Injection.INITCAP")
+    private InitCap initCap;
+
+    @HopMetadataProperty(
+        key = "mask_xml",
+        storeWithCode = true,
+        injectionKey = "MASKXML",
+        injectionKeyDescription = "StringOperationsDialog.Injection.MASKXML")
+    private MaskXml maskXml;
+
+    @HopMetadataProperty(
+        key = "digits",
+        storeWithCode = true,
+        injectionKey = "DIGITS",
+        injectionKeyDescription = "StringOperationsDialog.Injection.DIGITS")
+    private Digits digits;
+
+    @HopMetadataProperty(
+        key = "remove_special_characters",
+        storeWithCode = true,
+        injectionKey = "SPECIALCHARS",
+        injectionKeyDescription = "StringOperationsDialog.Injection.SPECIALCHARS")
+    private RemoveSpecialChars removeSpecialChars;
+
+    /** padding type */
+    @HopMetadataProperty(
+        key = "padding_type",
+        storeWithCode = true,
+        injectionKey = "PADDING",
+        injectionKeyDescription = "StringOperationsDialog.Injection.PADDING")
+    private Padding paddingType;
+
+    /** Pad length */
+    @HopMetadataProperty(
+        key = "pad_len",
+        injectionKey = "PADLEN",
+        injectionKeyDescription = "StringOperationsDialog.Injection.PADLEN")
+    private String padLen;
+
+    @HopMetadataProperty(
+        key = "pad_char",
+        injectionKey = "PADCHAR",
+        injectionKeyDescription = "StringOperationsDialog.Injection.PADCHAR")
+    private String padChar;
+
+    public StringOperation() {
+      this.trimType = TrimType.NONE;
+      this.lowerUpper = LowerUpper.NONE;
+      this.initCap = InitCap.NO;
+      this.maskXml = MaskXml.NONE;
+      this.paddingType = Padding.NONE;
+      this.removeSpecialChars = RemoveSpecialChars.NONE;
+      this.digits = Digits.NONE;
     }
-    return trimTypeCode[i];
+
+    public StringOperation(StringOperation op) {
+      this();
+      this.digits = op.digits;
+      this.fieldInStream = op.fieldInStream;
+      this.fieldOutStream = op.fieldOutStream;
+      this.initCap = op.initCap;
+      this.lowerUpper = op.lowerUpper;
+      this.maskXml = op.maskXml;
+      this.padChar = op.padChar;
+      this.paddingType = op.paddingType;
+      this.padLen = op.padLen;
+      this.removeSpecialChars = op.removeSpecialChars;
+      this.trimType = op.trimType;
+    }
   }
 
-  private static String getLowerUpperCode(int i) {
-    if (i < 0 || i >= lowerUpperCode.length) {
-      return lowerUpperCode[0];
+  @Getter
+  public enum TrimType implements IEnumHasCodeAndDescription {
+    NONE(ValueMetaBase.trimTypeCode[0], ValueMetaBase.trimTypeDesc[0]),
+    LEFT(ValueMetaBase.trimTypeCode[1], ValueMetaBase.trimTypeDesc[1]),
+    RIGHT(ValueMetaBase.trimTypeCode[2], ValueMetaBase.trimTypeDesc[2]),
+    BOTH(ValueMetaBase.trimTypeCode[3], ValueMetaBase.trimTypeDesc[3]),
+    ;
+    private final String code;
+    private final String description;
+
+    TrimType(String code, String description) {
+      this.code = code;
+      this.description = description;
     }
-    return lowerUpperCode[i];
+
+    public static String[] getDescriptions() {
+      return IEnumHasCodeAndDescription.getDescriptions(TrimType.class);
+    }
+
+    public static TrimType lookupDescription(String description) {
+      return IEnumHasCodeAndDescription.lookupDescription(TrimType.class, description, NONE);
+    }
   }
 
-  private static String getInitCapCode(int i) {
-    if (i < 0 || i >= initCapCode.length) {
-      return initCapCode[0];
+  @Getter
+  public enum LowerUpper implements IEnumHasCodeAndDescription {
+    NONE("none", BaseMessages.getString(PKG, "StringOperationsMeta.LowerUpper.None")),
+    LOWER("lower", BaseMessages.getString(PKG, "StringOperationsMeta.LowerUpper.Lower")),
+    UPPER("upper", BaseMessages.getString(PKG, "StringOperationsMeta.LowerUpper.Upper")),
+    ;
+    private final String code;
+    private final String description;
+
+    LowerUpper(String code, String description) {
+      this.code = code;
+      this.description = description;
     }
-    return initCapCode[i];
+
+    public static String[] getDescriptions() {
+      return IEnumHasCodeAndDescription.getDescriptions(LowerUpper.class);
+    }
+
+    public static LowerUpper lookupDescription(String description) {
+      return IEnumHasCodeAndDescription.lookupDescription(LowerUpper.class, description, NONE);
+    }
   }
 
-  private static String getMaskXMLCode(int i) {
-    if (i < 0 || i >= maskXMLCode.length) {
-      return maskXMLCode[0];
+  @Getter
+  public enum InitCap implements IEnumHasCodeAndDescription {
+    NO("no", BaseMessages.getString("System.Combo.No")),
+    YES("yes", BaseMessages.getString("System.Combo.Yes")),
+    ;
+    private final String code;
+    private final String description;
+
+    InitCap(String code, String description) {
+      this.code = code;
+      this.description = description;
     }
-    return maskXMLCode[i];
+
+    public static String[] getDescriptions() {
+      return IEnumHasCodeAndDescription.getDescriptions(InitCap.class);
+    }
+
+    public static InitCap lookupDescription(String description) {
+      return IEnumHasCodeAndDescription.lookupDescription(InitCap.class, description, NO);
+    }
   }
 
-  private static String getDigitsCode(int i) {
-    if (i < 0 || i >= digitsCode.length) {
-      return digitsCode[0];
+  @Getter
+  public enum Digits implements IEnumHasCodeAndDescription {
+    NONE("none", BaseMessages.getString(PKG, "StringOperationsMeta.Digits.None")),
+    DIGITS_ONLY("digits_only", BaseMessages.getString(PKG, "StringOperationsMeta.Digits.Only")),
+    DIGITS_REMOVE(
+        "remove_digits", BaseMessages.getString(PKG, "StringOperationsMeta.Digits.Remove")),
+    ;
+    private final String code;
+    private final String description;
+
+    Digits(String code, String description) {
+      this.code = code;
+      this.description = description;
     }
-    return digitsCode[i];
+
+    public static String[] getDescriptions() {
+      return IEnumHasCodeAndDescription.getDescriptions(Digits.class);
+    }
+
+    public static Digits lookupDescription(String description) {
+      return IEnumHasCodeAndDescription.lookupDescription(Digits.class, description, NONE);
+    }
   }
 
-  private static String getRemoveSpecialCharactersCode(int i) {
-    if (i < 0 || i >= removeSpecialCharactersCode.length) {
-      return removeSpecialCharactersCode[0];
+  @Getter
+  public enum MaskXml implements IEnumHasCodeAndDescription {
+    NONE("none", BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.None")),
+    ESCAPE_XML("escapexml", BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.EscapeXML")),
+    CDATA("cdata", BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.CDATA")),
+    UNESCAPE_XML(
+        "unescapexml", BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.UnEscapeXML")),
+    ESCAPE_SQL("escapesql", BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.EscapeSQL")),
+    ESCAPE_HTML(
+        "escapehtml", BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.EscapeHTML")),
+    UNESCAPE_HTML(
+        "unescapehtml", BaseMessages.getString(PKG, "StringOperationsMeta.MaskXML.UnEscapeHTML")),
+    ;
+
+    private final String code;
+    private final String description;
+
+    MaskXml(String code, String description) {
+      this.code = code;
+      this.description = description;
     }
-    return removeSpecialCharactersCode[i];
+
+    public static String[] getDescriptions() {
+      return IEnumHasCodeAndDescription.getDescriptions(MaskXml.class);
+    }
+
+    public static MaskXml lookupDescription(String description) {
+      return IEnumHasCodeAndDescription.lookupDescription(MaskXml.class, description, NONE);
+    }
   }
 
-  private static String getPaddingCode(int i) {
-    if (i < 0 || i >= paddingCode.length) {
-      return paddingCode[0];
+  @Getter
+  public enum RemoveSpecialChars implements IEnumHasCodeAndDescription {
+    NONE("none", BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.None")),
+    CR("cr", BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.CR")),
+    LF("lf", BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.LF")),
+    CRLF("crlf", BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.CRLF")),
+    TAB("tab", BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.TAB")),
+    SPACE(
+        "espace",
+        BaseMessages.getString(PKG, "StringOperationsMeta.RemoveSpecialCharacters.Space")),
+    ;
+    private final String code;
+    private final String description;
+
+    RemoveSpecialChars(String code, String description) {
+      this.code = code;
+      this.description = description;
     }
-    return paddingCode[i];
+
+    public static String[] getDescriptions() {
+      return IEnumHasCodeAndDescription.getDescriptions(RemoveSpecialChars.class);
+    }
+
+    public static RemoveSpecialChars lookupDescription(String description) {
+      return IEnumHasCodeAndDescription.lookupDescription(
+          RemoveSpecialChars.class, description, NONE);
+    }
   }
 
-  public static String getTrimTypeDesc(int i) {
-    if (i < 0 || i >= trimTypeDesc.length) {
-      return trimTypeDesc[0];
-    }
-    return trimTypeDesc[i];
-  }
+  @Getter
+  public enum Padding implements IEnumHasCodeAndDescription {
+    NONE("none", BaseMessages.getString(PKG, "StringOperationsMeta.Padding.None")),
+    LEFT("left", BaseMessages.getString(PKG, "StringOperationsMeta.Padding.Left")),
+    RIGHT("right", BaseMessages.getString(PKG, "StringOperationsMeta.Padding.Right")),
+    ;
+    private final String code;
+    private final String description;
 
-  public static String getLowerUpperDesc(int i) {
-    if (i < 0 || i >= lowerUpperDesc.length) {
-      return lowerUpperDesc[0];
-    }
-    return lowerUpperDesc[i];
-  }
-
-  public static String getInitCapDesc(int i) {
-    if (i < 0 || i >= initCapDesc.length) {
-      return initCapDesc[0];
-    }
-    return initCapDesc[i];
-  }
-
-  public static String getMaskXMLDesc(int i) {
-    if (i < 0 || i >= maskXMLDesc.length) {
-      return maskXMLDesc[0];
-    }
-    return maskXMLDesc[i];
-  }
-
-  public static String getDigitsDesc(int i) {
-    if (i < 0 || i >= digitsDesc.length) {
-      return digitsDesc[0];
-    }
-    return digitsDesc[i];
-  }
-
-  public static String getRemoveSpecialCharactersDesc(int i) {
-    if (i < 0 || i >= removeSpecialCharactersDesc.length) {
-      return removeSpecialCharactersDesc[0];
-    }
-    return removeSpecialCharactersDesc[i];
-  }
-
-  public static String getPaddingDesc(int i) {
-    if (i < 0 || i >= paddingDesc.length) {
-      return paddingDesc[0];
-    }
-    return paddingDesc[i];
-  }
-
-  private static int getTrimTypeByCode(String tt) {
-    if (tt == null) {
-      return 0;
+    Padding(String code, String description) {
+      this.code = code;
+      this.description = description;
     }
 
-    for (int i = 0; i < trimTypeCode.length; i++) {
-      if (trimTypeCode[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  private static int getLowerUpperByCode(String tt) {
-    if (tt == null) {
-      return 0;
+    public static String[] getDescriptions() {
+      return IEnumHasCodeAndDescription.getDescriptions(Padding.class);
     }
 
-    for (int i = 0; i < lowerUpperCode.length; i++) {
-      if (lowerUpperCode[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
+    public static Padding lookupDescription(String description) {
+      return IEnumHasCodeAndDescription.lookupDescription(Padding.class, description, NONE);
     }
-    return 0;
-  }
-
-  private static int getInitCapByCode(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < initCapCode.length; i++) {
-      if (initCapCode[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  private static int getMaskXMLByCode(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < maskXMLCode.length; i++) {
-      if (maskXMLCode[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  private static int getDigitsByCode(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < digitsCode.length; i++) {
-      if (digitsCode[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  private static int getRemoveSpecialCharactersByCode(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < removeSpecialCharactersCode.length; i++) {
-      if (removeSpecialCharactersCode[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  private static int getPaddingByCode(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < paddingCode.length; i++) {
-      if (paddingCode[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  public static int getTrimTypeByDesc(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < trimTypeDesc.length; i++) {
-      if (trimTypeDesc[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-
-    // If this fails, try to match using the code.
-    return getTrimTypeByCode(tt);
-  }
-
-  public static int getLowerUpperByDesc(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < lowerUpperDesc.length; i++) {
-      if (lowerUpperDesc[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-
-    // If this fails, try to match using the code.
-    return getLowerUpperByCode(tt);
-  }
-
-  public static int getInitCapByDesc(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < initCapDesc.length; i++) {
-      if (initCapDesc[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-
-    // If this fails, try to match using the code.
-    return getInitCapByCode(tt);
-  }
-
-  public static int getMaskXMLByDesc(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < maskXMLDesc.length; i++) {
-      if (maskXMLDesc[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-
-    // If this fails, try to match using the code.
-    return getMaskXMLByCode(tt);
-  }
-
-  public static int getDigitsByDesc(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < digitsDesc.length; i++) {
-      if (digitsDesc[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-
-    // If this fails, try to match using the code.
-    return getDigitsByCode(tt);
-  }
-
-  public static int getRemoveSpecialCharactersByDesc(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < removeSpecialCharactersDesc.length; i++) {
-      if (removeSpecialCharactersDesc[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-
-    // If this fails, try to match using the code.
-    return getRemoveSpecialCharactersByCode(tt);
-  }
-
-  public static int getPaddingByDesc(String tt) {
-    if (tt == null) {
-      return 0;
-    }
-
-    for (int i = 0; i < paddingDesc.length; i++) {
-      if (paddingDesc[i].equalsIgnoreCase(tt)) {
-        return i;
-      }
-    }
-
-    // If this fails, try to match using the code.
-    return getPaddingByCode(tt);
   }
 }
