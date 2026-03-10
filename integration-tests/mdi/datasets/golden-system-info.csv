@@ -1,0 +1,9 @@
+fieldName,fieldType
+JVM Total Memory,jvm total memory
+Available Processors,available processors
+Network_Hostname,Hostname
+real_Hostname,Hostname real
+IP address,IP address
+JVM max memory,jvm max memory
+fixed_sysdate,system date (fixed)
+variable_sysdate,system date (variable)

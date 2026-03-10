@@ -57,90 +57,120 @@ It can also accept any number of input streams, aggregate any fields defined by 
 
 [options="header"]
 |===
-|Item|Description
-|system date (variable)|System time, changes every time you ask a date.
-|system date (fixed)|System time, determined at the start of the pipeline.
-|start date range (Pipeline)|Start of date range, based upon information in ETL log table.
-See, also .08 Pipeline Settings.
-|end date range (Pipeline)|End of date range, based upon information in ETL log table.
-See, also .08 Pipeline Settings.
-|start data range (Workflow)|Start of date range based upon information in the ETL log table.
-See also .08 Pipeline Settings.
+|Function|Description|Serialization code (for metadata injection)
+
+|System date (variable)|System time, changes every time you ask a date. | `system date (variable)`
+
+|System date (fixed)|System time, determined at the start of the pipeline. | `system date (fixed)`
+
+|Start date range (Pipeline)|Start of date range, based upon information in ETL log table.
+See, also .08 Pipeline Settings. | `start date range`
+
+|End date range (Pipeline)|End of date range, based upon information in ETL log table.
+See, also .08 Pipeline Settings. | `end date range`
+
+|Start date range (Workflow)|Start of date range based upon information in the ETL log table.
+See also .08 Pipeline Settings. | `workflow start date range`
+
 |End date range (Workflow)|End of date range based upon information in the ETL log table.
-See also .08 Pipeline Settings.
-|Yesterday 00:00:00|Start of yesterday.
-|Yesterday 23:59:59|End of yesterday.
-|Today 00:00:00|Start of today.
-|Today 23:59:59|End of today.
-|Tomorrow 00:00:00|Start of tomorrow.
-|Tomorrow 23:59:59|End of tomorrow
-|First day of last month 00:00:00|Start of last month.
-|Last day of last month 23:59:59|End of last month.
-|First day of this month 00:00:00|Start of this month.
-|Last day of this month 23:59:59|End of this month.
-|First day of next month 00:00:00|Start of next month.
-|Last day of next month 23:59:59|End of next month.
-|copy of transform|Copy nr of the transform.
-See also Launching several copies of a transform.
-|Pipeline name|Name of the pipeline.
-|Pipeline file name|File name of the pipeline (XML only).
-|User that modified the pipeline last|
-|Date when the pipeline was modified last|
-|Hostname|Returns the hostname of the server.
-|IP address|Returns the IP address of the server.
-|Current process identifier (PID)|The PID under which the Java process is currently running
-|JVM max memory|
-|JVM total memory|
-|JVM free memory|
-|JVM available memory|
-|Available processors|
-|JVM CPU time (milliseconds)|
-|Total physical memory size (bytes)|
-|Total swap space size (bytes)|
-|Committed virtual size (bytes)|
-|Free physical memory size (bytes)|
-|Free swap space size (bytes)|
-|First day of last week 00:00:00|
-|Last day of last week 23:59:59|
-|Last working day of last week 23:59:59|
-|First day of last week 00:00:00 (US)|
-|Last day of last week 23:59:59 (US)|
-|First day of this week 00:00:00|
-|Last day of this week 23:59:59|
-|Last working day of this week 23:59:59|
-|First day of this week 00:00:00 (US)
-|Last day of this week 23:59:59 (US)
-|First day of next week 00:00:00|
-|Last day of next week 23:59:59|
-|Last working day of next week 23:59:59|
-|First day of next week 00:00:00 (US)|
-|Last day of next week 23:59:59 (US)|
-|First day of last quarter 00:00:00|
-|Last day of last quarter 23:59:59|
-|First day of this quarter 00:00:00|
-|Last day of this quarter 23:59:59|
-|First day of next quarter 00:00:00|
-|Last day of next quarter 23:59:59|
-|First day of last year 00:00:00|
-|Last day of last year 23:59:59|
-|First day of this year 00:00:00|
-|Last day of this year 23:59:59|
-|First day of next year 00:00:00|
-|Last day of next year 23:59:59|
-|Previous workflow action result|
-|Previous workflow action exit status|
-|Previous workflow action nr|
-|Previous workflow action nr errors|
-|Previous workflow action nr lines input|
-|Previous workflow action nr lines output|
-|Previous workflow action nr lines read|
-|Previous workflow action nr lines updated|
-|Previous workflow action nr lines written|
-|Previous workflow action nr lines deleted|
-|Previous workflow action nr lines rejected|
-|Previous workflow action nr rows|
-|Previous workflow action stopped|
-|Previous workflow action nr files|
-|Previous workflow action nr files retrieved|
-|Previous workflow action log text|
+See also .08 Pipeline Settings. | `workflow end date range`
+
+|Yesterday 00:00:00|Start of yesterday. | `yesterday start`
+
+|Yesterday 23:59:59|End of yesterday. | `yesterday end`
+
+|Today 00:00:00|Start of today. | `today start`
+
+|Today 23:59:59|End of today. | `today end`
+
+|Tomorrow 00:00:00|Start of tomorrow. | `tomorrow start`
+
+|Tomorrow 23:59:59|End of tomorrow. | `tomorrow end`
+
+|First day of last month 00:00:00|Start of last month. | `last month start`
+
+|Last day of last month 23:59:59|End of last month. | `last month end`
+
+|First day of this month 00:00:00|Start of this month. | `this month start`
+
+|Last day of this month 23:59:59|End of this month. | `this month end`
+
+|First day of next month 00:00:00|Start of next month. | `next month start`
+
+|Last day of next month 23:59:59|End of next month. | `next month end`
+
+|Copy of transform|Copy nr of the transform.
+See also Launching several copies of a transform. | `copy of transform`
+
+|Pipeline name|Name of the pipeline. | This code has a leading white space: `{sp}pipeline name`
+
+|Pipeline file name|File name of the pipeline (XML only). | This code has leading white space :  `{sp}pipeline file name`
+
+|User that modified the pipeline last| | `User modified`
+
+|Date when the pipeline was modified last| | `Date modified`
+
+|Hostname (Network setup)|Returns the hostname of the server. | `Hostname`
+
+|Hostname (Real)| | `Hostname real`
+
+|IP address|Returns the IP address of the server. | `IP address`
+
+|Current process identifier (PID)|The PID under which the Java process is currently running | `Current PID`
+
+|JVM max memory| | `jvm max memory`
+|JVM total memory| | `jvm total memory`
+|JVM free memory| | `jvm free memory`
+|JVM available memory| | `jvm available memory`
+|Available processors| | `available processors`
+|JVM CPU time (milliseconds)| | `jvm cpu time`
+|Total physical memory size (bytes)| | `total physical memory size`
+|Total swap space size (bytes)| | `total swap space size`
+|Committed virtual size (bytes)| | `committed virtual memory size`
+|Free physical memory size (bytes)| | `free physical memory size`
+|Free swap space size (bytes)| | `free swap space size`
+|First day of last week 00:00:00| | `last week start`
+|Last day of last week 23:59:59| | `last week end`
+|Last working day of last week 23:59:59| | `last week open end`
+|First day of last week 00:00:00 (US)| | `last week start us`
+|Last day of last week 23:59:59 (US)| | `last week end us`
+|First day of this week 00:00:00| | `this week start`
+|Last day of this week 23:59:59| | `this week end`
+|Last working day of this week 23:59:59| | `this week open end`
+|First day of this week 00:00:00 (US)| | `this week start us`
+|Last day of this week 23:59:59 (US)| | `this week end us`
+|First day of next week 00:00:00| | `next week start`
+|Last day of next week 23:59:59| | `next week end`
+|Last working day of next week 23:59:59| | `next week open end`
+|First day of next week 00:00:00 (US)| | `next week start us`
+|Last day of next week 23:59:59 (US)| | `next week end us`
+|First day of last quarter 00:00:00| | `prev quarter start`
+|Last day of last quarter 23:59:59| | `prev quarter end`
+|First day of this quarter 00:00:00| | `this quarter start`
+|Last day of this quarter 23:59:59| | `this quarter end`
+|First day of next quarter 00:00:00| | `next quarter start`
+|Last day of next quarter 23:59:59| | `next quarter end`
+|First day of last year 00:00:00| | `prev year start`
+|Last day of last year 23:59:59| | `prev year end`
+|First day of this year 00:00:00| | `this year start`
+|Last day of this year 23:59:59| | `this year end`
+|First day of next year 00:00:00| | `next year start`
+|Last day of next year 23:59:59| | `next year end`
+|Previous action result| | `previous result result`
+|Previous action exit status| | `previous result exist status`
+|Previous action nr| | `previous result entry nr`
+|Previous action nr errors | | `previous result nr errors`
+|Previous action nr lines input | | `previous result nr lines input`
+|Previous action nr lines output | | `previous result nr lines output`
+|Previous action nr lines read | | `previous result nr lines read`
+|Previous action nr lines updated | | `previous result nr lines updated`
+|Previous action nr lines written | | `previous result nr lines written`
+|Previous action nr lines deleted | | `previous result nr lines deleted`
+|Previous action nr lines rejected | | `previous result nr lines rejected`
+|Previous action nr rows| | `previous result nr rows`
+|Previous action stopped | | `previous result is stopped`
+|Previous action nr files | | `previous result nr files`
+|Previous action nr files retrieved | | `previous result nr files retrieved`
+|Previous action log text| | `previous result log text`
+
 |===

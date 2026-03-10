@@ -17,16 +17,14 @@
 
 package org.apache.hop.pipeline.transforms.systemdata;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.CheckResult;
-import org.apache.hop.core.Const;
 import org.apache.hop.core.ICheckResult;
 import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopTransformException;
-import org.apache.hop.core.exception.HopXmlException;
-import org.apache.hop.core.injection.Injection;
-import org.apache.hop.core.injection.InjectionSupported;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.value.ValueMetaBoolean;
@@ -35,15 +33,13 @@ import org.apache.hop.core.row.value.ValueMetaInteger;
 import org.apache.hop.core.row.value.ValueMetaNone;
 import org.apache.hop.core.row.value.ValueMetaString;
 import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.w3c.dom.Node;
 
-@InjectionSupported(localizationPrefix = "SystemDataMeta.Injection.")
 @Transform(
     id = "SystemInfo",
     image = "systeminfo.svg",
@@ -52,103 +48,33 @@ import org.w3c.dom.Node;
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Input",
     keywords = "i18n::SystemDataMeta.keyword",
     documentationUrl = "/pipeline/transforms/getsystemdata.html")
+@Getter
+@Setter
 public class SystemDataMeta extends BaseTransformMeta<SystemData, SystemDataData> {
   private static final Class<?> PKG = SystemDataMeta.class;
-  public static final String CONST_FIELD = "field";
 
-  @Injection(name = "FIELD_NAME")
-  private String[] fieldName;
-
-  @Injection(name = "FIELD_TYPE", converter = SystemDataMetaInjectionTypeConverter.class)
-  private SystemDataTypes[] fieldType;
+  @HopMetadataProperty(
+      groupKey = "fields",
+      injectionGroupKey = "FIELDS",
+      injectionGroupDescription = "SystemDataMeta.Injection.FIELDS",
+      key = "field",
+      injectionKey = "FIELD",
+      injectionKeyDescription = "SystemDataMeta.Injection.FIELD")
+  private List<SystemInfoField> fields;
 
   public SystemDataMeta() {
-    super(); // allocate BaseTransformMeta
-  }
-
-  /**
-   * @return Returns the fieldName.
-   */
-  public String[] getFieldName() {
-    return fieldName;
-  }
-
-  /**
-   * @param fieldName The fieldName to set.
-   */
-  public void setFieldName(String[] fieldName) {
-    this.fieldName = fieldName;
-  }
-
-  /**
-   * @return Returns the fieldType.
-   */
-  public SystemDataTypes[] getFieldType() {
-    return fieldType;
-  }
-
-  /**
-   * @param fieldType The fieldType to set.
-   */
-  public void setFieldType(SystemDataTypes[] fieldType) {
-    this.fieldType = fieldType;
-  }
-
-  @Override
-  public void loadXml(Node transformNode, IHopMetadataProvider metadataProvider)
-      throws HopXmlException {
-    readData(transformNode);
-  }
-
-  public void allocate(int count) {
-    fieldName = new String[count];
-    fieldType = new SystemDataTypes[count];
+    super();
+    fields = new ArrayList<>();
   }
 
   @Override
   public Object clone() {
-    SystemDataMeta retval = (SystemDataMeta) super.clone();
-
-    int count = fieldName.length;
-
-    retval.allocate(count);
-
-    System.arraycopy(fieldName, 0, retval.fieldName, 0, count);
-    System.arraycopy(fieldType, 0, retval.fieldType, 0, count);
-
-    return retval;
+    return new SystemDataMeta(this);
   }
 
-  private void readData(Node transformNode) throws HopXmlException {
-    try {
-      Node fields = XmlHandler.getSubNode(transformNode, "fields");
-      int count = XmlHandler.countNodes(fields, CONST_FIELD);
-      String type;
-
-      allocate(count);
-
-      for (int i = 0; i < count; i++) {
-        Node fnode = XmlHandler.getSubNodeByNr(fields, CONST_FIELD, i);
-
-        fieldName[i] = XmlHandler.getTagValue(fnode, "name");
-        type = XmlHandler.getTagValue(fnode, "type");
-        fieldType[i] = SystemDataTypes.getTypeFromString(type);
-      }
-    } catch (Exception e) {
-      throw new HopXmlException("Unable to read transform information from XML", e);
-    }
-  }
-
-  @Override
-  public void setDefault() {
-    int count = 0;
-
-    allocate(count);
-
-    for (int i = 0; i < count; i++) {
-      fieldName[i] = CONST_FIELD + i;
-      fieldType[i] = SystemDataTypes.TYPE_SYSTEM_INFO_SYSTEM_DATE;
-    }
+  public SystemDataMeta(SystemDataMeta m) {
+    this();
+    m.fields.forEach(f -> fields.add(new SystemInfoField(f)));
   }
 
   @Override
@@ -160,124 +86,105 @@ public class SystemDataMeta extends BaseTransformMeta<SystemData, SystemDataData
       IVariables variables,
       IHopMetadataProvider metadataProvider)
       throws HopTransformException {
-    for (int i = 0; i < fieldName.length; i++) {
+    for (SystemInfoField field : fields) {
       IValueMeta v;
 
-      switch (fieldType[i]) {
-        case TYPE_SYSTEM_INFO_SYSTEM_START,
-            TYPE_SYSTEM_INFO_SYSTEM_DATE,
-            TYPE_SYSTEM_INFO_PIPELINE_DATE_FROM,
-            TYPE_SYSTEM_INFO_PIPELINE_DATE_TO,
-            TYPE_SYSTEM_INFO_WORKFLOW_DATE_FROM,
-            TYPE_SYSTEM_INFO_WORKFLOW_DATE_TO,
-            TYPE_SYSTEM_INFO_PREV_DAY_START,
-            TYPE_SYSTEM_INFO_PREV_DAY_END,
-            TYPE_SYSTEM_INFO_THIS_DAY_START,
-            TYPE_SYSTEM_INFO_THIS_DAY_END,
-            TYPE_SYSTEM_INFO_NEXT_DAY_START,
-            TYPE_SYSTEM_INFO_NEXT_DAY_END,
-            TYPE_SYSTEM_INFO_PREV_MONTH_START,
-            TYPE_SYSTEM_INFO_PREV_MONTH_END,
-            TYPE_SYSTEM_INFO_THIS_MONTH_START,
-            TYPE_SYSTEM_INFO_THIS_MONTH_END,
-            TYPE_SYSTEM_INFO_NEXT_MONTH_START,
-            TYPE_SYSTEM_INFO_NEXT_MONTH_END,
-            TYPE_SYSTEM_INFO_MODIFIED_DATE,
-            TYPE_SYSTEM_INFO_PREV_WEEK_START,
-            TYPE_SYSTEM_INFO_PREV_WEEK_END,
-            TYPE_SYSTEM_INFO_PREV_WEEK_OPEN_END,
-            TYPE_SYSTEM_INFO_PREV_WEEK_START_US,
-            TYPE_SYSTEM_INFO_PREV_WEEK_END_US,
-            TYPE_SYSTEM_INFO_THIS_WEEK_START,
-            TYPE_SYSTEM_INFO_THIS_WEEK_END,
-            TYPE_SYSTEM_INFO_THIS_WEEK_OPEN_END,
-            TYPE_SYSTEM_INFO_THIS_WEEK_START_US,
-            TYPE_SYSTEM_INFO_THIS_WEEK_END_US,
-            TYPE_SYSTEM_INFO_NEXT_WEEK_START,
-            TYPE_SYSTEM_INFO_NEXT_WEEK_END,
-            TYPE_SYSTEM_INFO_NEXT_WEEK_OPEN_END,
-            TYPE_SYSTEM_INFO_NEXT_WEEK_START_US,
-            TYPE_SYSTEM_INFO_NEXT_WEEK_END_US,
-            TYPE_SYSTEM_INFO_PREV_QUARTER_START,
-            TYPE_SYSTEM_INFO_PREV_QUARTER_END,
-            TYPE_SYSTEM_INFO_THIS_QUARTER_START,
-            TYPE_SYSTEM_INFO_THIS_QUARTER_END,
-            TYPE_SYSTEM_INFO_NEXT_QUARTER_START,
-            TYPE_SYSTEM_INFO_NEXT_QUARTER_END,
-            TYPE_SYSTEM_INFO_PREV_YEAR_START,
-            TYPE_SYSTEM_INFO_PREV_YEAR_END,
-            TYPE_SYSTEM_INFO_THIS_YEAR_START,
-            TYPE_SYSTEM_INFO_THIS_YEAR_END,
-            TYPE_SYSTEM_INFO_NEXT_YEAR_START,
-            TYPE_SYSTEM_INFO_NEXT_YEAR_END:
-          v = new ValueMetaDate(fieldName[i]);
+      switch (field.getFieldType()) {
+        case SYSTEM_START,
+            SYSTEM_DATE,
+            PIPELINE_DATE_FROM,
+            PIPELINE_DATE_TO,
+            WORKFLOW_DATE_FROM,
+            WORKFLOW_DATE_TO,
+            PREV_DAY_START,
+            PREV_DAY_END,
+            THIS_DAY_START,
+            THIS_DAY_END,
+            NEXT_DAY_START,
+            NEXT_DAY_END,
+            PREV_MONTH_START,
+            PREV_MONTH_END,
+            THIS_MONTH_START,
+            THIS_MONTH_END,
+            NEXT_MONTH_START,
+            NEXT_MONTH_END,
+            MODIFIED_DATE,
+            PREV_WEEK_START,
+            PREV_WEEK_END,
+            PREV_WEEK_OPEN_END,
+            PREV_WEEK_START_US,
+            PREV_WEEK_END_US,
+            THIS_WEEK_START,
+            THIS_WEEK_END,
+            THIS_WEEK_OPEN_END,
+            THIS_WEEK_START_US,
+            THIS_WEEK_END_US,
+            NEXT_WEEK_START,
+            NEXT_WEEK_END,
+            NEXT_WEEK_OPEN_END,
+            NEXT_WEEK_START_US,
+            NEXT_WEEK_END_US,
+            PREV_QUARTER_START,
+            PREV_QUARTER_END,
+            THIS_QUARTER_START,
+            THIS_QUARTER_END,
+            NEXT_QUARTER_START,
+            NEXT_QUARTER_END,
+            PREV_YEAR_START,
+            PREV_YEAR_END,
+            THIS_YEAR_START,
+            THIS_YEAR_END,
+            NEXT_YEAR_START,
+            NEXT_YEAR_END:
+          v = new ValueMetaDate(field.getFieldName());
           break;
-        case TYPE_SYSTEM_INFO_PIPELINE_NAME,
-            TYPE_SYSTEM_INFO_FILENAME,
-            TYPE_SYSTEM_INFO_MODIFIED_USER,
-            TYPE_SYSTEM_INFO_HOSTNAME,
-            TYPE_SYSTEM_INFO_HOSTNAME_REAL,
-            TYPE_SYSTEM_INFO_IP_ADDRESS,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_LOG_TEXT:
-          v = new ValueMetaString(fieldName[i]);
+        case PIPELINE_NAME,
+            FILENAME,
+            MODIFIED_USER,
+            HOSTNAME,
+            HOSTNAME_REAL,
+            IP_ADDRESS,
+            PREVIOUS_RESULT_LOG_TEXT:
+          v = new ValueMetaString(field.getFieldName());
           break;
-        case TYPE_SYSTEM_INFO_COPYNR,
-            TYPE_SYSTEM_INFO_CURRENT_PID,
-            TYPE_SYSTEM_INFO_JVM_TOTAL_MEMORY,
-            TYPE_SYSTEM_INFO_JVM_FREE_MEMORY,
-            TYPE_SYSTEM_INFO_JVM_MAX_MEMORY,
-            TYPE_SYSTEM_INFO_JVM_AVAILABLE_MEMORY,
-            TYPE_SYSTEM_INFO_AVAILABLE_PROCESSORS,
-            TYPE_SYSTEM_INFO_JVM_CPU_TIME,
-            TYPE_SYSTEM_INFO_TOTAL_PHYSICAL_MEMORY_SIZE,
-            TYPE_SYSTEM_INFO_TOTAL_SWAP_SPACE_SIZE,
-            TYPE_SYSTEM_INFO_COMMITTED_VIRTUAL_MEMORY_SIZE,
-            TYPE_SYSTEM_INFO_FREE_PHYSICAL_MEMORY_SIZE,
-            TYPE_SYSTEM_INFO_FREE_SWAP_SPACE_SIZE,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_EXIT_STATUS,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_ENTRY_NR,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_ERRORS,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_FILES,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_FILES_RETRIEVED,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_DELETED,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_INPUT,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_OUTPUT,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_READ,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_REJECTED,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_UPDATED,
-            TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_WRITTEN:
-          v = new ValueMetaInteger(fieldName[i]);
+        case COPYNR,
+            CURRENT_PID,
+            JVM_TOTAL_MEMORY,
+            JVM_FREE_MEMORY,
+            JVM_MAX_MEMORY,
+            JVM_AVAILABLE_MEMORY,
+            AVAILABLE_PROCESSORS,
+            JVM_CPU_TIME,
+            TOTAL_PHYSICAL_MEMORY_SIZE,
+            TOTAL_SWAP_SPACE_SIZE,
+            COMMITTED_VIRTUAL_MEMORY_SIZE,
+            FREE_PHYSICAL_MEMORY_SIZE,
+            FREE_SWAP_SPACE_SIZE,
+            PREVIOUS_RESULT_EXIT_STATUS,
+            PREVIOUS_RESULT_ENTRY_NR,
+            PREVIOUS_RESULT_NR_ERRORS,
+            PREVIOUS_RESULT_NR_FILES,
+            PREVIOUS_RESULT_NR_FILES_RETRIEVED,
+            PREVIOUS_RESULT_NR_LINES_DELETED,
+            PREVIOUS_RESULT_NR_LINES_INPUT,
+            PREVIOUS_RESULT_NR_LINES_OUTPUT,
+            PREVIOUS_RESULT_NR_LINES_READ,
+            PREVIOUS_RESULT_NR_LINES_REJECTED,
+            PREVIOUS_RESULT_NR_LINES_UPDATED,
+            PREVIOUS_RESULT_NR_LINES_WRITTEN:
+          v = new ValueMetaInteger(field.getFieldName());
           v.setLength(IValueMeta.DEFAULT_INTEGER_LENGTH, 0);
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_RESULT, TYPE_SYSTEM_INFO_PREVIOUS_RESULT_IS_STOPPED:
-          v = new ValueMetaBoolean(fieldName[i]);
+        case PREVIOUS_RESULT_RESULT, PREVIOUS_RESULT_IS_STOPPED:
+          v = new ValueMetaBoolean(field.getFieldName());
           break;
         default:
-          v = new ValueMetaNone(fieldName[i]);
+          v = new ValueMetaNone(field.getFieldName());
           break;
       }
       v.setOrigin(name);
       row.addValueMeta(v);
     }
-  }
-
-  @Override
-  public String getXml() {
-    StringBuilder retval = new StringBuilder();
-
-    retval.append("    <fields>" + Const.CR);
-
-    for (int i = 0; i < fieldName.length; i++) {
-      retval.append("      <field>" + Const.CR);
-      retval.append("        " + XmlHandler.addTagValue("name", fieldName[i]));
-      retval.append(
-          "        "
-              + XmlHandler.addTagValue("type", fieldType[i] != null ? fieldType[i].getCode() : ""));
-      retval.append("        </field>" + Const.CR);
-    }
-    retval.append("      </fields>" + Const.CR);
-
-    return retval.toString();
   }
 
   @Override
@@ -293,13 +200,13 @@ public class SystemDataMeta extends BaseTransformMeta<SystemData, SystemDataData
       IHopMetadataProvider metadataProvider) {
     // See if we have input streams leading to this transform!
     int nrRemarks = remarks.size();
-    for (int i = 0; i < fieldName.length; i++) {
-      if (fieldType[i].ordinal() <= SystemDataTypes.TYPE_SYSTEM_INFO_NONE.ordinal()) {
+    for (SystemInfoField field : fields) {
+      if (field.getFieldType().getIndex() <= SystemDataType.NONE.getIndex()) {
         CheckResult cr =
             new CheckResult(
                 ICheckResult.TYPE_RESULT_ERROR,
                 BaseMessages.getString(
-                    PKG, "SystemDataMeta.CheckResult.FieldHasNoType", fieldName[i]),
+                    PKG, "SystemDataMeta.CheckResult.FieldHasNoType", field.getFieldName()),
                 transformMeta);
         remarks.add(cr);
       }
@@ -314,30 +221,27 @@ public class SystemDataMeta extends BaseTransformMeta<SystemData, SystemDataData
     }
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof SystemDataMeta)) {
-      return false;
-    }
-    SystemDataMeta that = (SystemDataMeta) o;
+  @Getter
+  @Setter
+  public static class SystemInfoField {
+    @HopMetadataProperty(
+        key = "name",
+        injectionKey = "FIELD_NAME",
+        injectionKeyDescription = "SystemDataMeta.Injection.FIELD_NAME")
+    private String fieldName;
 
-    if (!Arrays.equals(fieldName, that.fieldName)) {
-      return false;
-    }
-    if (!Arrays.equals(fieldType, that.fieldType)) {
-      return false;
-    }
+    @HopMetadataProperty(
+        key = "type",
+        injectionKey = "FIELD_TYPE",
+        injectionKeyDescription = "SystemDataMeta.Injection.FIELD_TYPE",
+        storeWithCode = true)
+    private SystemDataType fieldType;
 
-    return true;
-  }
+    public SystemInfoField() {}
 
-  @Override
-  public int hashCode() {
-    int result = Arrays.hashCode(fieldName);
-    result = 31 * result + Arrays.hashCode(fieldType);
-    return result;
+    public SystemInfoField(SystemInfoField f) {
+      this.fieldName = f.fieldName;
+      this.fieldType = f.fieldType;
+    }
   }
 }

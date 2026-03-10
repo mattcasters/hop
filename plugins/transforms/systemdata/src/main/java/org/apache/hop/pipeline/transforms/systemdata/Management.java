@@ -23,12 +23,13 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import org.apache.hop.core.Const;
 
+/** Return infos like current PID, JVM memory, ... */
 public class Management {
   private static RuntimeMXBean mx = null;
   private static OperatingSystemMXBean bean = null;
-  private static ThreadMXBean tbean = null;
+  private static ThreadMXBean threadBean = null;
 
-  /** Return infos like current PID, JVM memory, ... */
+  private Management() {}
 
   /**
    * @return Process CPU time in nanoseconds
@@ -60,7 +61,7 @@ public class Management {
    */
   public static long getFreePhysicalMemorySize() {
     setOperatingSystemMXBean();
-    return bean.getFreePhysicalMemorySize();
+    return bean.getFreeMemorySize();
   }
 
   /**
@@ -76,7 +77,7 @@ public class Management {
    */
   public static long getTotalPhysicalMemorySize() {
     setOperatingSystemMXBean();
-    return bean.getTotalPhysicalMemorySize();
+    return bean.getTotalMemorySize();
   }
 
   /**
@@ -101,10 +102,10 @@ public class Management {
    */
   public static long getCpuTime(long id) {
     setThreadMXBean();
-    if (!tbean.isThreadCpuTimeSupported()) {
+    if (!threadBean.isThreadCpuTimeSupported()) {
       return 0L;
     }
-    return tbean.getThreadCpuTime(id);
+    return threadBean.getThreadCpuTime(id);
   }
 
   private static void setOperatingSystemMXBean() {
@@ -114,8 +115,8 @@ public class Management {
   }
 
   private static void setThreadMXBean() {
-    if (tbean == null) {
-      tbean = ManagementFactory.getThreadMXBean();
+    if (threadBean == null) {
+      threadBean = ManagementFactory.getThreadMXBean();
     }
   }
 }

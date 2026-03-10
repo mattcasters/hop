@@ -18,159 +18,82 @@
 package org.apache.hop.pipeline.transforms.systemdata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.apache.hop.core.HopEnvironment;
-import org.apache.hop.core.exception.HopException;
-import org.apache.hop.core.plugins.PluginRegistry;
-import org.apache.hop.core.xml.XmlParserFactoryProducer;
-import org.apache.hop.junit.rules.RestoreHopEngineEnvironmentExtension;
-import org.apache.hop.pipeline.transforms.loadsave.LoadSaveTester;
-import org.apache.hop.pipeline.transforms.loadsave.initializer.IInitializer;
-import org.apache.hop.pipeline.transforms.loadsave.validator.ArrayLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.IFieldLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.StringLoadSaveValidator;
-import org.junit.jupiter.api.BeforeEach;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
+import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
+import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
+import org.apache.hop.pipeline.transform.TransformMeta;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
 
-/** User: Dzmitry Stsiapanau Date: 1/20/14 Time: 3:04 PM */
-class SystemDataMetaTest implements IInitializer<SystemDataMeta> {
-  @RegisterExtension
-  static RestoreHopEngineEnvironmentExtension env = new RestoreHopEngineEnvironmentExtension();
-
-  LoadSaveTester loadSaveTester;
-  Class<SystemDataMeta> testMetaClass = SystemDataMeta.class;
-  SystemDataMeta expectedSystemDataMeta;
-  String expectedXML =
-      "    <fields>\n"
-          + "      <field>\n"
-          + "        <name>hostname_real</name>\n"
-          + "        <type>Hostname real</type>\n"
-          + "        </field>\n"
-          + "      <field>\n"
-          + "        <name>hostname</name>\n"
-          + "        <type>Hostname</type>\n"
-          + "        </field>\n"
-          + "      </fields>\n";
-
-  @BeforeEach
-  void setUp() throws Exception {
-    expectedSystemDataMeta = new SystemDataMeta();
-    expectedSystemDataMeta.allocate(2);
-    String[] names = expectedSystemDataMeta.getFieldName();
-    SystemDataTypes[] types = expectedSystemDataMeta.getFieldType();
-    names[0] = "hostname_real";
-    names[1] = "hostname";
-    types[0] =
-        SystemDataTypes.getTypeFromString(
-            SystemDataTypes.TYPE_SYSTEM_INFO_HOSTNAME_REAL.getDescription());
-    types[1] =
-        SystemDataTypes.getTypeFromString(
-            SystemDataTypes.TYPE_SYSTEM_INFO_HOSTNAME.getDescription());
-  }
-
+class SystemDataMetaTest {
   @Test
-  void testLoadXml() throws Exception {
-    SystemDataMeta systemDataMeta = new SystemDataMeta();
-    DocumentBuilderFactory documentBuilderFactory =
-        XmlParserFactoryProducer.createSecureDocBuilderFactory();
-    DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-    Node node = documentBuilder.parse(new InputSource(new StringReader(expectedXML)));
-    systemDataMeta.loadXml(node, null);
-    assertEquals(expectedSystemDataMeta, systemDataMeta);
+  void testLoadSave() throws Exception {
+    Path path = Paths.get(Objects.requireNonNull(getClass().getResource("/transform.xml")).toURI());
+    String xml = Files.readString(path);
+    SystemDataMeta meta = new SystemDataMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xml, TransformMeta.XML_TAG),
+        SystemDataMeta.class,
+        meta,
+        new MemoryMetadataProvider());
+
+    validate(meta);
+
+    // Do a round trip:
+    //
+    String xmlCopy =
+        XmlHandler.openTag(TransformMeta.XML_TAG)
+            + XmlMetadataUtil.serializeObjectToXml(meta)
+            + XmlHandler.closeTag(TransformMeta.XML_TAG);
+    SystemDataMeta metaCopy = new SystemDataMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xmlCopy, TransformMeta.XML_TAG),
+        SystemDataMeta.class,
+        metaCopy,
+        new MemoryMetadataProvider());
+    validate(metaCopy);
   }
 
-  @Test
-  void testGetXml() throws Exception {
-    String generatedXML = expectedSystemDataMeta.getXml();
-    assertEquals(
-        expectedXML.replaceAll("\n", "").replaceAll("\r", ""),
-        generatedXML.replaceAll("\n", "").replaceAll("\r", ""));
-  }
+  private static void validate(SystemDataMeta meta) {
+    assertNotNull(meta.getFields());
+    assertFalse(meta.getFields().isEmpty());
+    assertEquals(8, meta.getFields().size());
+    SystemDataMeta.SystemInfoField f1 = meta.getFields().get(0);
+    assertEquals("variable_sysdate", f1.getFieldName());
+    assertEquals(SystemDataType.SYSTEM_DATE, f1.getFieldType());
 
-  @BeforeEach
-  void setUpLoadSave() throws Exception {
-    HopEnvironment.init();
-    PluginRegistry.init();
-    List<String> attributes = Arrays.asList("fieldName", "fieldType");
+    SystemDataMeta.SystemInfoField f2 = meta.getFields().get(1);
+    assertEquals("fixed_sysdate", f2.getFieldName());
+    assertEquals(SystemDataType.SYSTEM_START, f2.getFieldType());
 
-    Map<String, String> getterMap =
-        new HashMap<>() {
-          {
-            put("fieldName", "getFieldName");
-            put("fieldType", "getFieldType");
-          }
-        };
-    Map<String, String> setterMap =
-        new HashMap<>() {
-          {
-            put("fieldName", "setFieldName");
-            put("fieldType", "setFieldType");
-          }
-        };
-    IFieldLoadSaveValidator<String[]> stringArrayLoadSaveValidator =
-        new ArrayLoadSaveValidator<>(new StringLoadSaveValidator(), 5);
+    SystemDataMeta.SystemInfoField f3 = meta.getFields().get(2);
+    assertEquals("JVM max memory", f3.getFieldName());
+    assertEquals(SystemDataType.JVM_MAX_MEMORY, f3.getFieldType());
 
-    IFieldLoadSaveValidator<SystemDataTypes[]> sdtArrayLoadSaveValidator =
-        new ArrayLoadSaveValidator<>(new SystemDataTypesLoadSaveValidator(), 5);
+    SystemDataMeta.SystemInfoField f4 = meta.getFields().get(3);
+    assertEquals("IP address", f4.getFieldName());
+    assertEquals(SystemDataType.IP_ADDRESS, f4.getFieldType());
 
-    Map<String, IFieldLoadSaveValidator<?>> attrValidatorMap = new HashMap<>();
-    attrValidatorMap.put("fieldName", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("fieldType", sdtArrayLoadSaveValidator);
+    SystemDataMeta.SystemInfoField f5 = meta.getFields().get(4);
+    assertEquals("real_Hostname", f5.getFieldName());
+    assertEquals(SystemDataType.HOSTNAME_REAL, f5.getFieldType());
 
-    Map<String, IFieldLoadSaveValidator<?>> typeValidatorMap = new HashMap<>();
+    SystemDataMeta.SystemInfoField f6 = meta.getFields().get(5);
+    assertEquals("Network_Hostname", f6.getFieldName());
+    assertEquals(SystemDataType.HOSTNAME, f6.getFieldType());
 
-    loadSaveTester =
-        new LoadSaveTester(
-            testMetaClass,
-            attributes,
-            getterMap,
-            setterMap,
-            attrValidatorMap,
-            typeValidatorMap,
-            this);
-  }
+    SystemDataMeta.SystemInfoField f7 = meta.getFields().get(6);
+    assertEquals("Available Processors", f7.getFieldName());
+    assertEquals(SystemDataType.AVAILABLE_PROCESSORS, f7.getFieldType());
 
-  // Call the allocate method on the LoadSaveTester meta class
-  @Override
-  public void modify(SystemDataMeta someMeta) {
-    if (someMeta instanceof SystemDataMeta) {
-      ((SystemDataMeta) someMeta).allocate(5);
-    }
-  }
-
-  @Test
-  void testSerialization() throws HopException {
-    loadSaveTester.testSerialization();
-  }
-
-  public class SystemDataTypesLoadSaveValidator
-      implements IFieldLoadSaveValidator<SystemDataTypes> {
-    final Random rand = new Random();
-
-    @Override
-    public SystemDataTypes getTestObject() {
-      SystemDataTypes[] allTypes = SystemDataTypes.values();
-      return allTypes[rand.nextInt(allTypes.length)];
-    }
-
-    @Override
-    public boolean validateTestObject(SystemDataTypes testObject, Object actual) {
-      if (!(actual instanceof SystemDataTypes)) {
-        return false;
-      }
-      SystemDataTypes actualInput = (SystemDataTypes) actual;
-      return (testObject.toString().equals(actualInput.toString()));
-    }
+    SystemDataMeta.SystemInfoField f8 = meta.getFields().get(7);
+    assertEquals("JVM Total Memory", f8.getFieldName());
+    assertEquals(SystemDataType.JVM_TOTAL_MEMORY, f8.getFieldType());
   }
 }

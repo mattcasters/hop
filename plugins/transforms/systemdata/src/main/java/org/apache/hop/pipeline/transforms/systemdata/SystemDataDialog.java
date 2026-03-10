@@ -17,6 +17,7 @@
 
 package org.apache.hop.pipeline.transforms.systemdata;
 
+import org.apache.hop.core.Const;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
@@ -58,6 +59,15 @@ public class SystemDataDialog extends BaseTransformDialog {
 
   @Override
   public String open() {
+
+    try {
+      for (SystemDataType type : SystemDataType.values()) {
+        System.out.println('|' + type.getDescription() + "| | `" + type.getCode() + "` ");
+      }
+    } catch (Exception e) {
+      System.err.println(e.toString());
+    }
+
     createShell(BaseMessages.getString(PKG, "SystemDataDialog.DialogTitle"));
 
     buildButtonBar().ok(e -> ok()).preview(e -> preview()).cancel(e -> cancel()).build();
@@ -79,32 +89,27 @@ public class SystemDataDialog extends BaseTransformDialog {
     wlFields.setLayoutData(fdlFields);
 
     final int FieldsCols = 2;
-    final int FieldsRows = input.getFieldName().length;
+    final int FieldsRows = 1;
 
-    final String[] functionDesc = new String[SystemDataTypes.values().length - 1];
-    for (int i = 1; i < SystemDataTypes.values().length; i++) {
-      functionDesc[i - 1] = SystemDataTypes.values()[i].getDescription();
-    }
-
-    ColumnInfo[] colinf = new ColumnInfo[FieldsCols];
-    colinf[0] =
+    ColumnInfo[] viewColumns = new ColumnInfo[FieldsCols];
+    viewColumns[0] =
         new ColumnInfo(
             BaseMessages.getString(PKG, "SystemDataDialog.NameColumn.Column"),
             ColumnInfo.COLUMN_TYPE_TEXT,
             false);
-    colinf[1] =
+    viewColumns[1] =
         new ColumnInfo(
             BaseMessages.getString(PKG, "SystemDataDialog.TypeColumn.Column"),
             ColumnInfo.COLUMN_TYPE_TEXT,
             false);
-    colinf[1].setSelectionAdapter(
+    viewColumns[1].setSelectionAdapter(
         new SelectionAdapter() {
           @Override
           public void widgetSelected(SelectionEvent e) {
             EnterSelectionDialog esd =
                 new EnterSelectionDialog(
                     shell,
-                    functionDesc,
+                    SystemDataType.getDescriptions(),
                     BaseMessages.getString(PKG, "SystemDataDialog.SelectInfoType.DialogTitle"),
                     BaseMessages.getString(PKG, "SystemDataDialog.SelectInfoType.DialogMessage"));
             String string = esd.open();
@@ -121,7 +126,7 @@ public class SystemDataDialog extends BaseTransformDialog {
             variables,
             shell,
             SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI,
-            colinf,
+            viewColumns,
             FieldsRows,
             null,
             props);
@@ -143,21 +148,12 @@ public class SystemDataDialog extends BaseTransformDialog {
 
   /** Copy information from the meta-data input to the dialog fields. */
   public void getData() {
-    for (int i = 0; i < input.getFieldName().length; i++) {
-      TableItem item = wFields.table.getItem(i);
-      String name = input.getFieldName()[i];
-      String type = input.getFieldType()[i].getDescription();
-
-      if (name != null) {
-        item.setText(1, name);
-      }
-      if (type != null) {
-        item.setText(2, type);
-      }
+    for (SystemDataMeta.SystemInfoField field : input.getFields()) {
+      TableItem item = new TableItem(wFields.table, SWT.NONE);
+      item.setText(1, Const.NVL(field.getFieldName(), ""));
+      item.setText(2, Const.NVL(field.getFieldType().getDescription(), ""));
     }
-
-    wFields.setRowNums();
-    wFields.optWidth(true);
+    wFields.optimizeTableView();
   }
 
   private void cancel() {
@@ -184,15 +180,15 @@ public class SystemDataDialog extends BaseTransformDialog {
   }
 
   private void getInfo(SystemDataMeta in) {
-
     transformName = wTransformName.getText(); // return value
-    int count = wFields.nrNonEmpty();
-    in.allocate(count);
-
-    for (int i = 0; i < count; i++) {
-      TableItem item = wFields.getNonEmpty(i);
-      in.getFieldName()[i] = item.getText(1);
-      in.getFieldType()[i] = SystemDataTypes.getTypeFromString(item.getText(2));
+    in.getFields().clear();
+    for (TableItem item : wFields.getNonEmptyItems()) {
+      String name = item.getText(1);
+      String typeDescription = item.getText(2);
+      SystemDataMeta.SystemInfoField field = new SystemDataMeta.SystemInfoField();
+      field.setFieldName(name);
+      field.setFieldType(SystemDataType.lookupDescription(typeDescription));
+      in.getFields().add(field);
     }
   }
 
