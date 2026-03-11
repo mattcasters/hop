@@ -59,15 +59,6 @@ public class SystemDataDialog extends BaseTransformDialog {
 
   @Override
   public String open() {
-
-    try {
-      for (SystemDataType type : SystemDataType.values()) {
-        System.out.println('|' + type.getDescription() + "| | `" + type.getCode() + "` ");
-      }
-    } catch (Exception e) {
-      System.err.println(e.toString());
-    }
-
     createShell(BaseMessages.getString(PKG, "SystemDataDialog.DialogTitle"));
 
     buildButtonBar().ok(e -> ok()).preview(e -> preview()).cancel(e -> cancel()).build();
