@@ -1,0 +1,2 @@
+connection,tablename_in_field,tablename_field,commit,use_batch,order_delete,order_update,order_insert,operation_order_field,perform_lookup
+SomeConnection,Y,sourceField,123,Y,delete,update,insert,operationFieldName,Y

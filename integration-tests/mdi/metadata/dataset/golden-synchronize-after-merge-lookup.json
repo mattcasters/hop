@@ -1,0 +1,24 @@
+{
+  "base_filename": "golden-synchronize-after-merge-lookup.csv",
+  "name": "golden-synchronize-after-merge-lookup",
+  "description": "",
+  "dataset_fields": [
+    {
+      "field_comment": "",
+      "field_length": -1,
+      "field_type": 2,
+      "field_precision": -1,
+      "field_name": "schema",
+      "field_format": ""
+    },
+    {
+      "field_comment": "",
+      "field_length": -1,
+      "field_type": 2,
+      "field_precision": -1,
+      "field_name": "table",
+      "field_format": ""
+    }
+  ],
+  "folder_name": ""
+}

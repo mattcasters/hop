@@ -35,16 +35,16 @@ import org.apache.hop.pipeline.transform.ITransformData;
 public class SynchronizeAfterMergeData extends BaseTransformData implements ITransformData {
   public Database db;
 
-  public int[] keynrs; // nr of keylookup -value in row...
-  public int[] keynrs2; // nr of keylookup2-value in row...
-  public int[] valuenrs; // Stream valuename nrs to prevent searches.
+  public int[] keyIndexes; // nr of keylookup -value in row...
+  public int[] keyIndexes2; // nr of keylookup2-value in row...
+  public int[] valueIndexes; // Stream valuename nrs to prevent searches.
   public int indexOfTableNameField;
 
   public int indexOfOperationOrderField;
 
   /**
    * Mapping between the SQL and the actual prepared statement. Normally this is only one, but in
-   * case we have more then one, it's convenient to have this.
+   * case we have more than one, it's convenient to have this.
    */
   public Map<String, PreparedStatement> preparedStatements;
 
@@ -66,7 +66,7 @@ public class SynchronizeAfterMergeData extends BaseTransformData implements ITra
 
   public String stringErrorKeyNotFound;
 
-  public String stringFieldnames;
+  public String stringFieldNames;
 
   public boolean lookupFailure;
 
@@ -85,7 +85,7 @@ public class SynchronizeAfterMergeData extends BaseTransformData implements ITra
   public boolean specialErrorHandling;
   public Savepoint savepoint;
   public boolean releaseSavepoint;
-  public boolean supportsSavepoints;
+  public boolean supportsSavePoints;
 
   public List<Object[]> batchBuffer;
 
