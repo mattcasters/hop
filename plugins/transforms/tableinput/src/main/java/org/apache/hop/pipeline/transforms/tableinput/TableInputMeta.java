@@ -18,6 +18,8 @@
 package org.apache.hop.pipeline.transforms.tableinput;
 
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.CheckResult;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.ICheckResult;
@@ -29,7 +31,6 @@ import org.apache.hop.core.exception.HopDatabaseException;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopFileException;
 import org.apache.hop.core.exception.HopTransformException;
-import org.apache.hop.core.exception.HopXmlException;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.RowDataUtil;
@@ -51,7 +52,6 @@ import org.apache.hop.pipeline.transform.stream.IStream;
 import org.apache.hop.pipeline.transform.stream.IStream.StreamType;
 import org.apache.hop.pipeline.transform.stream.Stream;
 import org.apache.hop.pipeline.transform.stream.StreamIcon;
-import org.w3c.dom.Node;
 
 @Transform(
     id = "TableInput",
@@ -62,6 +62,8 @@ import org.w3c.dom.Node;
     documentationUrl = "/pipeline/transforms/tableinput.html",
     keywords = "i18n::TableInputMeta.keyword",
     actionTransformTypes = {ActionTransformType.INPUT, ActionTransformType.RDBMS})
+@Getter
+@Setter
 public class TableInputMeta extends BaseTransformMeta<TableInput, TableInputData> {
 
   private static final Class<?> PKG = TableInputMeta.class;
@@ -100,94 +102,20 @@ public class TableInputMeta extends BaseTransformMeta<TableInput, TableInputData
     super();
   }
 
-  /**
-   * @return Returns true if the transform should be run per row
-   */
-  public boolean isExecuteEachInputRow() {
-    return executeEachInputRow;
-  }
-
-  /**
-   * @param oncePerRow true if the transform should be run per row
-   */
-  public void setExecuteEachInputRow(boolean oncePerRow) {
-    this.executeEachInputRow = oncePerRow;
-  }
-
-  /**
-   * @return Returns the rowLimit.
-   */
-  public String getRowLimit() {
-    return rowLimit;
-  }
-
-  /**
-   * @param rowLimit The rowLimit to set.
-   */
-  public void setRowLimit(String rowLimit) {
-    this.rowLimit = rowLimit;
-  }
-
-  /**
-   * @return Returns the sql.
-   */
-  public String getSql() {
-    return sql;
-  }
-
-  /**
-   * @param sql The sql to set.
-   */
-  public void setSql(String sql) {
-    this.sql = sql;
-  }
-
-  public String getConnection() {
-    return connection;
-  }
-
-  public void setConnection(String connection) {
-    this.connection = connection;
-  }
-
-  public String getLookup() {
-    return lookup;
-  }
-
-  public void setLookup(String lookup) {
-    this.lookup = lookup;
-  }
-
-  public String getSqlFromFile() {
-    return sqlFromFile;
-  }
-
-  public void setSqlFromFile(String sqlFromFile) {
-    this.sqlFromFile = sqlFromFile;
-  }
-
-  /**
-   * Returns the SQL to execute: either from the inline editor or loaded from the file specified by
-   * sqlFromFile (using VFS). Variables are resolved in the file path.
-   */
-  public String getEffectiveSql(IVariables variables) throws HopException {
-    if (!Utils.isEmpty(sqlFromFile)) {
-      String path = variables.resolve(sqlFromFile);
-      try {
-        return HopVfs.getTextFileContent(path, Const.XML_ENCODING);
-      } catch (HopFileException e) {
-        throw new HopException(
-            BaseMessages.getString(PKG, "TableInputMeta.Exception.CouldNotLoadSqlFromFile", path),
-            e);
-      }
-    }
-    return sql;
+  public TableInputMeta(TableInputMeta m) {
+    this();
+    this.connection = m.connection;
+    this.executeEachInputRow = m.executeEachInputRow;
+    this.lookup = m.lookup;
+    this.rowLimit = m.rowLimit;
+    this.sql = m.sql;
+    this.sqlFromFile = m.sqlFromFile;
+    this.variableReplacementActive = m.variableReplacementActive;
   }
 
   @Override
   public Object clone() {
-    TableInputMeta retval = (TableInputMeta) super.clone();
-    return retval;
+    return new TableInputMeta(this);
   }
 
   @Override
@@ -286,22 +214,22 @@ public class TableInputMeta extends BaseTransformMeta<TableInput, TableInputData
     }
   }
 
-  @Override
-  public String getXml() throws HopException {
-
-    List<IStream> infoStreams = getTransformIOMeta().getInfoStreams();
-    lookup = infoStreams.get(0).getTransformName();
-
-    return super.getXml();
-  }
-
-  @Override
-  public void loadXml(Node transformNode, IHopMetadataProvider metadataProvider)
-      throws HopXmlException {
-    super.loadXml(transformNode, metadataProvider);
-
-    IStream infoStream = getTransformIOMeta().getInfoStreams().get(0);
-    infoStream.setSubject(lookup);
+  /**
+   * Returns the SQL to execute: either from the inline editor or loaded from the file specified by
+   * sqlFromFile (using VFS). Variables are resolved in the file path.
+   */
+  public String getEffectiveSql(IVariables variables) throws HopException {
+    if (!Utils.isEmpty(sqlFromFile)) {
+      String path = variables.resolve(sqlFromFile);
+      try {
+        return HopVfs.getTextFileContent(path, Const.XML_ENCODING);
+      } catch (HopFileException e) {
+        throw new HopException(
+            BaseMessages.getString(PKG, "TableInputMeta.Exception.CouldNotLoadSqlFromFile", path),
+            e);
+      }
+    }
+    return sql;
   }
 
   @Override
@@ -515,9 +443,9 @@ public class TableInputMeta extends BaseTransformMeta<TableInput, TableInputData
           metadataProvider.getSerializer(DatabaseMeta.class).load(variables.resolve(connection));
       String effectiveSql = getEffectiveSql(variables);
 
-      // Find the lookupfields...
+      // Find the lookup fields.
       IRowMeta out = new RowMeta();
-      // TODO: this builds, but does it work in all cases.
+
       getFields(
           out, transformMeta.getName(), new IRowMeta[] {info}, null, variables, metadataProvider);
 
@@ -544,20 +472,6 @@ public class TableInputMeta extends BaseTransformMeta<TableInput, TableInputData
           "Unable to get databaseMeta for connection: " + Const.CR + variables.resolve(connection),
           e);
     }
-  }
-
-  /**
-   * @return Returns the variableReplacementActive.
-   */
-  public boolean isVariableReplacementActive() {
-    return variableReplacementActive;
-  }
-
-  /**
-   * @param variableReplacementActive The variableReplacementActive to set.
-   */
-  public void setVariableReplacementActive(boolean variableReplacementActive) {
-    this.variableReplacementActive = variableReplacementActive;
   }
 
   /**

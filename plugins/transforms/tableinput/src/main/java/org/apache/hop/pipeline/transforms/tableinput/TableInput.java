@@ -26,6 +26,7 @@ import org.apache.hop.core.database.Database;
 import org.apache.hop.core.database.DatabaseMeta;
 import org.apache.hop.core.exception.HopDatabaseException;
 import org.apache.hop.core.exception.HopException;
+import org.apache.hop.core.exception.HopTransformException;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.RowDataUtil;
@@ -36,10 +37,10 @@ import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
 import org.apache.hop.pipeline.transform.TransformMeta;
+import org.jetbrains.annotations.Nullable;
 
 /** Reads information from a database table by using freehand SQL */
 public class TableInput extends BaseTransform<TableInputMeta, TableInputData> {
-
   private static final Class<?> PKG = TableInputMeta.class;
 
   public TableInput(
@@ -89,10 +90,10 @@ public class TableInput extends BaseTransform<TableInputMeta, TableInputData> {
   @Override
   public boolean processRow() throws HopException {
     if (first) { // we just got started
+      first = false;
 
       Object[] parameters;
       IRowMeta parametersMeta;
-      first = false;
 
       // Make sure we read data from source transforms...
       if (data.infoStream.getTransformMeta() != null) {
@@ -117,9 +118,9 @@ public class TableInput extends BaseTransform<TableInputMeta, TableInputData> {
                     + data.infoStream.getTransformName()
                     + "]");
           }
-          RowMetaAndData rmad = readStartDate(); // Read values in lookup table (look)
-          parameters = rmad.getData();
-          parametersMeta = rmad.getRowMeta();
+          RowMetaAndData rowMetaAndData = readStartDate(); // Read values in lookup table (look)
+          parameters = rowMetaAndData.getData();
+          parametersMeta = rowMetaAndData.getRowMeta();
         }
         if (parameters != null && isDetailed()) {
           logDetailed("Query parameters found = " + parametersMeta.getString(parameters));
@@ -139,64 +140,39 @@ public class TableInput extends BaseTransform<TableInputMeta, TableInputData> {
         return false;
       }
     } else {
-      if (data.thisrow != null) { // We can expect more rows
-
+      if (data.thisRow != null) { // We can expect more rows
         try {
-          data.nextrow = data.db.getRow(data.rs, false);
+          data.nextRow = data.db.getRow(data.rs, false);
         } catch (HopDatabaseException e) {
           if (e.getCause() instanceof SQLException && isStopped()) {
-            // This exception indicates we tried reading a row after the statment for this transform
-            // was cancelled
-            // this is expected and ok so do not pass the exception up
+            // This exception indicates we tried reading a row after the statement
+            // (for this transform) was canceled.
+            // This is expected and ok so do not pass the exception up.
+            //
             logDebug(e.getMessage());
             return false;
           } else {
             throw e;
           }
         }
-        if (data.nextrow != null) {
+        if (data.nextRow != null) {
           incrementLinesInput();
         }
       }
     }
 
-    if (data.thisrow == null) { // Finished reading?
-
-      boolean done = false;
-      if (meta.isExecuteEachInputRow()) { // Try to get another row from the input stream
-        Object[] nextRow = getRowFrom(data.rowSet);
-        if (nextRow == null) { // Nothing more to get!
-
-          done = true;
-        } else {
-          // First close the previous query, otherwise we run out of cursors!
-          closePreviousQuery();
-
-          boolean success = doQuery(data.rowSet.getRowMeta(), nextRow); // OK, perform a new query
-          if (!success) {
-            return false;
-          }
-
-          if (data.thisrow != null) {
-            putRow(data.rowMeta, data.thisrow); // fill the rowset(s). (wait for empty)
-            data.thisrow = data.nextrow;
-
-            if (checkFeedback(getLinesInput()) && isBasic()) {
-              logBasic("linenr " + getLinesInput());
-            }
-          }
-        }
-      } else {
-        done = true;
+    if (data.thisRow == null) { // Finished reading?
+      Boolean done = determineDoneReading();
+      if (done == null) {
+        return false;
       }
-
       if (done) {
         setOutputDone(); // signal end to receiver(s)
         return false; // end of data or error.
       }
     } else {
-      putRow(data.rowMeta, data.thisrow); // fill the rowset(s). (wait for empty)
-      data.thisrow = data.nextrow;
+      putRow(data.rowMeta, data.thisRow); // fill the rowset(s). (wait for empty)
+      data.thisRow = data.nextRow;
 
       if (checkFeedback(getLinesInput()) && isBasic()) {
         logBasic("linenr " + getLinesInput());
@@ -204,6 +180,38 @@ public class TableInput extends BaseTransform<TableInputMeta, TableInputData> {
     }
 
     return true;
+  }
+
+  private @Nullable Boolean determineDoneReading()
+      throws HopTransformException, HopDatabaseException {
+    boolean done = false;
+    if (meta.isExecuteEachInputRow()) { // Try to get another row from the input stream
+      Object[] nextRow = getRowFrom(data.rowSet);
+      if (nextRow == null) { // Nothing more to get!
+
+        done = true;
+      } else {
+        // First close the previous query, otherwise we run out of cursors!
+        closePreviousQuery();
+
+        boolean success = doQuery(data.rowSet.getRowMeta(), nextRow); // OK, perform a new query
+        if (!success) {
+          return null;
+        }
+
+        if (data.thisRow != null) {
+          putRow(data.rowMeta, data.thisRow); // fill the rowset(s). (wait for empty)
+          data.thisRow = data.nextRow;
+
+          if (checkFeedback(getLinesInput()) && isBasic()) {
+            logBasic("linenr " + getLinesInput());
+          }
+        }
+      }
+    } else {
+      done = true;
+    }
+    return done;
   }
 
   private void closePreviousQuery() throws HopDatabaseException {
@@ -255,11 +263,11 @@ public class TableInput extends BaseTransform<TableInputMeta, TableInputData> {
       }
 
       // Get the first row...
-      data.thisrow = data.db.getRow(data.rs);
-      if (data.thisrow != null) {
+      data.thisRow = data.db.getRow(data.rs);
+      if (data.thisRow != null) {
         incrementLinesInput();
-        data.nextrow = data.db.getRow(data.rs);
-        if (data.nextrow != null) {
+        data.nextRow = data.db.getRow(data.rs);
+        if (data.nextRow != null) {
           incrementLinesInput();
         }
       }
