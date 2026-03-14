@@ -20,6 +20,7 @@ package org.apache.hop.pipeline.transforms.fileinput.text;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.hop.core.exception.HopPluginException;
 import org.apache.hop.core.exception.HopTransformException;
+import org.apache.hop.core.file.TextFileInputField;
 import org.apache.hop.core.playlist.FilePlayListAll;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.util.Utils;
@@ -27,7 +28,6 @@ import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.apache.hop.pipeline.transforms.file.BaseFileField;
 import org.apache.hop.pipeline.transforms.file.BaseFileInputTransform;
 import org.apache.hop.pipeline.transforms.file.IBaseFileInputReader;
 import org.apache.hop.staticschema.metadata.SchemaDefinition;
@@ -38,7 +38,8 @@ import org.apache.hop.staticschema.util.SchemaDefinitionUtil;
  * Read all sorts of text files, convert them to rows and writes these to one or more output
  * streams.
  */
-public class TextFileInput extends BaseFileInputTransform<TextFileInputMeta, TextFileInputData> {
+public class TextFileInput
+    extends BaseFileInputTransform<TextFileInputMeta, TextFileInputData, TextFileInputField> {
 
   private static final Class<?> PKG = TextFileInputMeta.class;
 
@@ -65,7 +66,7 @@ public class TextFileInput extends BaseFileInputTransform<TextFileInputMeta, Tex
     }
     data.filePlayList = FilePlayListAll.INSTANCE;
 
-    data.filterProcessor = new TextFileFilterProcessor(meta.getFilter(), this);
+    data.filterProcessor = new TextFileFilterProcessor(meta.getFilters(), this);
 
     // calculate the file format type in advance so we can use a switch
     data.fileFormatType = meta.getFileFormatTypeNr();
@@ -74,17 +75,18 @@ public class TextFileInput extends BaseFileInputTransform<TextFileInputMeta, Tex
     data.fileType = meta.getFileTypeNr();
 
     // Handle the possibility of a variable substitution
-    data.separator = resolve(meta.content.separator);
-    data.enclosure = resolve(meta.content.enclosure);
-    data.escapeCharacter = resolve(meta.content.escapeCharacter);
+    data.separator = resolve(meta.getContent().getSeparator());
+    data.enclosure = resolve(meta.getContent().getEnclosure());
+    data.escapeCharacter = resolve(meta.getContent().getEscapeCharacter());
     // CSV without separator defined
-    if (meta.content.fileType.equalsIgnoreCase("CSV") && (Utils.isEmpty(meta.content.separator))) {
+    if (meta.getContent().getFileType().equalsIgnoreCase("CSV")
+        && (Utils.isEmpty(meta.getContent().getSeparator()))) {
       logError(BaseMessages.getString(PKG, "TextFileInput.Exception.NoSeparator"));
       return false;
     }
 
     // If use shema and ignore fields set the field definitions in the transform
-    if (meta.ignoreFields) {
+    if (meta.isIgnoreFields()) {
       try {
         SchemaDefinition loadedSchemaDefinition =
             (new SchemaDefinitionUtil())
@@ -92,11 +94,12 @@ public class TextFileInput extends BaseFileInputTransform<TextFileInputMeta, Tex
         if (loadedSchemaDefinition != null) {
           IRowMeta r = loadedSchemaDefinition.getRowMeta();
           if (r != null) {
-            meta.inputFields = new BaseFileField[r.size()];
+            meta.getInputFields().clear();
+
             for (int i = 0; i < r.size(); i++) {
               final SchemaFieldDefinition schemaFieldDefinition =
                   loadedSchemaDefinition.getFieldDefinitions().get(i);
-              BaseFileField f = new BaseFileField();
+              TextFileInputField f = new TextFileInputField();
               f.setName(schemaFieldDefinition.getName());
               f.setType(r.getValueMeta(i).getType());
               f.setFormat(r.getValueMeta(i).getFormatMask());
@@ -108,7 +111,7 @@ public class TextFileInput extends BaseFileInputTransform<TextFileInputMeta, Tex
               f.setIfNullValue(schemaFieldDefinition.getIfNullValue());
               f.setTrimType(r.getValueMeta(i).getTrimType());
               f.setRepeated(false);
-              meta.inputFields[i] = f;
+              meta.getInputFields().add(f);
             }
           }
         }

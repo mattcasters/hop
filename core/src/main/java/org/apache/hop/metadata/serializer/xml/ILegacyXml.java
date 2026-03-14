@@ -13,27 +13,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package org.apache.hop.pipeline.transforms.fileinput;
+package org.apache.hop.metadata.serializer.xml;
 
-import org.apache.commons.vfs2.FileObject;
+import org.apache.hop.core.exception.HopException;
+import org.w3c.dom.Node;
 
-/**
- * @deprecated replaced by implementation in the ...transforms.fileinput.text package
- */
-@Deprecated(since = "2.0")
-public class TextFileLine {
-  public String line;
-
-  long lineNumber;
-
-  FileObject file;
-
-  public TextFileLine(String line, long lineNumber, FileObject file) {
-    super();
-    this.line = line;
-    this.lineNumber = lineNumber;
-    this.file = file;
-  }
+public interface ILegacyXml {
+  /**
+   * In the rare case where we want to convert an old legacy XML format of this object, this method
+   * is called.
+   *
+   * @param node The node containing the transform properties
+   * @throws HopException In case there's an unexpected error in the old XML format.
+   */
+  void convertLegacyXml(Node node) throws HopException;
 }

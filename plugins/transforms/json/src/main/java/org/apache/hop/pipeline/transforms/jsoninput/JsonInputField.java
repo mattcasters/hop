@@ -17,100 +17,40 @@
 
 package org.apache.hop.pipeline.transforms.jsoninput;
 
-import org.apache.hop.core.Const;
-import org.apache.hop.core.exception.HopPluginException;
-import org.apache.hop.core.injection.Injection;
-import org.apache.hop.core.row.IValueMeta;
-import org.apache.hop.core.row.value.ValueMetaBase;
-import org.apache.hop.core.row.value.ValueMetaFactory;
-import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.core.xml.XmlHandler;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.hop.core.gui.ITextFileInputField;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.pipeline.transforms.file.BaseFileField;
-import org.w3c.dom.Node;
 
 /** Describes a JsonPath field. */
-public class JsonInputField extends BaseFileField implements Cloneable {
-
+@Getter
+@Setter
+public class JsonInputField extends BaseFileField implements ITextFileInputField {
   public static final String CONST_SPACES = "        ";
 
-  @Injection(name = "FIELD_PATH", group = "FIELDS")
+  @HopMetadataProperty(
+      key = "path",
+      injectionKey = "FIELD_PATH",
+      injectionKeyDescription = "JsonInput.Injection.FIELD_PATH")
   private String path;
 
-  public JsonInputField(String fieldname) {
+  public JsonInputField(String fieldName) {
     super();
-    setName(fieldname);
+    setName(fieldName);
   }
 
   public JsonInputField() {
     this("");
   }
 
-  public String getXml() {
-    StringBuffer retval = new StringBuffer(400);
-
-    retval.append("      <field>").append(Const.CR);
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("name", getName()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("path", getPath()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("type", getTypeDesc()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("format", getFormat()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("currency", getCurrencySymbol()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("decimal", getDecimalSymbol()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("group", getGroupSymbol()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("length", getLength()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("precision", getPrecision()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("trim_type", getTrimTypeCode()));
-    retval.append(CONST_SPACES).append(XmlHandler.addTagValue("repeat", isRepeated()));
-
-    retval.append("      </field>").append(Const.CR);
-
-    return retval.toString();
-  }
-
-  public JsonInputField(Node fnode) {
-    setName(XmlHandler.getTagValue(fnode, "name"));
-    setPath(XmlHandler.getTagValue(fnode, "path"));
-    setType(ValueMetaFactory.getIdForValueMeta(XmlHandler.getTagValue(fnode, "type")));
-    setFormat(XmlHandler.getTagValue(fnode, "format"));
-    setCurrencySymbol(XmlHandler.getTagValue(fnode, "currency"));
-    setDecimalSymbol(XmlHandler.getTagValue(fnode, "decimal"));
-    setGroupSymbol(XmlHandler.getTagValue(fnode, "group"));
-    setLength(Const.toInt(XmlHandler.getTagValue(fnode, "length"), -1));
-    setPrecision(Const.toInt(XmlHandler.getTagValue(fnode, "precision"), -1));
-    setTrimType(ValueMetaBase.getTrimTypeByCode(XmlHandler.getTagValue(fnode, "trim_type")));
-    setRepeated(!"N".equalsIgnoreCase(XmlHandler.getTagValue(fnode, "repeat")));
-  }
-
-  public IValueMeta toValueMeta(String fieldOriginTransformName, IVariables vspace)
-      throws HopPluginException {
-    int type = getType();
-    if (type == IValueMeta.TYPE_NONE) {
-      type = IValueMeta.TYPE_STRING;
-    }
-    IValueMeta v =
-        ValueMetaFactory.createValueMeta(
-            vspace != null ? vspace.resolve(getName()) : getName(), type);
-    v.setLength(getLength());
-    v.setPrecision(getPrecision());
-    v.setOrigin(fieldOriginTransformName);
-    v.setConversionMask(getFormat());
-    v.setDecimalSymbol(getDecimalSymbol());
-    v.setGroupingSymbol(getGroupSymbol());
-    v.setCurrencySymbol(getCurrencySymbol());
-    v.setTrimType(getTrimType());
-    return v;
+  public JsonInputField(JsonInputField f) {
+    super(f);
+    this.path = f.path;
   }
 
   @Override
   public JsonInputField clone() {
-    JsonInputField retval = (JsonInputField) super.clone();
-    return retval;
-  }
-
-  public String getPath() {
-    return path;
-  }
-
-  public void setPath(String value) {
-    this.path = value;
+    return new JsonInputField(this);
   }
 }

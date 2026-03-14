@@ -53,7 +53,8 @@ import org.apache.hop.pipeline.transforms.jsoninput.reader.RowOutputConverter;
  * Read Json files, parse them and convert them to rows and writes these to one or more output
  * streams.
  */
-public class JsonInput extends BaseFileInputTransform<JsonInputMeta, JsonInputData> {
+public class JsonInput
+    extends BaseFileInputTransform<JsonInputMeta, JsonInputData, JsonInputField> {
   private static final Class<?> PKG = JsonInputMeta.class;
 
   private RowOutputConverter rowOutputConverter;
@@ -79,11 +80,11 @@ public class JsonInput extends BaseFileInputTransform<JsonInputMeta, JsonInputDa
   @Override
   public boolean init() {
     data.rownr = 1L;
-    data.nrInputFields = meta.getInputFields().length;
+    data.nrInputFields = meta.getInputFields().size();
     data.repeatedFields = new BitSet(data.nrInputFields);
     // Take care of variable substitution
     for (int i = 0; i < data.nrInputFields; i++) {
-      JsonInputField field = meta.getInputFields()[i];
+      JsonInputField field = meta.getInputFields().get(i);
       if (field.isRepeated()) {
         data.repeatedFields.set(i);
       }
@@ -259,7 +260,7 @@ public class JsonInput extends BaseFileInputTransform<JsonInputMeta, JsonInputDa
     }
     if (file.getContent().getSize() == 0) {
       // log only basic as a warning (was before logError)
-      if (meta.isIgnoreEmptyFile()) {
+      if (meta.isIgnoringEmptyFile()) {
         logBasic(BaseMessages.getString(PKG, "JsonInput.Error.FileSizeZero", "" + file.getName()));
       } else {
         logError(BaseMessages.getString(PKG, "JsonInput.Error.FileSizeZero", "" + file.getName()));
@@ -506,16 +507,16 @@ public class JsonInput extends BaseFileInputTransform<JsonInputMeta, JsonInputDa
 
   private void createReader() throws HopException {
     // provide reader input fields with real path
-    // Need to have this run before we create the FastJsonReader, so we can use resolve Json Paths
+    // Need to have this run before we create the FastJsonReader, so we can use resolve JSON paths
     JsonInputField[] inputFields = new JsonInputField[data.nrInputFields];
     for (int i = 0; i < data.nrInputFields; i++) {
-      JsonInputField field = meta.getInputFields()[i].clone();
+      JsonInputField field = new JsonInputField(meta.getInputFields().get(i));
       field.setPath(resolve(field.getPath()));
       inputFields[i] = field;
     }
     // Instead of putting in the meta.inputFields, we put in our json path resolved input fields
     data.reader = new FastJsonReader(inputFields, meta.isDefaultPathLeafToNull(), getLogChannel());
-    data.reader.setIgnoreMissingPath(meta.isIgnoreMissingPath());
+    data.reader.setIgnoreMissingPath(meta.isIgnoringMissingPath());
   }
 
   @Override

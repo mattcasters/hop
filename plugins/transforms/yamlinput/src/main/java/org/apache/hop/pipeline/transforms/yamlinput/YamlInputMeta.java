@@ -591,7 +591,9 @@ public class YamlInputMeta extends BaseTransformMeta<YamlInput, YamlInputData> {
 
   public FileInputList getFiles(IVariables variables) {
     return FileInputList.createFileList(
-        variables, fileName, fileMask, fileRequired, includeSubFolderBoolean());
+        variables,
+        FileInputList.buildInputFiles(
+            fileName, fileMask, null, fileRequired, includeSubFolderBoolean(), null));
   }
 
   private boolean[] includeSubFolderBoolean() {

@@ -17,44 +17,81 @@
 
 package org.apache.hop.pipeline.transforms.file;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
-import org.apache.hop.core.injection.Injection;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 
 /** Additional fields settings. */
+@Getter
+@Setter
 public class BaseFileInputAdditionalField implements Cloneable {
-
   /** Additional fields */
-  @Injection(name = "FILE_SHORT_FILE_FIELDNAME")
-  public String shortFilenameField;
+  @HopMetadataProperty(
+      key = "shortFileFieldName",
+      injectionKey = "FILE_SHORT_FILE_FIELDNAME",
+      injectionKeyDescription = "TextFileInput.Injection.FILE_SHORT_FILE_FIELDNAME")
+  protected String shortFilenameField;
 
-  @Injection(name = "FILE_EXTENSION_FIELDNAME")
-  public String extensionField;
+  @HopMetadataProperty(
+      key = "extensionFieldName",
+      injectionKey = "FILE_EXTENSION_FIELDNAME",
+      injectionKeyDescription = "TextFileInput.Injection.FILE_EXTENSION_FIELDNAME")
+  protected String extensionField;
 
-  @Injection(name = "FILE_PATH_FIELDNAME")
-  public String pathField;
+  @HopMetadataProperty(
+      key = "pathFieldName",
+      injectionKey = "FILE_PATH_FIELDNAME",
+      injectionKeyDescription = "TextFileInput.Injection.FILE_PATH_FIELDNAME")
+  protected String pathField;
 
-  @Injection(name = "FILE_SIZE_FIELDNAME")
-  public String sizeField;
+  @HopMetadataProperty(
+      key = "sizeFieldName",
+      injectionKey = "FILE_SIZE_FIELDNAME",
+      injectionKeyDescription = "TextFileInput.Injection.FILE_SIZE_FIELDNAME")
+  protected String sizeField;
 
-  @Injection(name = "FILE_HIDDEN_FIELDNAME")
-  public String hiddenField;
+  @HopMetadataProperty(
+      key = "hiddenFieldName",
+      injectionKey = "FILE_HIDDEN_FIELDNAME",
+      injectionKeyDescription = "TextFileInput.Injection.FILE_HIDDEN_FIELDNAME")
+  protected String hiddenField;
 
-  @Injection(name = "FILE_LAST_MODIFICATION_FIELDNAME")
-  public String lastModificationField;
+  @HopMetadataProperty(
+      key = "lastModificationTimeFieldName",
+      injectionKey = "FILE_LAST_MODIFICATION_FIELDNAME",
+      injectionKeyDescription = "TextFileInput.Injection.FILE_LAST_MODIFICATION_FIELDNAME")
+  protected String lastModificationField;
 
-  @Injection(name = "FILE_URI_FIELDNAME")
-  public String uriField;
+  @HopMetadataProperty(
+      key = "uriNameFieldName",
+      injectionKey = "FILE_URI_FIELDNAME",
+      injectionKeyDescription = "TextFileInput.Injection.FILE_URI_FIELDNAME")
+  protected String uriField;
 
-  @Injection(name = "FILE_ROOT_URI_FIELDNAME")
-  public String rootUriField;
+  @HopMetadataProperty(
+      key = "rootUriNameFieldName",
+      injectionKey = "FILE_ROOT_URI_FIELDNAME",
+      injectionKeyDescription = "TextFileInput.Injection.FILE_ROOT_URI_FIELDNAME")
+  protected String rootUriField;
+
+  public BaseFileInputAdditionalField() {}
+
+  public BaseFileInputAdditionalField(BaseFileInputAdditionalField f) {
+    this();
+    this.extensionField = f.extensionField;
+    this.hiddenField = f.hiddenField;
+    this.lastModificationField = f.lastModificationField;
+    this.pathField = f.pathField;
+    this.rootUriField = f.rootUriField;
+    this.shortFilenameField = f.shortFilenameField;
+    this.sizeField = f.sizeField;
+    this.uriField = f.uriField;
+  }
 
   @Override
   public Object clone() {
-    try {
-      return super.clone();
-    } catch (CloneNotSupportedException ex) {
-      throw new IllegalArgumentException("Clone not supported for " + this.getClass().getName());
-    }
+    return new BaseFileInputAdditionalField(this);
   }
 
   /**

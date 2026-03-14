@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import java.util.concurrent.CountDownLatch;
 import org.apache.hop.core.HopEnvironment;
 import org.apache.hop.core.exception.HopException;
+import org.apache.hop.core.logging.LogLevel;
 import org.apache.hop.workflow.engine.IWorkflowEngine;
 import org.apache.hop.workflow.engines.local.LocalWorkflowEngine;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,6 +42,7 @@ class WorkflowTest {
     WorkflowKicker(IWorkflowEngine<WorkflowMeta> workflow, CountDownLatch start) {
       this.workflow = workflow;
       this.start = start;
+      this.workflow.setLogLevel(LogLevel.MINIMAL);
     }
 
     public void await() {

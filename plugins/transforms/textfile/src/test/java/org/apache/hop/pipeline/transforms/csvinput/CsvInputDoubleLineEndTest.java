@@ -130,7 +130,7 @@ class CsvInputDoubleLineEndTest extends CsvInputUnitTestBase {
     meta.setEncoding(encoding);
     meta.setEnclosure("\"");
     meta.setBufferSize("50000");
-    meta.setInputFields(getInputFileFields());
+    meta.setFields(getInputFileFields());
     meta.setHeaderPresent(true);
     return meta;
   }

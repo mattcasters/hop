@@ -35,6 +35,7 @@ public abstract class BaseCsvParsingTest
   void before() {
     meta = new CsvInputMeta();
     meta.setDefault();
+    meta.setLazyConversionActive(true);
 
     data = new CsvInputData();
     data.outputRowMeta = new RowMeta();
@@ -60,7 +61,7 @@ public abstract class BaseCsvParsingTest
 
   /** Declare fields for test. */
   protected void setFields(TextFileInputField... fields) throws Exception {
-    meta.setInputFields(fields);
+    meta.setFields(fields);
     meta.getFields(data.outputRowMeta, meta.getName(), null, null, new Variables(), null);
     data.convertRowMeta = data.outputRowMeta.cloneToType(IValueMeta.TYPE_STRING);
   }
@@ -87,7 +88,7 @@ public abstract class BaseCsvParsingTest
           }
         }
       } else {
-        expected[r] = new Object[meta.getInputFields().length];
+        expected[r] = new Object[meta.getInputFields().size()];
         expected[r][0] = StringUtils.EMPTY.getBytes("UTF-8");
       }
     }

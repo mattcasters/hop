@@ -33,7 +33,7 @@ public @interface HopMetadataProperty {
    * The optional key to store this metadata property under. By the default the name of the field is
    * taken.
    *
-   * @return
+   * @return The key. It should be unique in the parent class.
    */
   String key() default "";
 
@@ -151,4 +151,12 @@ public @interface HopMetadataProperty {
    * @return the type of metadata this property represents.
    */
   HopMetadataPropertyType hopMetadataPropertyType() default HopMetadataPropertyType.NONE;
+
+  /**
+   * When serializing common objects sometimes we don't want to serialize every field. In this
+   * scenario you can specify the fields to serialize.
+   *
+   * @return The names of the fields of the class to serialize.
+   */
+  String[] serializeOnly() default {};
 }

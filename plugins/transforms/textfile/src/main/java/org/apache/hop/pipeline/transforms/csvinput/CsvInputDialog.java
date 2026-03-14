@@ -49,7 +49,7 @@ import org.apache.hop.pipeline.engines.local.LocalPipelineEngine;
 import org.apache.hop.pipeline.transform.ITransform;
 import org.apache.hop.pipeline.transform.RowAdapter;
 import org.apache.hop.pipeline.transforms.common.ICsvInputAwareMeta;
-import org.apache.hop.pipeline.transforms.fileinput.TextFileCSVImportProgressDialog;
+import org.apache.hop.pipeline.transforms.fileinput.text.TextFileCSVImportProgressDialog;
 import org.apache.hop.staticschema.metadata.SchemaDefinition;
 import org.apache.hop.staticschema.metadata.SchemaFieldDefinition;
 import org.apache.hop.staticschema.util.SchemaDefinitionUtil;
@@ -626,14 +626,6 @@ public class CsvInputDialog extends BaseTransformDialog
                   false));
     }
 
-    SelectionAdapter lsFlags =
-        new SelectionAdapter() {
-          @Override
-          public void widgetSelected(SelectionEvent e) {
-            setFlags();
-          }
-        };
-
     // When ignoring manual fields, refresh fields from schema one last time
     wIgnoreFields.addSelectionListener(
         new SelectionAdapter() {
@@ -692,7 +684,6 @@ public class CsvInputDialog extends BaseTransformDialog
   }
 
   private void fillFieldsLayoutFromSchema(boolean askConfirmation) {
-
     if (!wSchemaDefinition.isDisposed()) {
       final String schemaName = wSchemaDefinition.getText();
 
@@ -813,7 +804,6 @@ public class CsvInputDialog extends BaseTransformDialog
       final boolean copyTransformName,
       final boolean reloadAllFields,
       final List<String> newFieldNames) {
-    if (copyTransformName) {}
     if (isReceivingInput) {
       wFilenameField.setText(Const.NVL(inputMeta.getFilenameField(), ""));
       wIncludeFilename.setSelection(inputMeta.isIncludingFilename());
@@ -834,8 +824,8 @@ public class CsvInputDialog extends BaseTransformDialog
     wIgnoreFields.setSelection(inputMeta.isIgnoreFields());
 
     final List<String> fieldName = newFieldNames == null ? new ArrayList() : newFieldNames;
-    for (int i = 0; i < inputMeta.getInputFields().length; i++) {
-      TextFileInputField field = inputMeta.getInputFields()[i];
+    for (int i = 0; i < inputMeta.getInputFields().size(); i++) {
+      TextFileInputField field = inputMeta.getInputFields().get(i);
       final TableItem item = getTableItem(field.getName(), true);
       // update the item only if we are reloading all fields, or the field is new
       if (!reloadAllFields && !fieldName.contains(field.getName())) {
@@ -888,30 +878,22 @@ public class CsvInputDialog extends BaseTransformDialog
     inputMeta.setSchemaDefinition(wSchemaDefinition.getText());
     inputMeta.setIgnoreFields(wIgnoreFields.getSelection());
 
-    int nrNonEmptyFields = wFields.nrNonEmpty();
-    inputMeta.allocate(nrNonEmptyFields);
-
-    for (int i = 0; i < nrNonEmptyFields; i++) {
-      TableItem item = wFields.getNonEmpty(i);
-
-      inputMeta.getInputFields()[i] = new TextFileInputField();
+    inputMeta.getInputFields().clear();
+    for (TableItem item : wFields.getNonEmptyItems()) {
+      TextFileInputField f = new TextFileInputField();
 
       int colnr = 1;
-      inputMeta.getInputFields()[i].setName(item.getText(colnr++));
-      inputMeta.getInputFields()[i].setType(
-          ValueMetaFactory.getIdForValueMeta(item.getText(colnr++)));
-      inputMeta.getInputFields()[i].setFormat(item.getText(colnr++));
-      inputMeta.getInputFields()[i].setLength(Const.toInt(item.getText(colnr++), -1));
-      inputMeta.getInputFields()[i].setPrecision(Const.toInt(item.getText(colnr++), -1));
-      inputMeta.getInputFields()[i].setCurrencySymbol(item.getText(colnr++));
-      inputMeta.getInputFields()[i].setDecimalSymbol(item.getText(colnr++));
-      inputMeta.getInputFields()[i].setGroupSymbol(item.getText(colnr++));
-      inputMeta.getInputFields()[i].setTrimType(
-          ValueMetaBase.getTrimTypeByDesc(item.getText(colnr++)));
+      f.setName(item.getText(colnr++));
+      f.setTypeWithString(item.getText(colnr++));
+      f.setFormat(item.getText(colnr++));
+      f.setLength(Const.toInt(item.getText(colnr++), -1));
+      f.setPrecision(Const.toInt(item.getText(colnr++), -1));
+      f.setCurrencySymbol(item.getText(colnr++));
+      f.setDecimalSymbol(item.getText(colnr++));
+      f.setGroupSymbol(item.getText(colnr++));
+      f.setTrimTypeWithString(item.getText(colnr));
     }
-    wFields.removeEmptyRows();
-    wFields.setRowNums();
-    wFields.optWidth(true);
+    wFields.optimizeTableView();
 
     inputMeta.setChanged();
   }
@@ -1079,7 +1061,7 @@ public class CsvInputDialog extends BaseTransformDialog
       if (Utils.isEmpty(meta.getFilename())) {
         return;
       }
-      if (Utils.isEmpty(meta.getInputFields())) {
+      if (meta.getInputFields().isEmpty()) {
         return;
       }
 
@@ -1163,7 +1145,7 @@ public class CsvInputDialog extends BaseTransformDialog
   public ICsvInputAwareImportProgressDialog getCsvImportProgressDialog(
       final ICsvInputAwareMeta meta, final int samples, final InputStreamReader reader) {
     return new TextFileCSVImportProgressDialog(
-        getShell(), variables, (CsvInputMeta) meta, pipelineMeta, reader, samples, true);
+        getShell(), variables, meta, pipelineMeta, reader, samples, true);
   }
 
   @Override

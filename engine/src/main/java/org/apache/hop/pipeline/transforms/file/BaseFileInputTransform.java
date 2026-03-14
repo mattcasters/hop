@@ -30,6 +30,7 @@ import org.apache.hop.core.Result;
 import org.apache.hop.core.ResultFile;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopFileException;
+import org.apache.hop.core.gui.ITextFileInputField;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.RowDataUtil;
@@ -48,7 +49,9 @@ import org.apache.hop.pipeline.transform.errorhandling.IFileErrorHandler;
 
 /** This class contains base functionality for file-based input transforms. */
 public abstract class BaseFileInputTransform<
-        Meta extends BaseFileInputMeta, Data extends BaseFileInputTransformData>
+        Meta extends BaseFileInputMeta,
+        Data extends BaseFileInputTransformData,
+        F extends ITextFileInputField>
     extends BaseTransform<Meta, Data> implements IBaseFileInputTransformControl {
 
   private static final Class<?> PKG = BaseFileInputTransform.class;
@@ -85,8 +88,8 @@ public abstract class BaseFileInputTransform<
 
     if ((previousResult == null || Utils.isEmpty(resultFiles))
         && data.files.nrOfMissingFiles() > 0
-        && !meta.inputFiles.acceptingFilenames
-        && !meta.errorHandling.errorIgnored) {
+        && !meta.getInput().isAcceptingFilenames()
+        && !meta.getErrorHandling().isErrorIgnored()) {
       logError(BaseMessages.getString(PKG, "BaseFileInputTransform.Log.Error.NoFilesSpecified"));
       return false;
     }
@@ -111,7 +114,7 @@ public abstract class BaseFileInputTransform<
       data.filename = HopVfs.getFilename(data.file);
 
       fillFileAdditionalFields(data, data.file);
-      if (meta.inputFiles.passingThruFields) {
+      if (meta.getInput().isPassingThruFields()) {
         StringBuilder sb = new StringBuilder();
         sb.append(data.currentFileIndex).append("_").append(data.file);
         data.currentPassThruFieldsRow = data.passThruFields.get(sb.toString());
@@ -119,7 +122,7 @@ public abstract class BaseFileInputTransform<
 
       // Add this files to the result of this pipeline.
       //
-      if (meta.inputFiles.isaddresult) {
+      if (meta.getInput().isAddingResult()) {
         ResultFile resultFile =
             new ResultFile(
                 ResultFile.FILE_TYPE_GENERAL, data.file, getPipelineMeta().getName(), toString());
@@ -202,7 +205,7 @@ public abstract class BaseFileInputTransform<
     data.outputRowMeta = new RowMeta();
     IRowMeta[] infoTransform = null;
 
-    if (meta.inputFiles.acceptingFilenames) {
+    if (meta.getInput().isAcceptingFilenames()) {
       // input files from previous transform
       infoTransform = filesFromPreviousTransform();
     }
@@ -215,11 +218,15 @@ public abstract class BaseFileInputTransform<
     data.convertRowMeta = data.outputRowMeta.cloneToType(IValueMeta.TYPE_STRING);
 
     BaseFileInputTransformUtils.handleMissingFiles(
-        data.files, getLogChannel(), meta.errorHandling.errorIgnored, data.dataErrorLineHandler);
+        data.files,
+        getLogChannel(),
+        meta.getErrorHandling().isErrorIgnored(),
+        data.dataErrorLineHandler);
 
     // Count the number of repeat fields...
-    for (int i = 0; i < meta.inputFields.length; i++) {
-      if (meta.inputFields[i].isRepeated()) {
+    for (int i = 0; i < meta.getInputFields().size(); i++) {
+      F f = (F) meta.getInputFields().get(i);
+      if (f.isRepeated()) {
         data.nr_repeats++;
       }
     }
@@ -245,21 +252,21 @@ public abstract class BaseFileInputTransform<
    */
   private void initErrorHandling() {
     List<IFileErrorHandler> dataErrorLineHandlers = new ArrayList<>(2);
-    if (meta.errorHandling.lineNumberFilesDestinationDirectory != null) {
+    if (meta.getErrorHandling().getLineNumberFilesDestinationDirectory() != null) {
       dataErrorLineHandlers.add(
           new FileErrorHandlerContentLineNumber(
               getPipeline().getExecutionStartDate(),
-              resolve(meta.errorHandling.lineNumberFilesDestinationDirectory),
-              meta.errorHandling.lineNumberFilesExtension,
+              resolve(meta.getErrorHandling().getLineNumberFilesDestinationDirectory()),
+              meta.getErrorHandling().getLineNumberFilesExtension(),
               meta.getEncoding(),
               this));
     }
-    if (meta.errorHandling.errorFilesDestinationDirectory != null) {
+    if (meta.getErrorHandling().getErrorFilesDestinationDirectory() != null) {
       dataErrorLineHandlers.add(
           new FileErrorHandlerMissingFiles(
               getPipeline().getExecutionStartDate(),
-              resolve(meta.errorHandling.errorFilesDestinationDirectory),
-              meta.errorHandling.errorFilesExtension,
+              resolve(meta.getErrorHandling().getErrorFilesDestinationDirectory()),
+              meta.getErrorHandling().getErrorFilesExtension(),
               meta.getEncoding(),
               this));
     }
@@ -273,24 +280,24 @@ public abstract class BaseFileInputTransform<
     data.files.getFiles().clear();
 
     int idx = -1;
-    IRowSet rowSet = findInputRowSet(meta.inputFiles.acceptingTransformName);
+    IRowSet rowSet = findInputRowSet(meta.getInput().getAcceptingTransformName());
 
     Object[] fileRow = getRowFrom(rowSet);
     while (fileRow != null) {
       IRowMeta prevInfoFields = rowSet.getRowMeta();
       if (idx < 0) {
-        if (meta.inputFiles.passingThruFields) {
+        if (meta.getInput().isPassingThruFields()) {
           data.passThruFields = new HashMap<>();
           infoTransform = new IRowMeta[] {prevInfoFields};
           data.nrPassThruFields = prevInfoFields.size();
         }
-        idx = prevInfoFields.indexOfValue(meta.inputFiles.acceptingField);
+        idx = prevInfoFields.indexOfValue(meta.getInput().getAcceptingField());
         if (idx < 0) {
           logError(
               BaseMessages.getString(
                   PKG,
                   "BaseFileInputTransform.Log.Error.UnableToFindFilenameField",
-                  meta.inputFiles.acceptingField));
+                  meta.getInput().getAcceptingField()));
           setErrors(getErrors() + 1);
           stopAll();
           return null;
@@ -300,7 +307,7 @@ public abstract class BaseFileInputTransform<
       try {
         FileObject fileObject = HopVfs.getFileObject(fileValue, variables);
         data.files.addFile(fileObject);
-        if (meta.inputFiles.passingThruFields) {
+        if (meta.getInput().isPassingThruFields()) {
           StringBuilder sb = new StringBuilder();
           sb.append(data.files.nrOfFiles() > 0 ? data.files.nrOfFiles() - 1 : 0)
               .append("_")
@@ -370,7 +377,7 @@ public abstract class BaseFileInputTransform<
       rejectCurrentFile(errorMsg);
     }
 
-    return !meta.errorHandling.errorIgnored || !meta.errorHandling.skipBadFiles;
+    return !meta.getErrorHandling().isErrorIgnored() || !meta.getErrorHandling().isSkipBadFiles();
   }
 
   /**
@@ -379,26 +386,28 @@ public abstract class BaseFileInputTransform<
    * @param errorMsg Message to send to rejected row if enabled
    */
   private void rejectCurrentFile(String errorMsg) {
-    if (StringUtils.isNotBlank(meta.errorHandling.fileErrorField)
-        || StringUtils.isNotBlank(meta.errorHandling.fileErrorMessageField)) {
+    if (StringUtils.isNotBlank(meta.getErrorHandling().getFileErrorField())
+        || StringUtils.isNotBlank(meta.getErrorHandling().getFileErrorMessageField())) {
       IRowMeta rowMeta = getInputRowMeta();
       if (rowMeta == null) {
         rowMeta = new RowMeta();
       }
 
       int errorFileIndex =
-          (StringUtils.isBlank(meta.errorHandling.fileErrorField))
-              ? -1
-              : BaseFileInputTransformUtils.addValueMeta(
-                  getTransformName(), rowMeta, this.resolve(meta.errorHandling.fileErrorField));
-
-      int errorMessageIndex =
-          StringUtils.isBlank(meta.errorHandling.fileErrorMessageField)
+          (StringUtils.isBlank(meta.getErrorHandling().getFileErrorField()))
               ? -1
               : BaseFileInputTransformUtils.addValueMeta(
                   getTransformName(),
                   rowMeta,
-                  this.resolve(meta.errorHandling.fileErrorMessageField));
+                  this.resolve(meta.getErrorHandling().getFileErrorField()));
+
+      int errorMessageIndex =
+          StringUtils.isBlank(meta.getErrorHandling().getFileErrorMessageField())
+              ? -1
+              : BaseFileInputTransformUtils.addValueMeta(
+                  getTransformName(),
+                  rowMeta,
+                  this.resolve(meta.getErrorHandling().getFileErrorMessageField()));
 
       try {
         Object[] rowData = getRow();

@@ -23,6 +23,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.encryption.Encr;
@@ -51,7 +52,8 @@ public class XmlMetadataUtil {
    * @return The XML representation of the given object.
    * @throws HopException
    */
-  public static String serializeObjectToXml(Object object) throws HopException {
+  public static String serializeObjectToXml(Object object, String... onlyFields)
+      throws HopException {
     Class<?> objectClass = object.getClass();
 
     StringBuilder xml = new StringBuilder();
@@ -61,12 +63,19 @@ public class XmlMetadataUtil {
       xml.append(XmlHandler.openTag(wrapper.tag()));
     }
 
+    Set<String> fieldsSet = Set.of(onlyFields);
+
     // Pick up all the fields with @HopMetadataProperty annotation, sorted by name.
     // Serialize them to XML.
     //
     List<Field> fields =
         ReflectionUtil.findAllFields(objectClass, new MetadataPropertyKeyFunction());
     for (Field field : fields) {
+      if (!fieldsSet.isEmpty() && !fieldsSet.contains(field.getName())) {
+        // We didn't select the field.
+        continue;
+      }
+
       // Don't serialize fields flagged as transient or volatile
       //
       if (Modifier.isTransient(field.getModifiers()) || Modifier.isVolatile(field.getModifiers())) {
@@ -205,7 +214,6 @@ public class XmlMetadataUtil {
         }
 
       } else {
-
         // POJO : serialize to XML...
         // We only take the fields of the POJO class that are annotated
         // We wrap the POJO properties in the provided tag
@@ -213,7 +221,7 @@ public class XmlMetadataUtil {
         if (!property.inline()) {
           xml.append(XmlHandler.openTag(tag)).append(Const.CR);
         }
-        xml.append(serializeObjectToXml(value));
+        xml.append(serializeObjectToXml(value, property.serializeOnly()));
         if (!property.inline()) {
           xml.append(XmlHandler.closeTag(tag)).append(Const.CR);
         }
@@ -252,9 +260,10 @@ public class XmlMetadataUtil {
       Object parentObject,
       Node node,
       Class<? extends T> clazz,
-      IHopMetadataProvider metadataProvider)
+      IHopMetadataProvider metadataProvider,
+      String... serializeOnly)
       throws HopXmlException {
-    return deSerializeFromXml(parentObject, node, clazz, null, metadataProvider);
+    return deSerializeFromXml(parentObject, node, clazz, null, metadataProvider, serializeOnly);
   }
 
   /**
@@ -289,7 +298,8 @@ public class XmlMetadataUtil {
       Node node,
       Class<? extends T> clazz,
       T object,
-      IHopMetadataProvider metadataProvider)
+      IHopMetadataProvider metadataProvider,
+      String... serializeFields)
       throws HopXmlException {
     if (object == null) {
       try {
@@ -338,12 +348,19 @@ public class XmlMetadataUtil {
       node = XmlHandler.getSubNode(node, wrapper.tag());
     }
 
+    Set<String> fieldsOnly = Set.of(serializeFields);
+
     // Pick up all the @HopMetadataProperty annotations.
     // The fields are sorted by name to get a stable XML output when serialized.
     //
     List<Field> fields =
         ReflectionUtil.findAllFields(object.getClass(), new MetadataPropertyKeyFunction());
     for (Field field : fields) {
+      if (!fieldsOnly.isEmpty() && !fieldsOnly.contains(field.getName())) {
+        // This is not a field we want to consider
+        continue;
+      }
+
       // Don't serialize fields flagged as transient or volatile
       //
       if (Modifier.isTransient(field.getModifiers()) || Modifier.isVolatile(field.getModifiers())) {
@@ -390,7 +407,8 @@ public class XmlMetadataUtil {
                 password,
                 storeWithCode,
                 property.intCodeConverter(),
-                inlineListTags);
+                inlineListTags,
+                property.serializeOnly());
 
         try {
           // Only set a value if we have something to set.
@@ -411,6 +429,15 @@ public class XmlMetadataUtil {
         }
       }
     }
+
+    if (object instanceof ILegacyXml legacyXml) {
+      try {
+        legacyXml.convertLegacyXml(node);
+      } catch (HopException e) {
+        throw new HopXmlException("Error de-serializing legacy XML", e);
+      }
+    }
+
     return object;
   }
 
@@ -427,7 +454,8 @@ public class XmlMetadataUtil {
       boolean password,
       boolean storeWithCode,
       Class<? extends IIntCodeConverter> intCodeConverterClass,
-      String[] inlineListTags)
+      String[] inlineListTags,
+      String... serializeOnly)
       throws HopXmlException {
     String elementString = XmlHandler.getNodeValue(elementNode);
 
@@ -584,7 +612,8 @@ public class XmlMetadataUtil {
                   password,
                   storeWithCode,
                   intCodeConverterClass,
-                  inlineListTags);
+                  inlineListTags,
+                  serializeOnly);
 
           // Add it to the list
           //
@@ -604,7 +633,8 @@ public class XmlMetadataUtil {
     } else {
       // Load the metadata for this node...
       //
-      return deSerializeFromXml(parentObject, elementNode, fieldType, metadataProvider);
+      return deSerializeFromXml(
+          parentObject, elementNode, fieldType, metadataProvider, serializeOnly);
     }
 
     // No value found for the given arguments: return the default value

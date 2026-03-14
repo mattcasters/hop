@@ -70,7 +70,8 @@ public abstract class CsvInputUnitTestBase {
     meta.setDelimiter(DELIMITER);
     meta.setEnclosure(ENCLOSURE);
     meta.setEncoding(ENCODING);
-    meta.setInputFields(fields);
+    meta.setLazyConversionActive(false);
+    meta.setFields(fields);
     meta.setHeaderPresent(false);
     return meta;
   }
