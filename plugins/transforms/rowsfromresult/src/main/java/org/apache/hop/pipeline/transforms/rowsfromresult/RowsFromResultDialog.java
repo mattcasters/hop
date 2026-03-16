@@ -69,9 +69,9 @@ public class RowsFromResultDialog extends BaseTransformDialog {
     fdlFields.top = new FormAttachment(wSpacer, margin);
     wlFields.setLayoutData(fdlFields);
 
-    final int FieldsRows = input.getFieldname().length;
+    final int FieldsRows = input.getResultFields().size();
 
-    ColumnInfo[] colinf =
+    ColumnInfo[] columnInfos =
         new ColumnInfo[] {
           new ColumnInfo(
               BaseMessages.getString(PKG, "RowsFromResultDialog.ColumnInfo.Fieldname"),
@@ -96,7 +96,7 @@ public class RowsFromResultDialog extends BaseTransformDialog {
             variables,
             shell,
             SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI,
-            colinf,
+            columnInfos,
             FieldsRows,
             lsMod,
             props);
@@ -122,12 +122,13 @@ public class RowsFromResultDialog extends BaseTransformDialog {
 
   /** Copy information from the meta-data input to the dialog fields. */
   public void getData() {
-    for (int i = 0; i < input.getFieldname().length; i++) {
+    for (int i = 0; i < input.getResultFields().size(); i++) {
+      RowsFromResultMeta.ResultRowField field = input.getResultFields().get(i);
       TableItem item = wFields.table.getItem(i);
-      item.setText(1, input.getFieldname()[i] == null ? "" : input.getFieldname()[i]);
-      item.setText(2, ValueMetaFactory.getValueMetaName(input.getType()[i]));
-      int len = input.getLength()[i];
-      int prc = input.getPrecision()[i];
+      item.setText(1, Const.NVL(field.getName(), ""));
+      item.setText(2, ValueMetaFactory.getValueMetaName(field.getHopType()));
+      int len = field.getLength();
+      int prc = field.getPrecision();
       item.setText(3, len >= 0 ? "" + len : "");
       item.setText(4, prc >= 0 ? "" + prc : "");
     }
@@ -145,15 +146,15 @@ public class RowsFromResultDialog extends BaseTransformDialog {
     }
 
     transformName = wTransformName.getText(); // return value
-    int nrFields = wFields.nrNonEmpty();
-    input.allocate(nrFields);
 
-    for (int i = 0; i < nrFields; i++) {
-      TableItem item = wFields.getNonEmpty(i);
-      input.getFieldname()[i] = item.getText(1);
-      input.getType()[i] = ValueMetaFactory.getIdForValueMeta(item.getText(2));
-      input.getLength()[i] = Const.toInt(item.getText(3), -1);
-      input.getPrecision()[i] = Const.toInt(item.getText(4), -1);
+    input.getResultFields().clear();
+    for (TableItem item : wFields.getNonEmptyItems()) {
+      RowsFromResultMeta.ResultRowField field = new RowsFromResultMeta.ResultRowField();
+      field.setName(item.getText(1));
+      field.setHopType(ValueMetaFactory.getIdForValueMeta(item.getText(2)));
+      field.setLength(Const.toInt(item.getText(3), -1));
+      field.setPrecision(Const.toInt(item.getText(4), -1));
+      input.getResultFields().add(field);
     }
     dispose();
   }

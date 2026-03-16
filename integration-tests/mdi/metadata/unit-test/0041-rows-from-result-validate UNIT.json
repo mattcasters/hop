@@ -1,0 +1,40 @@
+{
+  "database_replacements": [],
+  "autoOpening": true,
+  "description": "",
+  "persist_filename": "",
+  "test_type": "UNIT_TEST",
+  "variableValues": [],
+  "basePath": "${HOP_UNIT_TESTS_FOLDER}",
+  "golden_data_sets": [
+    {
+      "field_mappings": [
+        {
+          "transform_field": "name",
+          "data_set_field": "name"
+        },
+        {
+          "transform_field": "type",
+          "data_set_field": "type"
+        },
+        {
+          "transform_field": "length",
+          "data_set_field": "length"
+        },
+        {
+          "transform_field": "precision",
+          "data_set_field": "precision"
+        }
+      ],
+      "field_order": [
+        "name"
+      ],
+      "data_set_name": "golden-rows-from-result",
+      "transform_name": "Validate"
+    }
+  ],
+  "input_data_sets": [],
+  "name": "0041-rows-from-result-validate UNIT",
+  "trans_test_tweaks": [],
+  "pipeline_filename": "/home/matt.casters/Projects/demo/0041-rows-from-result-validate.hpl"
+}

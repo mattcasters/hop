@@ -16,77 +16,95 @@
  */
 package org.apache.hop.pipeline.transforms.rowsfromresult;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.hop.core.HopEnvironment;
-import org.apache.hop.core.exception.HopException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
 import org.apache.hop.core.plugins.PluginRegistry;
-import org.apache.hop.junit.rules.RestoreHopEngineEnvironmentExtension;
-import org.apache.hop.pipeline.transform.ITransformMeta;
-import org.apache.hop.pipeline.transforms.loadsave.LoadSaveTester;
-import org.apache.hop.pipeline.transforms.loadsave.initializer.IInitializer;
-import org.apache.hop.pipeline.transforms.loadsave.validator.ArrayLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.IFieldLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.IntLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.PrimitiveIntArrayLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.StringLoadSaveValidator;
+import org.apache.hop.core.row.IValueMeta;
+import org.apache.hop.core.row.value.ValueMetaDate;
+import org.apache.hop.core.row.value.ValueMetaInteger;
+import org.apache.hop.core.row.value.ValueMetaNumber;
+import org.apache.hop.core.row.value.ValueMetaPlugin;
+import org.apache.hop.core.row.value.ValueMetaPluginType;
+import org.apache.hop.core.row.value.ValueMetaString;
+import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
+import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
+import org.apache.hop.pipeline.transform.TransformMeta;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-class RowsFromResultMetaTest implements IInitializer<ITransformMeta> {
-  LoadSaveTester loadSaveTester;
-  Class<RowsFromResultMeta> testMetaClass = RowsFromResultMeta.class;
-
-  @RegisterExtension
-  static RestoreHopEngineEnvironmentExtension env = new RestoreHopEngineEnvironmentExtension();
-
+class RowsFromResultMetaTest {
   @BeforeEach
-  void setUpLoadSave() throws Exception {
-    HopEnvironment.init();
-    PluginRegistry.init();
-    List<String> attributes = Arrays.asList("fieldname", "type", "length", "precision");
-
-    Map<String, String> getterMap = new HashMap<>();
-    Map<String, String> setterMap = new HashMap<>();
-
-    IFieldLoadSaveValidator<String[]> stringArrayLoadSaveValidator =
-        new ArrayLoadSaveValidator<>(new StringLoadSaveValidator(), 5);
-
-    Map<String, IFieldLoadSaveValidator<?>> attrValidatorMap = new HashMap<>();
-    attrValidatorMap.put("fieldname", stringArrayLoadSaveValidator);
-    attrValidatorMap.put(
-        "type", new PrimitiveIntArrayLoadSaveValidator(new IntLoadSaveValidator(7), 5));
-    attrValidatorMap.put(
-        "length", new PrimitiveIntArrayLoadSaveValidator(new IntLoadSaveValidator(100), 5));
-    attrValidatorMap.put(
-        "precision", new PrimitiveIntArrayLoadSaveValidator(new IntLoadSaveValidator(9), 5));
-
-    Map<String, IFieldLoadSaveValidator<?>> typeValidatorMap = new HashMap<>();
-
-    loadSaveTester =
-        new LoadSaveTester(
-            testMetaClass,
-            attributes,
-            getterMap,
-            setterMap,
-            attrValidatorMap,
-            typeValidatorMap,
-            this);
-  }
-
-  // Call the allocate method on the LoadSaveTester meta class
-  @Override
-  public void modify(ITransformMeta someMeta) {
-    if (someMeta instanceof RowsFromResultMeta) {
-      ((RowsFromResultMeta) someMeta).allocate(5);
+  void beforeEach() throws Exception {
+    PluginRegistry registry = PluginRegistry.getInstance();
+    String[] classNames = {
+      ValueMetaString.class.getName(), ValueMetaInteger.class.getName(),
+      ValueMetaDate.class.getName(), ValueMetaNumber.class.getName()
+    };
+    for (String className : classNames) {
+      registry.registerPluginClass(className, ValueMetaPluginType.class, ValueMetaPlugin.class);
     }
   }
 
   @Test
-  void testSerialization() throws HopException {
-    loadSaveTester.testSerialization();
+  void testLoadSave() throws Exception {
+    Path path = Paths.get(Objects.requireNonNull(getClass().getResource("/transform.xml")).toURI());
+    String xml = Files.readString(path);
+    RowsFromResultMeta meta = new RowsFromResultMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xml, TransformMeta.XML_TAG),
+        RowsFromResultMeta.class,
+        meta,
+        new MemoryMetadataProvider());
+
+    validate(meta);
+
+    // Do a round trip:
+    //
+    String xmlCopy =
+        XmlHandler.openTag(TransformMeta.XML_TAG)
+            + XmlMetadataUtil.serializeObjectToXml(meta)
+            + XmlHandler.closeTag(TransformMeta.XML_TAG);
+    RowsFromResultMeta metaCopy = new RowsFromResultMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xmlCopy, TransformMeta.XML_TAG),
+        RowsFromResultMeta.class,
+        metaCopy,
+        new MemoryMetadataProvider());
+    validate(metaCopy);
+  }
+
+  private static void validate(RowsFromResultMeta meta) {
+    assertNotNull(meta.getResultFields());
+    assertEquals(4, meta.getResultFields().size());
+
+    RowsFromResultMeta.ResultRowField f = meta.getResultFields().get(0);
+    assertEquals("field1", f.getName());
+    assertEquals(IValueMeta.TYPE_STRING, f.getHopType());
+    assertEquals(100, f.getLength());
+    assertEquals(-1, f.getPrecision());
+
+    f = meta.getResultFields().get(1);
+    assertEquals("field2", f.getName());
+    assertEquals(IValueMeta.TYPE_DATE, f.getHopType());
+    assertEquals(-1, f.getLength());
+    assertEquals(-1, f.getPrecision());
+
+    f = meta.getResultFields().get(2);
+    assertEquals("field3", f.getName());
+    assertEquals(IValueMeta.TYPE_INTEGER, f.getHopType());
+    assertEquals(7, f.getLength());
+    assertEquals(-1, f.getPrecision());
+
+    f = meta.getResultFields().get(3);
+    assertEquals("field4", f.getName());
+    assertEquals(IValueMeta.TYPE_NUMBER, f.getHopType());
+    assertEquals(9, f.getLength());
+    assertEquals(2, f.getPrecision());
   }
 }

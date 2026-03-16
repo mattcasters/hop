@@ -1,0 +1,5 @@
+name,type,length,precision
+field1,String,100,-1
+field2,Date,-1,-1
+field3,Integer,7,-1
+field4,Number,9,2
