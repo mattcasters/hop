@@ -159,4 +159,12 @@ public @interface HopMetadataProperty {
    * @return The names of the fields of the class to serialize.
    */
   String[] serializeOnly() default {};
+
+  /**
+   * If you have a String that needs to be encoded in the XML or JSON to be serialized safely, you
+   * can specify an encoder. For example, you can encode to Base64.
+   *
+   * @return The string encoder to use for this property.
+   */
+  Class<? extends IStringEncoder> stringEncoder() default EmptyStringEncoder.class;
 }

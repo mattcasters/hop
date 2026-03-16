@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.CheckResult;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.ICheckResult;
@@ -45,6 +47,8 @@ import org.apache.hop.pipeline.transform.TransformMeta;
     categoryDescription = "i18n::JsonOutput.category",
     keywords = "i18n::JsonOutputMeta.keyword",
     documentationUrl = "/pipeline/transforms/jsonoutput.html")
+@Getter
+@Setter
 public class JsonOutputMeta extends BaseFileOutputMeta<JsonOutput, JsonOutputData> {
   private static final Class<?> PKG = JsonOutputMeta.class;
 

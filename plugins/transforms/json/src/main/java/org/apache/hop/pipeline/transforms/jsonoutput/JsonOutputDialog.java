@@ -607,7 +607,7 @@ public class JsonOutputDialog extends BaseTransformDialog {
     colinf =
         new ColumnInfo[] {
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.Fieldname.Column"),
+              BaseMessages.getString(PKG, "JsonOutputDialog.FieldName.Column"),
               ColumnInfo.COLUMN_TYPE_CCOMBO,
               new String[] {""},
               false),

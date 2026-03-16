@@ -75,12 +75,7 @@ import org.w3c.dom.Node;
 @Getter
 @Setter
 public class TextFileInputMeta
-    extends BaseFileInputMeta<
-        TextFileInput,
-        TextFileInputData,
-        BaseFileInputAdditionalField,
-        BaseFileInput,
-        TextFileInputField>
+    extends BaseFileInputMeta<TextFileInput, TextFileInputData, BaseFileInput, TextFileInputField>
     implements ICsvInputAwareMeta<TextFileInputField> {
   private static final Class<?> PKG = TextFileInputMeta.class;
 
@@ -388,6 +383,9 @@ public class TextFileInputMeta
       injectionKeyDescription = "TextFileInput.Injection.IGNORE_FIELDS")
   private boolean ignoreFields;
 
+  @HopMetadataProperty(inline = true)
+  protected BaseFileInputAdditionalField additionalOutputFields;
+
   /** The fields to import... */
   @HopMetadataProperty(
       key = "field",
@@ -402,6 +400,7 @@ public class TextFileInputMeta
     super();
     filters = new ArrayList<>();
     inputFields = new ArrayList<>();
+    additionalOutputFields = new BaseFileInputAdditionalField();
     additionalOutputFields.setShortFilenameField(null);
     additionalOutputFields.setPathField(null);
     additionalOutputFields.setHiddenField(null);
@@ -463,6 +462,7 @@ public class TextFileInputMeta
     this.errorTextField = m.errorTextField;
     this.ignoreFields = m.ignoreFields;
     this.schemaDefinition = m.schemaDefinition;
+    this.additionalOutputFields = new BaseFileInputAdditionalField(m.additionalOutputFields);
     m.filters.forEach(filter -> this.filters.add(new TextFileFilter(filter)));
     m.inputFields.forEach(f -> this.inputFields.add(new TextFileInputField(f.clone())));
   }

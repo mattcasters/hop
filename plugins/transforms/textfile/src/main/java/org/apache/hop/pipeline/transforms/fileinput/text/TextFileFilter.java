@@ -19,6 +19,7 @@ package org.apache.hop.pipeline.transforms.fileinput.text;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.hop.metadata.api.Base64StringEncoder;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
 @Getter
@@ -26,28 +27,29 @@ import org.apache.hop.metadata.api.HopMetadataProperty;
 public class TextFileFilter implements Cloneable {
   /** The position of the occurrence of the filter string to check at */
   @HopMetadataProperty(
-      key = "",
+      key = "filter_position",
       injectionKey = "FILTER_POSITION",
       injectionKeyDescription = "TextFileInput.Injection.FILTER_POSITION")
   private int filterPosition;
 
   /** The string to filter on */
   @HopMetadataProperty(
-      key = "",
+      key = "filter_string",
+      stringEncoder = Base64StringEncoder.class,
       injectionKey = "FILTER_STRING",
       injectionKeyDescription = "TextFileInput.Injection.FILTER_STRING")
   private String filterString;
 
   /** True if we want to stop when we reach a filter line */
   @HopMetadataProperty(
-      key = "",
+      key = "filter_is_last_line",
       injectionKey = "FILTER_LAST_LINE",
       injectionKeyDescription = "TextFileInput.Injection.FILTER_LAST_LINE")
   private boolean filterLastLine;
 
   /** True if we want to match only this lines */
   @HopMetadataProperty(
-      key = "",
+      key = "filter_is_positive",
       injectionKey = "FILTER_POSITIVE",
       injectionKeyDescription = "TextFileInput.Injection.FILTER_POSITIVE")
   private boolean filterPositive;

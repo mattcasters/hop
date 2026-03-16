@@ -64,8 +64,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 
-public class JsonOutputDialog extends BaseTransformDialog {
-  private static final Class<?> PKG = JsonOutputMeta.class; // needed by Translator!!
+public class JsonEOutputDialog extends BaseTransformDialog {
+  private static final Class<?> PKG = JsonEOutputMeta.class; // needed by Translator!!
 
   public static final String STRING_SORT_WARNING_PARAMETER = "JSONSortWarning";
   public static final String SYSTEM_COMBO_NO = "System.Combo.No";
@@ -84,7 +84,7 @@ public class JsonOutputDialog extends BaseTransformDialog {
 
   private TableView wFields;
 
-  private JsonOutputMeta input;
+  private JsonEOutputMeta input;
 
   private boolean gotEncodings = false;
 
@@ -136,8 +136,11 @@ public class JsonOutputDialog extends BaseTransformDialog {
 
   private final List<String> inputFields = new ArrayList<>();
 
-  public JsonOutputDialog(
-      Shell parent, IVariables variables, JsonOutputMeta transformMeta, PipelineMeta pipelineMeta) {
+  public JsonEOutputDialog(
+      Shell parent,
+      IVariables variables,
+      JsonEOutputMeta transformMeta,
+      PipelineMeta pipelineMeta) {
     super(parent, variables, transformMeta, pipelineMeta);
     input = transformMeta;
   }
@@ -189,7 +192,7 @@ public class JsonOutputDialog extends BaseTransformDialog {
     fdOperation.top = new FormAttachment(wlBlocName, margin);
     fdOperation.right = new FormAttachment(100, -margin);
     wOperation.setLayoutData(fdOperation);
-    wOperation.setItems(JsonOutputMeta.operationTypeDesc);
+    wOperation.setItems(JsonEOutputMeta.OperationType.getDescriptions());
     wOperation.addSelectionListener(
         new SelectionAdapter() {
           @Override
@@ -229,12 +232,12 @@ public class JsonOutputDialog extends BaseTransformDialog {
     Composite wKeyConfigComp = new Composite(wTabFolder, SWT.NONE);
     PropsUi.setLook(wKeyConfigComp);
 
-    final int keyFieldsRows = input.getKeyFields().length;
+    final int keyFieldsRows = input.getKeyFields().size();
 
     keyColInf =
         new ColumnInfo[] {
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.Fieldname.Column"),
+              BaseMessages.getString(PKG, "JsonOutputDialog.FieldName.Column"),
               ColumnInfo.COLUMN_TYPE_CCOMBO,
               new String[] {""},
               false),
@@ -290,12 +293,12 @@ public class JsonOutputDialog extends BaseTransformDialog {
 
     setButtonPositions(new Button[] {wGet}, margin, null);
 
-    final int fieldsRows = input.getOutputFields().length;
+    final int fieldsRows = input.getOutputFields().size();
 
     colinf =
         new ColumnInfo[] {
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.Fieldname.Column"),
+              BaseMessages.getString(PKG, "JsonOutputDialog.FieldName.Column"),
               ColumnInfo.COLUMN_TYPE_CCOMBO,
               new String[] {""},
               false),
@@ -556,7 +559,7 @@ public class JsonOutputDialog extends BaseTransformDialog {
         });
 
     Label wlJSONPrittified = new Label(wSettings, SWT.RIGHT);
-    wlJSONPrittified.setText(BaseMessages.getString(PKG, "JsonOutputDialog.JSONPrittified.Label"));
+    wlJSONPrittified.setText(BaseMessages.getString(PKG, "JsonOutputDialog.JSONPrettified.Label"));
     PropsUi.setLook(wlJSONPrittified);
     FormData fdlJSONPrittified = new FormData();
     fdlJSONPrittified.left = new FormAttachment(0, 0);
@@ -565,7 +568,7 @@ public class JsonOutputDialog extends BaseTransformDialog {
     wlJSONPrittified.setLayoutData(fdlJSONPrittified);
     wJSONPrittified = new Button(wSettings, SWT.CHECK);
     wJSONPrittified.setToolTipText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.JSONPrittified.Tooltip"));
+        BaseMessages.getString(PKG, "JsonOutputDialog.JSONPrettified.Tooltip"));
     PropsUi.setLook(wJSONPrittified);
     FormData fdJSONPrittified = new FormData();
     fdJSONPrittified.left = new FormAttachment(middle, 0);
@@ -816,9 +819,9 @@ public class JsonOutputDialog extends BaseTransformDialog {
         new SelectionAdapter() {
           @Override
           public void widgetSelected(SelectionEvent e) {
-            JsonOutputMeta tfoi = new JsonOutputMeta();
-            getInfo(tfoi);
-            String[] files = tfoi.getFiles(variables);
+            JsonEOutputMeta jsonEOutputMeta = new JsonEOutputMeta();
+            getInfo(jsonEOutputMeta);
+            String[] files = jsonEOutputMeta.getFileSettings().getFiles(variables, "", true);
             if (files != null && files.length > 0) {
               EnterSelectionDialog esd =
                   new EnterSelectionDialog(
@@ -970,43 +973,43 @@ public class JsonOutputDialog extends BaseTransformDialog {
     wOutputValue.setText(Const.NVL(input.getOutputValue(), ""));
     wUseArrayWithSingleInstance.setSelection(input.isUseArrayWithSingleInstance());
     wUseSingleItemPerGroup.setSelection(input.isUseSingleItemPerGroup());
-    wJSONPrittified.setSelection(input.isJsonPrittified());
-    wSplitOutputAfter.setText(Integer.toString(input.getSplitOutputAfter()));
-    wOperation.setText(JsonOutputMeta.getOperationTypeDesc(input.getOperationType()));
-    wFilename.setText(Const.NVL(input.getFileName(), ""));
-    wCreateParentFolder.setSelection(input.isCreateParentFolder());
-    wExtension.setText(Const.NVL(input.getExtension(), ""));
+    wJSONPrittified.setSelection(input.isJsonPrettified());
+    wSplitOutputAfter.setText(Integer.toString(input.getFileSettings().getSplitOutputAfter()));
+    wOperation.setText(input.getOperationType().getDescription());
+    wFilename.setText(Const.NVL(input.getFileSettings().getFileName(), ""));
+    wCreateParentFolder.setSelection(input.getFileSettings().isCreateParentFolder());
+    wExtension.setText(Const.NVL(input.getFileSettings().getExtension(), ""));
 
-    wAddDate.setSelection(input.isDateInFilename());
-    wAddTime.setSelection(input.isTimeInFilename());
-    wAppend.setSelection(input.isFileAppended());
+    wAddDate.setSelection(input.getFileSettings().isDateInFileName());
+    wAddTime.setSelection(input.getFileSettings().isTimeInFileName());
+    wAppend.setSelection(input.getFileSettings().isFileAppended());
 
     wEncoding.setText(Const.NVL(input.getEncoding(), ""));
-    wAddToResult.setSelection(input.addToResult());
-    wDoNotOpenNewFileInit.setSelection(input.isDoNotOpenNewFileInit());
+    wAddToResult.setSelection(input.isAddingToResult());
+    wDoNotOpenNewFileInit.setSelection(input.getFileSettings().isDoNotOpenNewFileInit());
 
-    wJSONSizeFieldname.setText(Const.NVL(input.getJsonSizeFieldname(), ""));
+    wJSONSizeFieldname.setText(Const.NVL(input.getJsonSizeFieldName(), ""));
 
     if (isDebug()) {
       logDebug(BaseMessages.getString(PKG, "JsonOutputDialog.Log.GettingFieldsInfo"));
     }
 
-    for (int i = 0; i < input.getKeyFields().length; i++) {
-      JsonOutputKeyField field = input.getKeyFields()[i];
+    for (int i = 0; i < input.getKeyFields().size(); i++) {
+      JsonEOutputKeyField field = input.getKeyFields().get(i);
 
       TableItem item = wKeyFields.table.getItem(i);
       item.setText(1, Const.NVL(field.getFieldName(), ""));
       item.setText(2, Const.NVL(field.getElementName(), ""));
     }
 
-    for (int i = 0; i < input.getOutputFields().length; i++) {
-      JsonOutputField field = input.getOutputFields()[i];
+    for (int i = 0; i < input.getOutputFields().size(); i++) {
+      JsonEOutputField field = input.getOutputFields().get(i);
 
       TableItem item = wFields.table.getItem(i);
       item.setText(1, Const.NVL(field.getFieldName(), ""));
       item.setText(2, Const.NVL(field.getElementName(), ""));
       String jsonFragment =
-          field.isJSONFragment()
+          field.isJsonFragment()
               ? BaseMessages.getString(PKG, SYSTEM_COMBO_YES)
               : BaseMessages.getString(PKG, SYSTEM_COMBO_NO);
       if (jsonFragment != null) {
@@ -1039,61 +1042,53 @@ public class JsonOutputDialog extends BaseTransformDialog {
     dispose();
   }
 
-  private void getInfo(JsonOutputMeta jsometa) {
+  private void getInfo(JsonEOutputMeta jsometa) {
 
     jsometa.setJsonBloc(wBlocName.getText());
     jsometa.setEncoding(wEncoding.getText());
     jsometa.setOutputValue(wOutputValue.getText());
     jsometa.setUseArrayWithSingleInstance(wUseArrayWithSingleInstance.getSelection());
     jsometa.setUseSingleItemPerGroup(wUseSingleItemPerGroup.getSelection());
-    jsometa.setOperationType(JsonOutputMeta.getOperationTypeByDesc(wOperation.getText()));
-    jsometa.setJsonPrittified(wJSONPrittified.getSelection());
-    jsometa.setSplitOutputAfter(
-        Integer.parseInt(
-            wSplitOutputAfter.getText().isEmpty() ? "0" : wSplitOutputAfter.getText()));
-    jsometa.setCreateParentFolder(wCreateParentFolder.getSelection());
-    jsometa.setFileName(wFilename.getText());
-    jsometa.setExtension(wExtension.getText());
-    jsometa.setFileAppended(wAppend.getSelection());
-    jsometa.setDateInFilename(wAddDate.getSelection());
-    jsometa.setTimeInFilename(wAddTime.getSelection());
+    jsometa.setOperationType(JsonEOutputMeta.OperationType.lookupDescription(wOperation.getText()));
+    jsometa.setJsonPrettified(wJSONPrittified.getSelection());
+    jsometa
+        .getFileSettings()
+        .setSplitOutputAfter(
+            Integer.parseInt(
+                wSplitOutputAfter.getText().isEmpty() ? "0" : wSplitOutputAfter.getText()));
+    jsometa.getFileSettings().setCreateParentFolder(wCreateParentFolder.getSelection());
+    jsometa.getFileSettings().setFileName(wFilename.getText());
+    jsometa.getFileSettings().setExtension(wExtension.getText());
+    jsometa.getFileSettings().setFileAppended(wAppend.getSelection());
+    jsometa.getFileSettings().setDateInFileName(wAddDate.getSelection());
+    jsometa.getFileSettings().setTimeInFileName(wAddTime.getSelection());
 
     jsometa.setEncoding(wEncoding.getText());
-    jsometa.setAddToResult(wAddToResult.getSelection());
-    jsometa.setDoNotOpenNewFileInit(wDoNotOpenNewFileInit.getSelection());
+    jsometa.setAddingToResult(wAddToResult.getSelection());
+    jsometa.getFileSettings().setDoNotOpenNewFileInit(wDoNotOpenNewFileInit.getSelection());
 
-    jsometa.setJsonSizeFieldname(wJSONSizeFieldname.getText());
+    jsometa.setJsonSizeFieldName(wJSONSizeFieldname.getText());
 
-    int nrKeyFields = wKeyFields.nrNonEmpty();
-
-    jsometa.allocateKey(nrKeyFields);
-
-    for (int i = 0; i < nrKeyFields; i++) {
-      JsonOutputKeyField field = new JsonOutputKeyField();
-
-      TableItem item = wKeyFields.getNonEmpty(i);
+    jsometa.getKeyFields().clear();
+    for (TableItem item : wKeyFields.getNonEmptyItems()) {
+      JsonEOutputKeyField field = new JsonEOutputKeyField();
       field.setFieldName(item.getText(1));
       field.setElementName(item.getText(2));
-      jsometa.getKeyFields()[i] = field;
+      jsometa.getKeyFields().add(field);
     }
 
-    int nrfields = wFields.nrNonEmpty();
-
-    jsometa.allocate(nrfields);
-
-    for (int i = 0; i < nrfields; i++) {
-      JsonOutputField field = new JsonOutputField();
-
-      TableItem item = wFields.getNonEmpty(i);
+    jsometa.getOutputFields().clear();
+    for (TableItem item : wFields.getNonEmptyItems()) {
+      JsonEOutputField field = new JsonEOutputField();
       field.setFieldName(item.getText(1));
       field.setElementName(item.getText(2));
-      field.setJSONFragment(
+      field.setJsonFragment(
           BaseMessages.getString(PKG, SYSTEM_COMBO_YES).equalsIgnoreCase(item.getText(3)));
       field.setWithoutEnclosing(
           BaseMessages.getString(PKG, SYSTEM_COMBO_YES).equalsIgnoreCase(item.getText(4)));
       field.setRemoveIfBlank(
           BaseMessages.getString(PKG, SYSTEM_COMBO_YES).equalsIgnoreCase(item.getText(5)));
-      jsometa.getOutputFields()[i] = field;
+      jsometa.getOutputFields().add(field);
     }
   }
 
@@ -1175,8 +1170,9 @@ public class JsonOutputDialog extends BaseTransformDialog {
 
   private void updateOperation() {
 
-    int opType = JsonOutputMeta.getOperationTypeByDesc(wOperation.getText());
-    boolean activeFile = opType != JsonOutputMeta.OPERATION_TYPE_OUTPUT_VALUE;
+    JsonEOutputMeta.OperationType opType =
+        JsonEOutputMeta.OperationType.lookupDescription(wOperation.getText());
+    boolean activeFile = opType != JsonEOutputMeta.OperationType.OUTPUT_VALUE;
 
     wlFilename.setEnabled(activeFile);
     wFilename.setEnabled(activeFile);

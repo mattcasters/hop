@@ -21,12 +21,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.pipeline.transform.BaseTransformData;
 import org.apache.hop.pipeline.transform.ITransformData;
 
 @SuppressWarnings("java:S1104")
-public class JsonOutputData extends BaseTransformData implements ITransformData {
+public class JsonEOutputData extends BaseTransformData implements ITransformData {
 
   public IRowMeta inputRowMeta;
   public IRowMeta outputRowMeta;
@@ -46,9 +47,10 @@ public class JsonOutputData extends BaseTransformData implements ITransformData 
   public boolean isWriteToFile;
   public String jsonSerialized;
   public long jsonLength;
+  public Set<Integer> keyFields;
 
   /** */
-  public JsonOutputData() {
+  public JsonEOutputData() {
     super();
 
     this.nrRow = 0;

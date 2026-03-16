@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one or more
   ~ contributor license agreements.  See the NOTICE file distributed with
@@ -19,7 +18,7 @@
 
 <transform>
     <schema_definition>schemaDefinition</schema_definition>
-    <ignore_fields>N</ignore_fields>
+    <ignore_fields>Y</ignore_fields>
     <separator>;</separator>
     <enclosure>&#34;</enclosure>
     <enclosure_forced>Y</enclosure_forced>
@@ -29,7 +28,7 @@
     <format>UNIX</format>
     <compression>Snappy</compression>
     <encoding>UTF-8</encoding>
-    <endedLine>endLine</endedLine>
+    <endedLine/>
     <fileNameInField>Y</fileNameInField>
     <fileNameField>filenameField</fileNameField>
     <create_parent_folder>Y</create_parent_folder>
@@ -72,7 +71,7 @@
             <decimal/>
             <group/>
             <nullif/>
-            <trim_type>none</trim_type>
+            <trim_type>both</trim_type>
             <roundingType>half_even</roundingType>
             <length>7</length>
             <precision>-1</precision>
@@ -85,10 +84,11 @@
             <decimal/>
             <group/>
             <nullif/>
-            <trim_type>none</trim_type>
+            <trim_type>right</trim_type>
             <roundingType>half_even</roundingType>
             <length>-1</length>
             <precision>-1</precision>
         </field>
     </fields>
 </transform>
+

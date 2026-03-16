@@ -75,7 +75,6 @@ public abstract class BaseFileInputTransform<
   public boolean init() {
     initErrorHandling();
 
-    meta.additionalOutputFields.normalize();
     data.files = meta.getFileInputList(this);
     data.currentFileIndex = 0;
 

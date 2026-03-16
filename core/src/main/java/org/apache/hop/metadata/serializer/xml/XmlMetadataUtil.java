@@ -30,6 +30,7 @@ import org.apache.hop.core.encryption.Encr;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopXmlException;
 import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.api.EmptyStringEncoder;
 import org.apache.hop.metadata.api.HopMetadataObject;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.HopMetadataWrapper;
@@ -39,6 +40,7 @@ import org.apache.hop.metadata.api.IHopMetadata;
 import org.apache.hop.metadata.api.IHopMetadataObjectFactory;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.metadata.api.IIntCodeConverter;
+import org.apache.hop.metadata.api.IStringEncoder;
 import org.apache.hop.metadata.util.ReflectionUtil;
 import org.w3c.dom.Node;
 
@@ -120,7 +122,8 @@ public class XmlMetadataUtil {
                     tag,
                     isPassword,
                     storeWithCode,
-                    property.intCodeConverter()));
+                    property.intCodeConverter(),
+                    property.stringEncoder()));
           }
         }
       }
@@ -140,7 +143,8 @@ public class XmlMetadataUtil {
       String tag,
       boolean password,
       boolean storeWithCode,
-      Class<? extends IIntCodeConverter> intCodeConverterClass)
+      Class<? extends IIntCodeConverter> intCodeConverterClass,
+      Class<? extends IStringEncoder> stringEncoderClass)
       throws HopException {
 
     StringBuilder xml = new StringBuilder();
@@ -153,6 +157,15 @@ public class XmlMetadataUtil {
         //
         if (password) {
           xml.append(XmlHandler.addTagValue(tag, Encr.encryptPasswordIfNotUsingVariables(string)));
+        } else if (!stringEncoderClass.equals(EmptyStringEncoder.class)) {
+          // We need to encode the string
+          try {
+            IStringEncoder encoder = stringEncoderClass.getConstructor().newInstance();
+            xml.append(XmlHandler.addTagValue(tag, encoder.encode(string)));
+          } catch (Exception e) {
+            throw new HopException(
+                "Error encoding string with class " + stringEncoderClass.getName(), e);
+          }
         } else {
           xml.append(XmlHandler.addTagValue(tag, string));
         }
@@ -206,7 +219,8 @@ public class XmlMetadataUtil {
                   tag,
                   password,
                   storeWithCode,
-                  property.intCodeConverter()));
+                  property.intCodeConverter(),
+                  property.stringEncoder()));
         }
 
         if (StringUtils.isNotEmpty(groupKey)) {
@@ -407,6 +421,7 @@ public class XmlMetadataUtil {
                 password,
                 storeWithCode,
                 property.intCodeConverter(),
+                property.stringEncoder(),
                 inlineListTags,
                 property.serializeOnly());
 
@@ -454,6 +469,7 @@ public class XmlMetadataUtil {
       boolean password,
       boolean storeWithCode,
       Class<? extends IIntCodeConverter> intCodeConverterClass,
+      Class<? extends IStringEncoder> stringEncoderClass,
       String[] inlineListTags,
       String... serializeOnly)
       throws HopXmlException {
@@ -485,6 +501,21 @@ public class XmlMetadataUtil {
       if (elementNode != null) {
         if (password) {
           return Encr.decryptPasswordOptionallyEncrypted(elementString);
+        }
+        if (!EmptyStringEncoder.class.equals(stringEncoderClass)) {
+          // Decode the encoded string
+          //
+          try {
+            IStringEncoder encoder = stringEncoderClass.getConstructor().newInstance();
+            return encoder.decode(elementString);
+          } catch (Exception e) {
+            throw new HopXmlException(
+                "Error decoding string '"
+                    + elementString
+                    + "' with string encoder class "
+                    + stringEncoderClass.getName(),
+                e);
+          }
         } else {
           return elementString;
         }
@@ -612,6 +643,7 @@ public class XmlMetadataUtil {
                   password,
                   storeWithCode,
                   intCodeConverterClass,
+                  stringEncoderClass,
                   inlineListTags,
                   serializeOnly);
 

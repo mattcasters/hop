@@ -18,7 +18,7 @@
 
 <transform>
     <schema_definition>schemaDefinition</schema_definition>
-    <ignore_fields>N</ignore_fields>
+    <ignore_fields>Y</ignore_fields>
     <separator>;</separator>
     <enclosure>&#34;</enclosure>
     <enclosure_forced>Y</enclosure_forced>

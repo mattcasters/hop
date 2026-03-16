@@ -209,7 +209,7 @@ class TextFileOutputMetaTest {
 
   private static void validate(TextFileOutputMeta meta) {
     assertEquals("schemaDefinition", meta.getSchemaDefinition());
-    assertFalse(meta.isIgnoreFields());
+    assertTrue(meta.isIgnoreFields());
     assertEquals(";", meta.getSeparator());
     assertEquals("\"", meta.getEnclosure());
     assertTrue(meta.isEnclosureForced());

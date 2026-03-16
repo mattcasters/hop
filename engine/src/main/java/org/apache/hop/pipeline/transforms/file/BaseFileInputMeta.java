@@ -43,7 +43,6 @@ import org.w3c.dom.Node;
 public abstract class BaseFileInputMeta<
         Main extends ITransform,
         Data extends ITransformData,
-        A extends BaseFileInputAdditionalField,
         I extends BaseFileInput,
         F extends ITextFileInputField>
     extends BaseTransformMeta<Main, Data> {
@@ -71,42 +70,31 @@ public abstract class BaseFileInputMeta<
   @HopMetadataProperty(inline = true)
   protected BaseFileErrorHandling errorHandling;
 
-  @HopMetadataProperty(inline = true)
-  protected A additionalOutputFields;
-
   public BaseFileInputMeta() {
     this.input = (I) new BaseFileInput();
-    this.additionalOutputFields = (A) new BaseFileInputAdditionalField();
     this.errorHandling = new BaseFileErrorHandling();
   }
 
-  public BaseFileInputMeta(BaseFileInputMeta<Main, Data, A, I, F> meta) {
+  public BaseFileInputMeta(BaseFileInputMeta<Main, Data, I, F> meta) {
     this();
     this.input = (I) meta.clone();
     this.errorHandling = (BaseFileErrorHandling) meta.clone();
-    this.additionalOutputFields = (A) meta.clone();
   }
 
   @Override
   public Object clone() {
     BaseFileInputMeta<
-            BaseFileInputTransform,
-            BaseFileInputTransformData,
-            BaseFileInputAdditionalField,
-            BaseFileInput,
-            BaseFileField>
+            BaseFileInputTransform, BaseFileInputTransformData, BaseFileInput, BaseFileField>
         retval =
             (BaseFileInputMeta<
                     BaseFileInputTransform,
                     BaseFileInputTransformData,
-                    BaseFileInputAdditionalField,
                     BaseFileInput,
                     BaseFileField>)
                 super.clone();
 
     retval.input = (BaseFileInput) input.clone();
     retval.errorHandling = (BaseFileErrorHandling) errorHandling.clone();
-    retval.additionalOutputFields = (BaseFileInputAdditionalField) additionalOutputFields.clone();
 
     return retval;
   }

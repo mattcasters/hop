@@ -32,7 +32,6 @@ import org.apache.hop.core.exception.HopTransformException;
 import org.apache.hop.core.fileinput.FileInputList;
 import org.apache.hop.core.fileinput.InputFile;
 import org.apache.hop.core.gui.ITextFileInputField;
-import org.apache.hop.core.injection.InjectionSupported;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.value.ValueMetaBoolean;
@@ -62,39 +61,34 @@ import org.w3c.dom.Node;
     description = "i18n::JsonInput.description",
     keywords = "i18n::JsonInputMeta.keyword",
     categoryDescription = "i18n::JsonInput.category")
-@InjectionSupported(
-    localizationPrefix = "JsonInput.Injection.",
-    groups = {"FILENAME_LINES", "FIELDS"},
-    hide = {
-      "ACCEPT_FILE_NAMES",
-      "ACCEPT_FILE_TRANSFORM",
-      "PASS_THROUGH_FIELDS",
-      "ACCEPT_FILE_FIELD",
-      "ADD_FILES_TO_RESULT",
-      "IGNORE_ERRORS",
-      "FILE_ERROR_FIELD",
-      "FILE_ERROR_MESSAGE_FIELD",
-      "SKIP_BAD_FILES",
-      "WARNING_FILES_TARGET_DIR",
-      "WARNING_FILES_EXTENTION",
-      "ERROR_FILES_TARGET_DIR",
-      "ERROR_FILES_EXTENTION",
-      "LINE_NR_FILES_TARGET_DIR",
-      "LINE_NR_FILES_EXTENTION",
-      "FIELD_NULL_STRING",
-      "FIELD_POSITION",
-      "FIELD_IGNORE",
-      "FIELD_IF_NULL"
-    })
+/*@InjectionSupported(
+localizationPrefix = "JsonInput.Injection.",
+groups = {"FILENAME_LINES", "FIELDS"},
+hide = {
+  "ACCEPT_FILE_NAMES",
+  "ACCEPT_FILE_TRANSFORM",
+  "PASS_THROUGH_FIELDS",
+  "ACCEPT_FILE_FIELD",
+  "ADD_FILES_TO_RESULT",
+  "IGNORE_ERRORS",
+  "FILE_ERROR_FIELD",
+  "FILE_ERROR_MESSAGE_FIELD",
+  "SKIP_BAD_FILES",
+  "WARNING_FILES_TARGET_DIR",
+  "WARNING_FILES_EXTENTION",
+  "ERROR_FILES_TARGET_DIR",
+  "ERROR_FILES_EXTENTION",
+  "LINE_NR_FILES_TARGET_DIR",
+  "LINE_NR_FILES_EXTENTION",
+  "FIELD_NULL_STRING",
+  "FIELD_POSITION",
+  "FIELD_IGNORE",
+  "FIELD_IF_NULL"
+})*/
 @Getter
 @Setter
 public class JsonInputMeta
-    extends BaseFileInputMeta<
-        JsonInput,
-        JsonInputData,
-        JsonInputMeta.AdditionalFileOutputFields,
-        BaseFileInput,
-        JsonInputField> {
+    extends BaseFileInputMeta<JsonInput, JsonInputData, BaseFileInput, JsonInputField> {
   private static final Class<?> PKG = JsonInputMeta.class;
 
   protected static final String[] RequiredFilesDesc =
@@ -102,11 +96,16 @@ public class JsonInputMeta
         BaseMessages.getString(PKG, "System.Combo.No"),
         BaseMessages.getString(PKG, "System.Combo.Yes")
       };
-  public static final String CONST_DEFAULT_PATH_LEAF_TO_NULL = "defaultPathLeafToNull";
-  public static final String CONST_SPACES = "      ";
-  public static final String CONST_FIELD = "field";
 
   public static class AdditionalFileOutputFields extends BaseFileInputAdditionalField {
+    public AdditionalFileOutputFields() {
+      super();
+    }
+
+    public AdditionalFileOutputFields(AdditionalFileOutputFields f) {
+      super(f);
+    }
+
     public void getFields(IRowMeta r, String name, IVariables variables) {
       // TextFileInput is the same, this can be refactored further
       if (StringUtils.isNotEmpty(shortFilenameField)) {
@@ -138,7 +137,6 @@ public class JsonInputMeta
         v.setOrigin(name);
         r.addValueMeta(v);
       }
-
       if (StringUtils.isNotEmpty(lastModificationField)) {
         IValueMeta v = new ValueMetaDate(variables.resolve(lastModificationField));
         v.setOrigin(name);
@@ -150,7 +148,6 @@ public class JsonInputMeta
         v.setOrigin(name);
         r.addValueMeta(v);
       }
-
       if (StringUtils.isNotEmpty(rootUriField)) {
         IValueMeta v = new ValueMetaString(variables.resolve(rootUriField));
         v.setLength(100, -1);
@@ -166,7 +163,7 @@ public class JsonInputMeta
       key = "include",
       injectionKey = "FILE_NAME_OUTPUT",
       injectionKeyDescription = "JsonInput.Injection.FILE_NAME_OUTPUT")
-  private boolean includeFilename; // InputFiles.isaddresult?..
+  private boolean includeFilename;
 
   // TextFileInputMeta.Content.filenameField
   /** The name of the field in the output containing the filename */
@@ -267,6 +264,9 @@ public class JsonInputMeta
       injectionKeyDescription = "JsonInput.Injection.DEFAULT_PATH_LEAF_TO_NULL")
   private boolean defaultPathLeafToNull;
 
+  @HopMetadataProperty(inline = true)
+  protected AdditionalFileOutputFields additionalOutputFields;
+
   @HopMetadataProperty(
       key = "field",
       groupKey = "fields",
@@ -298,7 +298,7 @@ public class JsonInputMeta
   }
 
   public JsonInputMeta(JsonInputMeta m) {
-    super(m);
+    this();
     this.addResultFile = m.addResultFile;
     this.defaultPathLeafToNull = m.defaultPathLeafToNull;
     this.doNotFailIfNoFile = m.doNotFailIfNoFile;
@@ -314,6 +314,7 @@ public class JsonInputMeta
     this.rowLimit = m.rowLimit;
     this.rowNumberField = m.rowNumberField;
     this.valueField = m.valueField;
+    this.additionalOutputFields = new AdditionalFileOutputFields(m.additionalOutputFields);
     m.inputFields.forEach(f -> inputFields.add(new JsonInputField(f)));
   }
 
@@ -439,14 +440,6 @@ public class JsonInputMeta
    */
   public boolean addResultFile() {
     return addResultFile;
-  }
-
-  public boolean isReadUrl() {
-    return readUrl;
-  }
-
-  public void setReadUrl(boolean readurl) {
-    this.readUrl = readurl;
   }
 
   /** Get field value. */

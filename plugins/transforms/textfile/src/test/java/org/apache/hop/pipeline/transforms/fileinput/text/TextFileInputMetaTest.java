@@ -130,5 +130,12 @@ class TextFileInputMetaTest {
     assertEquals("f3", f3.getName());
     assertEquals(IValueMeta.TYPE_DATE, f3.getType());
     assertEquals("yyyy/MM/dd", f3.getFormat());
+
+    assertNotNull(meta.getFilters());
+    assertEquals(1, meta.getFilters().size());
+    TextFileFilter filter = meta.getFilters().getFirst();
+    assertEquals("filterString", filter.getFilterString());
+    assertTrue(filter.isFilterPositive());
+    assertTrue(filter.isFilterLastLine());
   }
 }
