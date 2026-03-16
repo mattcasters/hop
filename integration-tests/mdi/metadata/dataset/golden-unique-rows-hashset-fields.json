@@ -1,0 +1,16 @@
+{
+  "base_filename": "golden-unique-rows-hashset-fields.csv",
+  "name": "golden-unique-rows-hashset-fields",
+  "description": "",
+  "dataset_fields": [
+    {
+      "field_comment": "",
+      "field_length": -1,
+      "field_type": 2,
+      "field_precision": -1,
+      "field_name": "name",
+      "field_format": ""
+    }
+  ],
+  "folder_name": ""
+}

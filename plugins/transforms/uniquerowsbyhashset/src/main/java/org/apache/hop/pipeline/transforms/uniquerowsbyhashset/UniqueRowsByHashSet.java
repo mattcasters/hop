@@ -61,19 +61,20 @@ public class UniqueRowsByHashSet
       data.outputRowMeta = getInputRowMeta().clone();
       meta.getFields(data.outputRowMeta, getTransformName(), null, null, this, metadataProvider);
 
-      data.storeValues = meta.getStoreValues();
+      data.storeValues = meta.isStoreValues();
 
       // ICache lookup of fields
-      data.fieldnrs = new int[meta.getCompareFields().length];
+      data.fieldnrs = new int[meta.getCompareFields().size()];
 
-      for (int i = 0; i < meta.getCompareFields().length; i++) {
-        data.fieldnrs[i] = getInputRowMeta().indexOfValue(meta.getCompareFields()[i]);
+      for (int i = 0; i < meta.getCompareFields().size(); i++) {
+        UniqueRowsByHashSetMeta.CompareField compareField = meta.getCompareFields().get(i);
+        data.fieldnrs[i] = getInputRowMeta().indexOfValue(compareField.getName());
         if (data.fieldnrs[i] < 0) {
           logError(
               BaseMessages.getString(
                   PKG,
                   "UniqueRowsByHashSet.Log.CouldNotFindFieldInRow",
-                  meta.getCompareFields()[i]));
+                  meta.getCompareFields().get(i)));
           setErrors(1);
           stopAll();
           return false;
@@ -81,8 +82,8 @@ public class UniqueRowsByHashSet
         if (data.sendDuplicateRows) {
           data.compareFields =
               data.compareFields == null
-                  ? meta.getCompareFields()[i]
-                  : data.compareFields + "," + meta.getCompareFields()[i];
+                  ? meta.getCompareFields().get(i).getName()
+                  : data.compareFields + "," + meta.getCompareFields().get(i);
         }
       }
       if (data.sendDuplicateRows && !Utils.isEmpty(meta.getErrorDescription())) {

@@ -1,0 +1,74 @@
+{
+  "database_replacements": [],
+  "autoOpening": true,
+  "description": "",
+  "persist_filename": "",
+  "test_type": "UNIT_TEST",
+  "variableValues": [],
+  "basePath": "${HOP_UNIT_TESTS_FOLDER}",
+  "golden_data_sets": [
+    {
+      "field_mappings": [
+        {
+          "transform_field": "error_description",
+          "data_set_field": "error_description"
+        },
+        {
+          "transform_field": "reject_duplicate_row",
+          "data_set_field": "reject_duplicate_row"
+        },
+        {
+          "transform_field": "store_values",
+          "data_set_field": "store_values"
+        }
+      ],
+      "field_order": [
+        "store_values",
+        "reject_duplicate_row",
+        "error_description"
+      ],
+      "data_set_name": "golden-unique-rows-hashset",
+      "transform_name": "Dummy (do nothing)"
+    },
+    {
+      "field_mappings": [
+        {
+          "transform_field": "error_description",
+          "data_set_field": "error_description"
+        },
+        {
+          "transform_field": "reject_duplicate_row",
+          "data_set_field": "reject_duplicate_row"
+        },
+        {
+          "transform_field": "store_values",
+          "data_set_field": "store_values"
+        }
+      ],
+      "field_order": [
+        "store_values",
+        "reject_duplicate_row",
+        "error_description"
+      ],
+      "data_set_name": "golden-unique-rows-hashset",
+      "transform_name": "validate"
+    },
+    {
+      "field_mappings": [
+        {
+          "transform_field": "name",
+          "data_set_field": "name"
+        }
+      ],
+      "field_order": [
+        "name"
+      ],
+      "data_set_name": "golden-unique-rows-hashset-fields",
+      "transform_name": "validate fields"
+    }
+  ],
+  "input_data_sets": [],
+  "name": "0040-unique-hashset-validate UNIT",
+  "trans_test_tweaks": [],
+  "pipeline_filename": "./0040-unique-hashset-validate.hpl"
+}

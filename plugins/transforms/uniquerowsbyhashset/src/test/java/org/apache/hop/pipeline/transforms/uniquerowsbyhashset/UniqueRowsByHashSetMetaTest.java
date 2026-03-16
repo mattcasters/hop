@@ -17,57 +17,56 @@
 
 package org.apache.hop.pipeline.transforms.uniquerowsbyhashset;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.hop.core.exception.HopException;
-import org.apache.hop.junit.rules.RestoreHopEngineEnvironmentExtension;
-import org.apache.hop.pipeline.transforms.loadsave.LoadSaveTester;
-import org.apache.hop.pipeline.transforms.loadsave.validator.ArrayLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.IFieldLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.StringLoadSaveValidator;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
+import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
+import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
+import org.apache.hop.pipeline.transform.TransformMeta;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 class UniqueRowsByHashSetMetaTest {
-  @RegisterExtension
-  static RestoreHopEngineEnvironmentExtension env = new RestoreHopEngineEnvironmentExtension();
-
   @Test
-  void testRoundTrip() throws HopException {
-    List<String> attributes =
-        Arrays.asList("store_values", "reject_duplicate_row", "error_description", "name");
+  void testLoadSave() throws Exception {
+    Path path = Paths.get(Objects.requireNonNull(getClass().getResource("/transform.xml")).toURI());
+    String xml = Files.readString(path);
+    UniqueRowsByHashSetMeta meta = new UniqueRowsByHashSetMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xml, TransformMeta.XML_TAG),
+        UniqueRowsByHashSetMeta.class,
+        meta,
+        new MemoryMetadataProvider());
 
-    Map<String, String> getterMap = new HashMap<>();
-    getterMap.put("store_values", "getStoreValues");
-    getterMap.put("reject_duplicate_row", "isRejectDuplicateRow");
-    getterMap.put("error_description", "getErrorDescription");
-    getterMap.put("name", "getCompareFields");
+    validate(meta);
 
-    Map<String, String> setterMap = new HashMap<>();
-    setterMap.put("store_values", "setStoreValues");
-    setterMap.put("reject_duplicate_row", "setRejectDuplicateRow");
-    setterMap.put("error_description", "setErrorDescription");
-    setterMap.put("name", "setCompareFields");
+    // Do a round trip:
+    //
+    String xmlCopy =
+        XmlHandler.openTag(TransformMeta.XML_TAG)
+            + XmlMetadataUtil.serializeObjectToXml(meta)
+            + XmlHandler.closeTag(TransformMeta.XML_TAG);
+    UniqueRowsByHashSetMeta metaCopy = new UniqueRowsByHashSetMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xmlCopy, TransformMeta.XML_TAG),
+        UniqueRowsByHashSetMeta.class,
+        metaCopy,
+        new MemoryMetadataProvider());
+    validate(metaCopy);
+  }
 
-    Map<String, IFieldLoadSaveValidator<?>> fieldLoadSaveValidatorAttributeMap = new HashMap<>();
-
-    // Arrays need to be consistent length
-    IFieldLoadSaveValidator<String[]> stringArrayLoadSaveValidator =
-        new ArrayLoadSaveValidator<>(new StringLoadSaveValidator(), 25);
-
-    fieldLoadSaveValidatorAttributeMap.put("name", stringArrayLoadSaveValidator);
-
-    LoadSaveTester loadSaveTester =
-        new LoadSaveTester(
-            UniqueRowsByHashSetMeta.class,
-            attributes,
-            getterMap,
-            setterMap,
-            fieldLoadSaveValidatorAttributeMap,
-            new HashMap<>());
-
-    loadSaveTester.testSerialization();
+  private static void validate(UniqueRowsByHashSetMeta meta) {
+    assertNotNull(meta.getCompareFields());
+    assertTrue(meta.isStoreValues());
+    assertTrue(meta.isRejectDuplicateRow());
+    assertEquals("Duplicate row detected", meta.getErrorDescription());
+    assertEquals("compareField1", meta.getCompareFields().get(0).getName());
+    assertEquals("compareField2", meta.getCompareFields().get(1).getName());
+    assertEquals("compareField3", meta.getCompareFields().get(2).getName());
   }
 }

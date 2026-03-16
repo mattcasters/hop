@@ -18,16 +18,15 @@ limitations under the License.
 
 -->
 <workflow>
-  <name>main-0034-unique-rows</name>
+  <name>main-0040-unique-hashset</name>
   <name_sync_with_filename>Y</name_sync_with_filename>
   <description/>
   <extended_description/>
   <workflow_version/>
-  <workflow_status>0</workflow_status>
   <created_user>-</created_user>
-  <created_date>2021/07/21 20:36:24.295</created_date>
+  <created_date>2026/03/16 15:28:51.665</created_date>
   <modified_user>-</modified_user>
-  <modified_date>2021/07/21 20:36:24.295</modified_date>
+  <modified_date>2026/03/16 15:28:51.665</modified_date>
   <parameters>
     </parameters>
   <actions>
@@ -46,22 +45,48 @@ limitations under the License.
       <schedulerType>0</schedulerType>
       <weekDay>1</weekDay>
       <parallel>N</parallel>
-      <xloc>128</xloc>
+      <xloc>96</xloc>
       <yloc>80</yloc>
       <attributes_hac/>
     </action>
     <action>
-      <name>Unique Rows Tests</name>
+      <name>Run Pipeline Unit Tests</name>
       <description/>
       <type>RunPipelineTests</type>
       <attributes/>
       <test_names>
         <test_name>
-          <name>0034-unique-rows UNIT</name>
+          <name>0040-unique-hashset-validate UNIT</name>
         </test_name>
       </test_names>
       <parallel>N</parallel>
-      <xloc>272</xloc>
+      <xloc>416</xloc>
+      <yloc>80</yloc>
+      <attributes_hac/>
+    </action>
+    <action>
+      <name>0040-unique-hashset</name>
+      <description/>
+      <type>PIPELINE</type>
+      <attributes/>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <clear_files>N</clear_files>
+      <clear_rows>N</clear_rows>
+      <create_parent_folder>N</create_parent_folder>
+      <exec_per_row>N</exec_per_row>
+      <filename>${PROJECT_HOME}/0040-unique-hashset.hpl</filename>
+      <loglevel>Basic</loglevel>
+      <parameters>
+        <pass_all_parameters>Y</pass_all_parameters>
+      </parameters>
+      <params_from_previous>N</params_from_previous>
+      <run_configuration>local</run_configuration>
+      <set_append_logfile>N</set_append_logfile>
+      <set_logfile>N</set_logfile>
+      <wait_until_finished>Y</wait_until_finished>
+      <parallel>N</parallel>
+      <xloc>256</xloc>
       <yloc>80</yloc>
       <attributes_hac/>
     </action>
@@ -69,10 +94,17 @@ limitations under the License.
   <hops>
     <hop>
       <from>Start</from>
-      <to>Unique Rows Tests</to>
+      <to>0040-unique-hashset</to>
       <enabled>Y</enabled>
-      <evaluation>N</evaluation>
+      <evaluation>Y</evaluation>
       <unconditional>Y</unconditional>
+    </hop>
+    <hop>
+      <from>0040-unique-hashset</from>
+      <to>Run Pipeline Unit Tests</to>
+      <enabled>Y</enabled>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
     </hop>
   </hops>
   <notepads>
