@@ -1,0 +1,33 @@
+{
+  "database_replacements": [],
+  "autoOpening": true,
+  "description": "",
+  "persist_filename": "",
+  "test_type": "UNIT_TEST",
+  "variableValues": [],
+  "basePath": "${HOP_UNIT_TESTS_FOLDER}",
+  "golden_data_sets": [
+    {
+      "field_mappings": [
+        {
+          "transform_field": "fieldName",
+          "data_set_field": "fieldName"
+        },
+        {
+          "transform_field": "fieldType",
+          "data_set_field": "fieldType"
+        }
+      ],
+      "field_order": [
+        "fieldName",
+        "fieldType"
+      ],
+      "data_set_name": "golden-system-info",
+      "transform_name": "Validate"
+    }
+  ],
+  "input_data_sets": [],
+  "name": "0034-system-info-validate UNIT",
+  "trans_test_tweaks": [],
+  "pipeline_filename": "./0034-system-info-validate.hpl"
+}

@@ -231,10 +231,7 @@ public class FileInputList {
       }
 
       try (FileObject directoryFileObject = HopVfs.getFileObject(oneFile, variables)) {
-        // Find all folder names in this directory
-        //
-        if (directoryFileObject != null
-            && directoryFileObject.getType() == FileType.FOLDER) { // it's a directory
+        if (directoryFileObject != null && directoryFileObject.getType() == FileType.FOLDER) {
           FileObject[] fileObjects =
               directoryFileObject.findFiles(
                   new AllFileSelector() {
@@ -261,18 +258,19 @@ public class FileInputList {
               }
             }
           }
-          if (Utils.isEmpty(fileObjects) && oneRequired) {
-            fileInputList.addNonAccessibleFile(directoryFileObject);
-          }
 
-          // Sort the list: quicksort, only for regular files
           fileInputList.sortFiles();
-        } else {
-          if (oneRequired && (directoryFileObject == null || !directoryFileObject.exists())) {
+        } else if (oneRequired) {
+          if (directoryFileObject == null || !directoryFileObject.exists()) {
             fileInputList.addNonExistantFile(directoryFileObject);
+          } else {
+            fileInputList.addNonAccessibleFile(directoryFileObject);
           }
         }
       } catch (Exception e) {
+        if (oneRequired) {
+          fileInputList.addNonAccessibleFile(new NonAccessibleFileObject(oneFile));
+        }
         log.logError(Const.getStackTracker(e));
       }
       // Ignore

@@ -26,6 +26,7 @@ import org.apache.hop.core.Const;
 import org.apache.hop.core.Result;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.row.IRowMeta;
+import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.execution.Execution;
@@ -40,7 +41,6 @@ import org.apache.hop.pipeline.transform.TransformMeta;
 
 /** Get information from the System or the supervising pipeline. */
 public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
-
   public SystemData(
       TransformMeta transformMeta,
       SystemDataMeta meta,
@@ -52,27 +52,27 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
   }
 
   private Object[] getSystemData(IRowMeta inputRowMeta, Object[] inputRowData) throws HopException {
-    Object[] row = new Object[data.outputRowMeta.size()];
-    // no data is changed, clone is not needed here.
-    if (!inputRowMeta.isEmpty()) System.arraycopy(inputRowData, 0, row, 0, inputRowMeta.size());
-    for (int i = 0, index = inputRowMeta.size(); i < meta.getFieldName().length; i++, index++) {
+    Object[] row = RowDataUtil.createResizedCopy(inputRowData, data.outputRowMeta.size());
+
+    for (int i = 0, index = inputRowMeta.size(); i < meta.getFields().size(); i++, index++) {
+      SystemDataMeta.SystemInfoField field = meta.getFields().get(i);
       Calendar cal;
 
-      switch (meta.getFieldType()[i]) {
-        case TYPE_SYSTEM_INFO_SYSTEM_START, TYPE_SYSTEM_INFO_PIPELINE_DATE_TO:
+      switch (field.getFieldType()) {
+        case SYSTEM_START, PIPELINE_DATE_TO:
           row[index] = getPipeline().getExecutionStartDate();
           break;
-        case TYPE_SYSTEM_INFO_SYSTEM_DATE:
+        case SYSTEM_DATE:
           row[index] = new Date();
           break;
-        case TYPE_SYSTEM_INFO_PIPELINE_DATE_FROM:
+        case PIPELINE_DATE_FROM:
           row[index] =
               calculateStartRange(
                   getPipeline().getPipelineRunConfiguration().getExecutionInfoLocationName(),
                   ExecutionType.Pipeline,
                   getPipeline().getPipelineMeta().getName());
           break;
-        case TYPE_SYSTEM_INFO_WORKFLOW_DATE_FROM:
+        case WORKFLOW_DATE_FROM:
           if (getPipeline().getParentWorkflow() != null) {
             row[index] =
                 calculateStartRange(
@@ -84,10 +84,10 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
                     getPipeline().getParentWorkflow().getWorkflowMeta().getName());
           }
           break;
-        case TYPE_SYSTEM_INFO_WORKFLOW_DATE_TO:
+        case WORKFLOW_DATE_TO:
           row[index] = getPipeline().getParentWorkflow().getExecutionStartDate();
           break;
-        case TYPE_SYSTEM_INFO_PREV_DAY_START:
+        case PREV_DAY_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.DAY_OF_MONTH, -1);
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -96,7 +96,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_DAY_END:
+        case PREV_DAY_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.DAY_OF_MONTH, -1);
           cal.set(Calendar.HOUR_OF_DAY, 23);
@@ -105,7 +105,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_DAY_START:
+        case THIS_DAY_START:
           cal = Calendar.getInstance();
           cal.set(Calendar.HOUR_OF_DAY, 0);
           cal.set(Calendar.MINUTE, 0);
@@ -113,7 +113,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_DAY_END:
+        case THIS_DAY_END:
           cal = Calendar.getInstance();
           cal.set(Calendar.HOUR_OF_DAY, 23);
           cal.set(Calendar.MINUTE, 59);
@@ -121,7 +121,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_DAY_START:
+        case NEXT_DAY_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.DAY_OF_MONTH, 1);
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -130,7 +130,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_DAY_END:
+        case NEXT_DAY_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.DAY_OF_MONTH, 1);
           cal.set(Calendar.HOUR_OF_DAY, 23);
@@ -139,7 +139,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_MONTH_START:
+        case PREV_MONTH_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, -1);
           cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -149,7 +149,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_MONTH_END:
+        case PREV_MONTH_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, -1);
           cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
@@ -159,7 +159,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_MONTH_START:
+        case THIS_MONTH_START:
           cal = Calendar.getInstance();
           cal.set(Calendar.DAY_OF_MONTH, 1);
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -168,7 +168,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_MONTH_END:
+        case THIS_MONTH_END:
           cal = Calendar.getInstance();
           cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
           cal.set(Calendar.HOUR_OF_DAY, 23);
@@ -177,7 +177,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_MONTH_START:
+        case NEXT_MONTH_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, 1);
           cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -187,7 +187,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_MONTH_END:
+        case NEXT_MONTH_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, 1);
           cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
@@ -197,73 +197,73 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_COPYNR:
+        case COPYNR:
           row[index] = (long) getCopy();
           break;
-        case TYPE_SYSTEM_INFO_PIPELINE_NAME:
+        case PIPELINE_NAME:
           row[index] = getPipelineMeta().getName();
           break;
-        case TYPE_SYSTEM_INFO_MODIFIED_USER:
+        case MODIFIED_USER:
           row[index] = getPipelineMeta().getModifiedUser();
           break;
-        case TYPE_SYSTEM_INFO_MODIFIED_DATE:
+        case MODIFIED_DATE:
           row[index] = getPipelineMeta().getModifiedDate();
           break;
-        case TYPE_SYSTEM_INFO_HOSTNAME_REAL:
+        case HOSTNAME_REAL:
           row[index] = Const.getHostnameReal();
           break;
-        case TYPE_SYSTEM_INFO_HOSTNAME:
+        case HOSTNAME:
           row[index] = Const.getHostname();
           break;
-        case TYPE_SYSTEM_INFO_IP_ADDRESS:
+        case IP_ADDRESS:
           try {
             row[index] = Const.getIPAddress();
           } catch (Exception e) {
             throw new HopException(e);
           }
           break;
-        case TYPE_SYSTEM_INFO_FILENAME:
+        case FILENAME:
           row[index] = getPipelineMeta().getFilename();
           break;
-        case TYPE_SYSTEM_INFO_CURRENT_PID:
+        case CURRENT_PID:
           row[index] = Management.getPID();
           break;
-        case TYPE_SYSTEM_INFO_JVM_TOTAL_MEMORY:
+        case JVM_TOTAL_MEMORY:
           row[index] = Runtime.getRuntime().totalMemory();
           break;
-        case TYPE_SYSTEM_INFO_JVM_FREE_MEMORY:
+        case JVM_FREE_MEMORY:
           row[index] = Runtime.getRuntime().freeMemory();
           break;
-        case TYPE_SYSTEM_INFO_JVM_MAX_MEMORY:
+        case JVM_MAX_MEMORY:
           row[index] = Runtime.getRuntime().maxMemory();
           break;
-        case TYPE_SYSTEM_INFO_JVM_AVAILABLE_MEMORY:
+        case JVM_AVAILABLE_MEMORY:
           Runtime rt = Runtime.getRuntime();
           row[index] = rt.freeMemory() + (rt.maxMemory() - rt.totalMemory());
           break;
-        case TYPE_SYSTEM_INFO_AVAILABLE_PROCESSORS:
+        case AVAILABLE_PROCESSORS:
           row[index] = (long) Runtime.getRuntime().availableProcessors();
           break;
-        case TYPE_SYSTEM_INFO_JVM_CPU_TIME:
+        case JVM_CPU_TIME:
           row[index] = Management.getJVMCpuTime() / 1000000;
           break;
-        case TYPE_SYSTEM_INFO_TOTAL_PHYSICAL_MEMORY_SIZE:
+        case TOTAL_PHYSICAL_MEMORY_SIZE:
           row[index] = Management.getTotalPhysicalMemorySize();
           break;
-        case TYPE_SYSTEM_INFO_TOTAL_SWAP_SPACE_SIZE:
+        case TOTAL_SWAP_SPACE_SIZE:
           row[index] = Management.getTotalSwapSpaceSize();
           break;
-        case TYPE_SYSTEM_INFO_COMMITTED_VIRTUAL_MEMORY_SIZE:
+        case COMMITTED_VIRTUAL_MEMORY_SIZE:
           row[index] = Management.getCommittedVirtualMemorySize();
           break;
-        case TYPE_SYSTEM_INFO_FREE_PHYSICAL_MEMORY_SIZE:
+        case FREE_PHYSICAL_MEMORY_SIZE:
           row[index] = Management.getFreePhysicalMemorySize();
           break;
-        case TYPE_SYSTEM_INFO_FREE_SWAP_SPACE_SIZE:
+        case FREE_SWAP_SPACE_SIZE:
           row[index] = Management.getFreeSwapSpaceSize();
           break;
 
-        case TYPE_SYSTEM_INFO_PREV_WEEK_START:
+        case PREV_WEEK_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.WEEK_OF_YEAR, -1);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -273,7 +273,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_WEEK_END:
+        case PREV_WEEK_END:
           cal = Calendar.getInstance();
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -282,7 +282,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_WEEK_OPEN_END:
+        case PREV_WEEK_OPEN_END:
           cal = Calendar.getInstance(Locale.ROOT);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -292,7 +292,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.add(Calendar.DAY_OF_WEEK, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_WEEK_START_US:
+        case PREV_WEEK_START_US:
           cal = Calendar.getInstance(Locale.US);
           cal.add(Calendar.WEEK_OF_YEAR, -1);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -302,7 +302,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_WEEK_END_US:
+        case PREV_WEEK_END_US:
           cal = Calendar.getInstance(Locale.US);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -311,7 +311,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_WEEK_START:
+        case THIS_WEEK_START:
           cal = Calendar.getInstance();
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -320,7 +320,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_WEEK_END:
+        case THIS_WEEK_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.WEEK_OF_YEAR, 1);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -330,7 +330,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_WEEK_OPEN_END:
+        case THIS_WEEK_OPEN_END:
           cal = Calendar.getInstance(Locale.ROOT);
           cal.add(Calendar.WEEK_OF_YEAR, 1);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -341,7 +341,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.add(Calendar.DAY_OF_WEEK, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_WEEK_START_US:
+        case THIS_WEEK_START_US:
           cal = Calendar.getInstance(Locale.US);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -350,7 +350,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_WEEK_END_US:
+        case THIS_WEEK_END_US:
           cal = Calendar.getInstance(Locale.US);
           cal.add(Calendar.WEEK_OF_YEAR, 1);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -360,7 +360,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_WEEK_START:
+        case NEXT_WEEK_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.WEEK_OF_YEAR, 1);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -370,7 +370,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_WEEK_END:
+        case NEXT_WEEK_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.WEEK_OF_YEAR, 2);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -380,7 +380,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_WEEK_OPEN_END:
+        case NEXT_WEEK_OPEN_END:
           cal = Calendar.getInstance(Locale.ROOT);
           cal.add(Calendar.WEEK_OF_YEAR, 2);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -391,7 +391,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.add(Calendar.DAY_OF_WEEK, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_WEEK_START_US:
+        case NEXT_WEEK_START_US:
           cal = Calendar.getInstance(Locale.US);
           cal.add(Calendar.WEEK_OF_YEAR, 1);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -401,7 +401,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_WEEK_END_US:
+        case NEXT_WEEK_END_US:
           cal = Calendar.getInstance(Locale.US);
           cal.add(Calendar.WEEK_OF_YEAR, 2);
           cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
@@ -411,7 +411,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, -1);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_QUARTER_START:
+        case PREV_QUARTER_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, -3 - (cal.get(Calendar.MONTH) % 3));
           cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -421,7 +421,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_QUARTER_END:
+        case PREV_QUARTER_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, -1 - (cal.get(Calendar.MONTH) % 3));
           cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DATE));
@@ -431,7 +431,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_QUARTER_START:
+        case THIS_QUARTER_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, -(cal.get(Calendar.MONTH) % 3));
           cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -441,7 +441,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_QUARTER_END:
+        case THIS_QUARTER_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, 2 - (cal.get(Calendar.MONTH) % 3));
           cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DATE));
@@ -451,7 +451,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_QUARTER_START:
+        case NEXT_QUARTER_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, 3 - (cal.get(Calendar.MONTH) % 3));
           cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -461,7 +461,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_QUARTER_END:
+        case NEXT_QUARTER_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.MONTH, 5 - (cal.get(Calendar.MONTH) % 3));
           cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DATE));
@@ -471,7 +471,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_YEAR_START:
+        case PREV_YEAR_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.YEAR, -1);
           cal.set(Calendar.DAY_OF_YEAR, cal.getActualMinimum(Calendar.DATE));
@@ -481,7 +481,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREV_YEAR_END:
+        case PREV_YEAR_END:
           cal = Calendar.getInstance();
           cal.set(Calendar.DAY_OF_YEAR, cal.getActualMinimum(Calendar.DATE));
           cal.add(Calendar.DAY_OF_YEAR, -1);
@@ -491,7 +491,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_YEAR_START:
+        case THIS_YEAR_START:
           cal = Calendar.getInstance();
           cal.set(Calendar.DAY_OF_YEAR, cal.getActualMinimum(Calendar.DATE));
           cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -500,7 +500,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_THIS_YEAR_END:
+        case THIS_YEAR_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.YEAR, 1);
           cal.set(Calendar.DAY_OF_YEAR, cal.getActualMinimum(Calendar.DATE));
@@ -511,7 +511,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_YEAR_START:
+        case NEXT_YEAR_START:
           cal = Calendar.getInstance();
           cal.add(Calendar.YEAR, 1);
           cal.set(Calendar.DAY_OF_YEAR, cal.getActualMinimum(Calendar.DATE));
@@ -521,7 +521,7 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 0);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_NEXT_YEAR_END:
+        case NEXT_YEAR_END:
           cal = Calendar.getInstance();
           cal.add(Calendar.YEAR, 2);
           cal.set(Calendar.DAY_OF_YEAR, cal.getActualMinimum(Calendar.DATE));
@@ -532,136 +532,134 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
           cal.set(Calendar.MILLISECOND, 999);
           row[index] = cal.getTime();
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_RESULT:
-          Result previousResult = getPipeline().getPreviousResult();
+        case PREVIOUS_RESULT_RESULT:
+          Result previousResultResult = getPipeline().getPreviousResult();
           boolean result = false;
-          if (previousResult != null) {
-            result = previousResult.isResult();
+          if (previousResultResult != null) {
+            result = previousResultResult.isResult();
           }
           row[index] = result;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_EXIT_STATUS:
-          previousResult = getPipeline().getPreviousResult();
-          long value = 0;
-          if (previousResult != null) {
-            value = previousResult.getExitStatus();
+        case PREVIOUS_RESULT_EXIT_STATUS:
+          Result previousResultExitStatus = getPipeline().getPreviousResult();
+          long exitStatus = 0;
+          if (previousResultExitStatus != null) {
+            exitStatus = previousResultExitStatus.getExitStatus();
           }
-          row[index] = value;
+          row[index] = exitStatus;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_ENTRY_NR:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getEntryNr();
+        case PREVIOUS_RESULT_ENTRY_NR:
+          Result previousResultEntryNr = getPipeline().getPreviousResult();
+          long entryNr = 0;
+          if (previousResultEntryNr != null) {
+            entryNr = previousResultEntryNr.getEntryNr();
           }
-          row[index] = value;
+          row[index] = entryNr;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_FILES:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-
-          if (previousResult != null) {
-            value = previousResult.getResultFiles().size();
+        case PREVIOUS_RESULT_NR_FILES:
+          Result previousResultNrFiles = getPipeline().getPreviousResult();
+          long nrFiles = 0;
+          if (previousResultNrFiles != null) {
+            nrFiles = previousResultNrFiles.getResultFiles().size();
           }
-          row[index] = value;
+          row[index] = nrFiles;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_FILES_RETRIEVED:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrFilesRetrieved();
+        case PREVIOUS_RESULT_NR_FILES_RETRIEVED:
+          Result previousResultNrFilesRetrieves = getPipeline().getPreviousResult();
+          long nrFilesRetrieved = 0;
+          if (previousResultNrFilesRetrieves != null) {
+            nrFilesRetrieved = previousResultNrFilesRetrieves.getNrFilesRetrieved();
           }
-          row[index] = value;
+          row[index] = nrFilesRetrieved;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_DELETED:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrLinesDeleted();
+        case PREVIOUS_RESULT_NR_LINES_DELETED:
+          Result previousResultNrLinesDeleted = getPipeline().getPreviousResult();
+          long nrLinesDeleted = 0;
+          if (previousResultNrLinesDeleted != null) {
+            nrLinesDeleted = previousResultNrLinesDeleted.getNrLinesDeleted();
           }
-          row[index] = value;
+          row[index] = nrLinesDeleted;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_INPUT:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrLinesInput();
+        case PREVIOUS_RESULT_NR_LINES_INPUT:
+          Result previousResultNrLinesInput = getPipeline().getPreviousResult();
+          long nrLinesInput = 0;
+          if (previousResultNrLinesInput != null) {
+            nrLinesInput = previousResultNrLinesInput.getNrLinesInput();
           }
-          row[index] = value;
+          row[index] = nrLinesInput;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_OUTPUT:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrLinesOutput();
+        case PREVIOUS_RESULT_NR_LINES_OUTPUT:
+          Result previousResultNrLinesOutput = getPipeline().getPreviousResult();
+          long nrLinesOutput = 0;
+          if (previousResultNrLinesOutput != null) {
+            nrLinesOutput = previousResultNrLinesOutput.getNrLinesOutput();
           }
-          row[index] = value;
+          row[index] = nrLinesOutput;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_READ:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrLinesRead();
+        case PREVIOUS_RESULT_NR_LINES_READ:
+          Result previousResultNrLinesRead = getPipeline().getPreviousResult();
+          long nrLinesRead = 0;
+          if (previousResultNrLinesRead != null) {
+            nrLinesRead = previousResultNrLinesRead.getNrLinesRead();
           }
-          row[index] = value;
+          row[index] = nrLinesRead;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_REJECTED:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrLinesRejected();
+        case PREVIOUS_RESULT_NR_LINES_REJECTED:
+          Result previousResultNrLinesRejected = getPipeline().getPreviousResult();
+          long nrLinesRejected = 0;
+          if (previousResultNrLinesRejected != null) {
+            nrLinesRejected = previousResultNrLinesRejected.getNrLinesRejected();
           }
-          row[index] = value;
+          row[index] = nrLinesRejected;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_UPDATED:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrLinesUpdated();
+        case PREVIOUS_RESULT_NR_LINES_UPDATED:
+          Result previousResultNrLinesUpdated = getPipeline().getPreviousResult();
+          long nrLinesUpdated = 0;
+          if (previousResultNrLinesUpdated != null) {
+            nrLinesUpdated = previousResultNrLinesUpdated.getNrLinesUpdated();
           }
-          row[index] = value;
+          row[index] = nrLinesUpdated;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_LINES_WRITTEN:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrLinesWritten();
+        case PREVIOUS_RESULT_NR_LINES_WRITTEN:
+          Result previousResultNrLinesWritten = getPipeline().getPreviousResult();
+          long nrLinesWritten = 0;
+          if (previousResultNrLinesWritten != null) {
+            nrLinesWritten = previousResultNrLinesWritten.getNrLinesWritten();
           }
-          row[index] = value;
+          row[index] = nrLinesWritten;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_ROWS:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getRows().size();
+        case PREVIOUS_RESULT_NR_ROWS:
+          Result previousResultNrRows = getPipeline().getPreviousResult();
+          long nrRows = 0;
+          if (previousResultNrRows != null) {
+            nrRows = previousResultNrRows.getRows().size();
           }
-          row[index] = value;
+          row[index] = nrRows;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_IS_STOPPED:
-          previousResult = getPipeline().getPreviousResult();
+        case PREVIOUS_RESULT_IS_STOPPED:
+          Result previousResultIsStopped = getPipeline().getPreviousResult();
           boolean stop = false;
-          if (previousResult != null) {
-            stop = previousResult.isStopped();
+          if (previousResultIsStopped != null) {
+            stop = previousResultIsStopped.isStopped();
           }
           row[index] = stop;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_NR_ERRORS:
-          previousResult = getPipeline().getPreviousResult();
-          value = 0;
-          if (previousResult != null) {
-            value = previousResult.getNrErrors();
+        case PREVIOUS_RESULT_NR_ERRORS:
+          Result previousResultNrErrors = getPipeline().getPreviousResult();
+          long nrErrors = 0;
+          if (previousResultNrErrors != null) {
+            nrErrors = previousResultNrErrors.getNrErrors();
           }
-          row[index] = value;
+          row[index] = nrErrors;
           break;
-        case TYPE_SYSTEM_INFO_PREVIOUS_RESULT_LOG_TEXT:
-          previousResult = getPipeline().getPreviousResult();
+        case PREVIOUS_RESULT_LOG_TEXT:
+          Result previousResultLogText = getPipeline().getPreviousResult();
           String errorReason = null;
-          if (previousResult != null) {
-            errorReason = previousResult.getLogText();
+          if (previousResultLogText != null) {
+            errorReason = previousResultLogText.getLogText();
           }
           row[index] = errorReason;
           break;
-
         default:
           break;
       }
@@ -757,7 +755,6 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
 
   @Override
   public boolean init() {
-
     if (super.init()) {
       List<TransformMeta> previous = getPipelineMeta().findPreviousTransforms(getTransformMeta());
       if (!Utils.isEmpty(previous)) {
@@ -767,10 +764,5 @@ public class SystemData extends BaseTransform<SystemDataMeta, SystemDataData> {
       return true;
     }
     return false;
-  }
-
-  @Override
-  public void dispose() {
-    super.dispose();
   }
 }

@@ -20,7 +20,9 @@ package org.apache.hop.ui.hopgui.perspective.metadata;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.Props;
@@ -40,15 +42,21 @@ import org.apache.hop.metadata.api.HopMetadata;
 import org.apache.hop.metadata.api.IHopMetadata;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.metadata.api.IHopMetadataSerializer;
+import org.apache.hop.metadata.api.MetadataRefactorUtil;
 import org.apache.hop.metadata.plugin.MetadataPluginType;
+import org.apache.hop.metadata.refactor.MetadataObjectReference;
+import org.apache.hop.metadata.refactor.MetadataReferenceFinder;
+import org.apache.hop.metadata.refactor.MetadataReferenceResult;
 import org.apache.hop.metadata.util.HopMetadataUtil;
 import org.apache.hop.ui.core.ConstUi;
 import org.apache.hop.ui.core.FormDataBuilder;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.bus.HopGuiEvents;
+import org.apache.hop.ui.core.dialog.BaseDialog;
+import org.apache.hop.ui.core.dialog.DetailsDialog;
 import org.apache.hop.ui.core.dialog.EnterStringDialog;
 import org.apache.hop.ui.core.dialog.ErrorDialog;
-import org.apache.hop.ui.core.dialog.ShowMessageDialog;
+import org.apache.hop.ui.core.dialog.MessageBox;
 import org.apache.hop.ui.core.gui.GuiResource;
 import org.apache.hop.ui.core.gui.GuiToolbarWidgets;
 import org.apache.hop.ui.core.gui.IToolbarContainer;
@@ -67,10 +75,13 @@ import org.apache.hop.ui.hopgui.file.empty.EmptyFileType;
 import org.apache.hop.ui.hopgui.file.empty.EmptyHopFileTypeHandler;
 import org.apache.hop.ui.hopgui.perspective.HopPerspectivePlugin;
 import org.apache.hop.ui.hopgui.perspective.IHopPerspective;
+import org.apache.hop.ui.hopgui.perspective.IMetadataDropReceiver;
+import org.apache.hop.ui.hopgui.perspective.MetadataTransfer;
 import org.apache.hop.ui.hopgui.perspective.TabClosable;
 import org.apache.hop.ui.hopgui.perspective.TabCloseHandler;
 import org.apache.hop.ui.hopgui.perspective.TabItemHandler;
 import org.apache.hop.ui.hopgui.perspective.TabItemReorder;
+import org.apache.hop.ui.hopgui.perspective.explorer.ExplorerPerspective;
 import org.apache.hop.ui.pipeline.transform.BaseTransformDialog;
 import org.apache.hop.ui.util.HelpUtils;
 import org.eclipse.swt.SWT;
@@ -80,13 +91,24 @@ import org.eclipse.swt.custom.CTabFolderEvent;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.TreeEditor;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DragSource;
+import org.eclipse.swt.dnd.DragSourceAdapter;
+import org.eclipse.swt.dnd.DragSourceEvent;
+import org.eclipse.swt.dnd.DropTarget;
+import org.eclipse.swt.dnd.DropTargetAdapter;
+import org.eclipse.swt.dnd.DropTargetEvent;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
@@ -95,6 +117,7 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.Widget;
 
 @HopPerspectivePlugin(
     id = "200-HopMetadataPerspective",
@@ -105,7 +128,7 @@ import org.eclipse.swt.widgets.TreeItem;
 @GuiPlugin(
     name = "i18n::MetadataPerspective.Name",
     description = "i18n::MetadataPerspective.GuiPlugin.Description")
-public class MetadataPerspective implements IHopPerspective, TabClosable {
+public class MetadataPerspective implements IHopPerspective, TabClosable, IMetadataDropReceiver {
 
   public static final Class<?> PKG = MetadataPerspective.class; // i18n
   private static final String METADATA_PERSPECTIVE_TREE = "Metadata perspective tree";
@@ -362,6 +385,169 @@ public class MetadataPerspective implements IHopPerspective, TabClosable {
 
     // Remember tree node expanded/Collapsed
     TreeMemory.addTreeListener(tree, METADATA_PERSPECTIVE_TREE);
+
+    // Drag and drop: reorganize within tree (same type only) and drag to canvas to open
+    createTreeDragSource(tree);
+    createTreeDropTarget(tree);
+  }
+
+  /**
+   * Returns the metadata type key (objectKey) for the given tree item by walking up to the root
+   * class item.
+   */
+  private String getObjectKey(TreeItem item) {
+    TreeItem root = item;
+    while (root.getParentItem() != null) {
+      root = root.getParentItem();
+    }
+    return (String) root.getData();
+  }
+
+  private void createTreeDragSource(Tree tree) {
+    DragSource dragSource = new DragSource(tree, DND.DROP_MOVE);
+    dragSource.setTransfer(MetadataTransfer.INSTANCE);
+    dragSource.addDragListener(
+        new DragSourceAdapter() {
+          private Image dragImage;
+
+          @Override
+          public void dragStart(DragSourceEvent event) {
+            if (tree.getSelectionCount() != 1) {
+              event.doit = false;
+              return;
+            }
+            TreeItem item = tree.getSelection()[0];
+            if (item == null || !FILE.equals(item.getData(KEY_TYPE))) {
+              event.doit = false;
+              return;
+            }
+            if (dragImage != null) {
+              dragImage.dispose();
+              dragImage = null;
+            }
+            Rectangle bounds = item.getBounds();
+            if (bounds.width > 0 && bounds.height > 0) {
+              try {
+                dragImage = new Image(Display.getCurrent(), bounds.width, bounds.height);
+                GC gc = new GC(tree);
+                try {
+                  gc.copyArea(dragImage, bounds.x, bounds.y);
+                } finally {
+                  gc.dispose();
+                }
+                event.image = dragImage;
+              } catch (Exception e) {
+                LogChannel.GENERAL.logDebug("Could not create metadata drag image", e);
+              }
+            }
+          }
+
+          @Override
+          public void dragSetData(DragSourceEvent event) {
+            if (MetadataTransfer.INSTANCE.isSupportedType(event.dataType)) {
+              TreeItem item = tree.getSelection()[0];
+              String objectKey = getObjectKey(item);
+              String name = item.getText(0);
+              event.data = new String[] {objectKey, name};
+            }
+          }
+
+          @Override
+          public void dragFinished(DragSourceEvent event) {
+            if (dragImage != null) {
+              dragImage.dispose();
+              dragImage = null;
+            }
+          }
+        });
+  }
+
+  private void createTreeDropTarget(Tree tree) {
+    DropTarget dropTarget = new DropTarget(tree, DND.DROP_MOVE);
+    dropTarget.setTransfer(MetadataTransfer.INSTANCE);
+    dropTarget.addDropListener(
+        new DropTargetAdapter() {
+          @Override
+          public void dragOver(DropTargetEvent event) {
+            if (event.item == null) {
+              event.detail = DND.DROP_NONE;
+              return;
+            }
+            if (!MetadataTransfer.INSTANCE.isSupportedType(event.currentDataType)) {
+              return;
+            }
+            TreeItem targetItem = (TreeItem) event.item;
+            String targetType = (String) targetItem.getData(KEY_TYPE);
+            // Only allow drop on folder or on class root (MetadataItem); not on another file
+            if (FILE.equals(targetType)) {
+              event.detail = DND.DROP_NONE;
+              event.feedback = DND.FEEDBACK_NONE;
+              return;
+            }
+            // Same-type check is enforced in drop()
+            event.feedback = DND.FEEDBACK_SELECT | DND.FEEDBACK_SCROLL | DND.FEEDBACK_EXPAND;
+            event.detail = DND.DROP_MOVE;
+          }
+
+          @Override
+          public void drop(DropTargetEvent event) {
+            if (!MetadataTransfer.INSTANCE.isSupportedType(event.currentDataType)
+                || event.data == null
+                || !(event.data instanceof String[])) {
+              return;
+            }
+            String[] payload = (String[]) event.data;
+            if (payload.length < 2) {
+              return;
+            }
+            String sourceObjectKey = payload[0];
+            String name = payload[1];
+            Widget item = event.item;
+            if (!(item instanceof TreeItem targetItem)) {
+              return;
+            }
+            String targetType = (String) targetItem.getData(KEY_TYPE);
+            if (FILE.equals(targetType)) {
+              return;
+            }
+            if (!sourceObjectKey.equals(getObjectKey(targetItem))) {
+              return;
+            }
+            String newVirtualPath =
+                FOLDER.equals(targetType) ? (String) targetItem.getData(VIRTUAL_PATH) : "";
+            try {
+              IHopMetadataProvider provider = hopGui.getMetadataProvider();
+              IHopMetadataSerializer<IHopMetadata> serializer =
+                  provider.getSerializer(provider.getMetadataClassForKey(sourceObjectKey));
+              IHopMetadata metadata = serializer.load(name);
+              metadata.setVirtualPath(Utils.isEmpty(newVirtualPath) ? "" : newVirtualPath);
+              serializer.save(metadata);
+              hopGui.getEventsHandler().fire(HopGuiEvents.MetadataChanged.name());
+              refresh();
+            } catch (Exception e) {
+              new ErrorDialog(
+                  getShell(),
+                  ERROR,
+                  BaseMessages.getString(PKG, "MetadataPerspective.DragDropMove.Error"),
+                  e);
+            }
+          }
+        });
+  }
+
+  @Override
+  public void openDroppedMetadata(String objectKey, String name) {
+    try {
+      MetadataManager<IHopMetadata> manager = getMetadataManager(objectKey);
+      manager.editWithEditor(name);
+      hopGui.getEventsHandler().fire(HopGuiEvents.MetadataChanged.name());
+    } catch (Exception e) {
+      new ErrorDialog(
+          getShell(),
+          ERROR,
+          BaseMessages.getString(PKG, "MetadataPerspective.DragDropOpen.Error"),
+          e);
+    }
   }
 
   protected void createTabFolder(Composite parent) {
@@ -408,10 +594,21 @@ public class MetadataPerspective implements IHopPerspective, TabClosable {
   }
 
   public void addEditor(MetadataEditor<?> editor) {
+    addEditor(editor, -1);
+  }
+
+  /**
+   * Adds a metadata editor as a new tab. When {@code tabIndex} is non-negative the tab is inserted
+   * at that position; otherwise it is appended at the end.
+   */
+  public void addEditor(MetadataEditor<?> editor, int tabIndex) {
 
     // Create tab item
     //
-    CTabItem tabItem = new CTabItem(tabFolder, SWT.CLOSE);
+    CTabItem tabItem =
+        tabIndex >= 0 && tabIndex < tabFolder.getItemCount()
+            ? new CTabItem(tabFolder, SWT.CLOSE, tabIndex)
+            : new CTabItem(tabFolder, SWT.CLOSE);
     tabItem.setFont(GuiResource.getInstance().getFontDefault());
     tabItem.setText(editor.getTitle());
     tabItem.setImage(editor.getTitleImage());
@@ -645,11 +842,54 @@ public class MetadataPerspective implements IHopPerspective, TabClosable {
               case SWT.CR, SWT.KEYPAD_CR:
                 // If name changed
                 if (!objectName.equals(text.getText())) {
+                  String newName = text.getText().trim();
                   try {
                     MetadataManager<IHopMetadata> manager = getMetadataManager(objectKey);
-                    if (manager.rename(objectName, text.getText())) {
+                    // If the renamed item's own tab has unsaved changes, ask to save first.
+                    // This must happen before the rename so the save uses the original name.
+                    MetadataEditor<?> ownEditor = findEditor(objectKey, objectName);
+                    if (ownEditor != null
+                        && ownEditor.hasChanged()
+                        && !promptSaveBeforeRefactoring(ownEditor)) {
+                      break; // user cancelled — abort rename
+                    }
+                    // Capture the currently active editor so we can restore focus after all
+                    // close/reopen operations finish (tabs are reordered but focus should not move)
+                    String[] activeLocation = captureActiveEditorLocation();
+                    // Collect metadata refs whose tabs should be reloaded after the rename so that
+                    // MetaSelectionLine dropdowns are already populated with the new name.
+                    List<MetadataObjectReference> deferredMetadataRefs = new ArrayList<>();
+                    // Check if this metadata type supports global replace
+                    if (!MetadataRefactorUtil.supportsGlobalReplace(
+                        hopGui.getMetadataProvider(), objectKey)) {
+                      MessageBox msgDialog = new MessageBox(getShell(), SWT.ICON_WARNING | SWT.OK);
+                      msgDialog.setText(
+                          BaseMessages.getString(
+                              PKG,
+                              "MetadataPerspective.RenameMetadata.NoPropertyTypeWarning.Title"));
+                      msgDialog.setMessage(
+                          BaseMessages.getString(
+                              PKG,
+                              "MetadataPerspective.RenameMetadata.NoPropertyTypeWarning.Message"));
+                      msgDialog.open();
+                      // Proceed with rename only; no reference update
+                    } else {
+                      if (!performGlobalReplaceIfSupported(
+                          objectKey, objectName, newName, deferredMetadataRefs)) {
+                        break; // user cancelled a save dialog — abort rename
+                      }
+                    }
+                    if (manager.rename(objectName, newName)) {
                       text.dispose();
                     }
+                    // Reload affected metadata tabs now — after the rename so that
+                    // MetaSelectionLine dropdowns already contain the new item name.
+                    reloadEditorsForMetadata(deferredMetadataRefs);
+                    // If the renamed item's tab is open, close and reopen it
+                    reopenEditorIfOpen(objectKey, objectName, newName);
+                    // Restore focus to the originally active editor. When the renamed item itself
+                    // was active, focus follows it to its new name.
+                    restoreActiveEditor(activeLocation, objectKey, objectName, newName);
                     hopGui.getEventsHandler().fire(HopGuiEvents.MetadataChanged.name());
                   } catch (Exception e) {
                     new ErrorDialog(
@@ -676,6 +916,434 @@ public class MetadataPerspective implements IHopPerspective, TabClosable {
     }
   }
 
+  /**
+   * If the metadata type supports global replace, finds references to oldName in pipeline/workflow
+   * files, optionally shows the update dialog, and replaces references with newName. Reloads open
+   * tabs for modified files. Call this when a metadata element is renamed (from tree or from
+   * editor).
+   *
+   * @param objectKey metadata type key (e.g. "rdbms", "restconnection")
+   * @param oldName the name before rename
+   * @param newName the name after rename
+   */
+  /**
+   * Finds references to {@code oldName} in pipelines/workflows and other metadata, asks the user to
+   * update them, and performs the replacement. Returns {@code true} if the operation completed (or
+   * there was nothing to do), {@code false} if the user cancelled a save-changes dialog and the
+   * caller should abort its own operation too.
+   */
+  public boolean performGlobalReplaceIfSupported(String objectKey, String oldName, String newName)
+      throws HopException {
+    return performGlobalReplaceIfSupported(objectKey, oldName, newName, null);
+  }
+
+  /**
+   * Like {@link #performGlobalReplaceIfSupported(String, String, String)} but populates {@code
+   * metadataRefsToReload} (when non-null) with the metadata objects whose editors should be
+   * refreshed after the caller completes the rename. This allows the caller to defer the
+   * close+reopen until after {@code manager.rename()} so that MetaSelectionLine dropdowns are
+   * populated with the already-renamed item's new name.
+   */
+  public boolean performGlobalReplaceIfSupported(
+      String objectKey,
+      String oldName,
+      String newName,
+      List<MetadataObjectReference> metadataRefsToReload)
+      throws HopException {
+    if (!MetadataRefactorUtil.supportsGlobalReplace(hopGui.getMetadataProvider(), objectKey)) {
+      return true;
+    }
+    List<String> searchRoots = new ArrayList<>();
+    String projectHome = hopGui.getVariables().resolve("${PROJECT_HOME}");
+    if (Utils.isEmpty(projectHome) || "${PROJECT_HOME}".equals(projectHome)) {
+      return true;
+    }
+    searchRoots.add(projectHome);
+    MetadataReferenceFinder finder = new MetadataReferenceFinder(hopGui.getMetadataProvider());
+    List<MetadataReferenceResult> fileRefs = finder.findReferences(objectKey, oldName, searchRoots);
+    List<MetadataObjectReference> metadataRefs =
+        finder.findReferencesInMetadata(objectKey, oldName);
+    if (fileRefs.isEmpty() && metadataRefs.isEmpty()) {
+      return true;
+    }
+    // Before asking about updating references, let the user save any open pipeline/workflow tabs
+    // or metadata tabs that would be affected. Abort the whole operation on cancel.
+    Set<String> filePaths = new LinkedHashSet<>();
+    for (MetadataReferenceResult r : fileRefs) {
+      filePaths.add(r.getFilePath());
+    }
+    if (!saveChangedFileHandlersForRefs(filePaths)) {
+      return false;
+    }
+    if (!saveChangedEditorsForRefs(metadataRefs)) {
+      return false;
+    }
+    int fileTotal = fileRefs.stream().mapToInt(MetadataReferenceResult::getReferenceCount).sum();
+    int total = fileTotal + metadataRefs.size();
+    List<String> detailLines = new ArrayList<>();
+    for (MetadataReferenceResult r : fileRefs) {
+      detailLines.add(toDisplayPath(r.getFilePath(), projectHome));
+    }
+    for (MetadataObjectReference r : metadataRefs) {
+      detailLines.add(
+          BaseMessages.getString(
+              PKG,
+              "MetadataPerspective.RenameMetadata.UpdateReferences.Details.MetadataEntry",
+              r.getContainerMetadataKey(),
+              r.getContainerObjectName()));
+    }
+    boolean updateRefs =
+        showUpdateMetadataReferencesDialog(
+            objectKey, total, fileRefs.size(), metadataRefs.size(), detailLines);
+    if (updateRefs) {
+      finder.replaceReferences(objectKey, fileRefs, oldName, newName);
+      finder.replaceReferencesInMetadata(objectKey, oldName, newName, metadataRefs);
+      Set<String> updatedPaths = new LinkedHashSet<>();
+      for (MetadataReferenceResult r : fileRefs) {
+        updatedPaths.add(r.getFilePath());
+      }
+      // Capture the active file handler so reloading tabs doesn't steal focus
+      ExplorerPerspective explorerPerspective = HopGui.getExplorerPerspective();
+      IHopFileTypeHandler activeFileHandler = explorerPerspective.getActiveFileTypeHandler();
+      explorerPerspective.reloadTabsForFilenames(updatedPaths);
+      if (!(activeFileHandler instanceof EmptyHopFileTypeHandler)) {
+        explorerPerspective.setActiveFileTypeHandler(activeFileHandler);
+      }
+      // Metadata tab reload is deferred: if the caller supplied an output list, populate it so
+      // it can reload after manager.rename() — ensuring MetaSelectionLine dropdowns already
+      // contain the new name when the tabs reopen. Otherwise reload immediately (backward compat).
+      if (metadataRefsToReload != null) {
+        metadataRefsToReload.addAll(metadataRefs);
+      } else {
+        reloadEditorsForMetadata(metadataRefs);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * For each file path in {@code filePaths}, if an open pipeline/workflow tab has unsaved changes,
+   * shows "save before refactoring?" dialog. Saves on Yes, discards on No, aborts on Cancel.
+   */
+  private boolean saveChangedFileHandlersForRefs(Set<String> filePaths) {
+    List<IHopFileTypeHandler> changed =
+        HopGui.getExplorerPerspective().getChangedHandlersForFilenames(filePaths);
+    for (IHopFileTypeHandler handler : changed) {
+      if (!promptSaveFileHandlerBeforeRefactoring(handler)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Shows "Do you want to save '{filename}' before refactoring?" for the given file handler. Saves
+   * on Yes, discards on No, returns {@code false} (abort) on Cancel.
+   */
+  private boolean promptSaveFileHandlerBeforeRefactoring(IHopFileTypeHandler handler) {
+    String filename = Const.NVL(handler.getFilename(), handler.toString());
+    MessageBox dialog =
+        new MessageBox(getShell(), SWT.ICON_QUESTION | SWT.YES | SWT.NO | SWT.CANCEL);
+    dialog.setText(
+        BaseMessages.getString(PKG, "MetadataPerspective.RenameMetadata.UpdateReferences.Title"));
+    dialog.setMessage(
+        BaseMessages.getString(
+            PKG, "MetadataPerspective.RenameMetadata.SaveBeforeRefactoring.Message", filename));
+    int answer = dialog.open();
+    if ((answer & SWT.YES) != 0) {
+      try {
+        handler.save();
+      } catch (Exception e) {
+        new ErrorDialog(getShell(), "Error", "Error saving file before refactoring", e);
+        return false;
+      }
+    }
+    return (answer & SWT.CANCEL) == 0;
+  }
+
+  /**
+   * For each metadata object in {@code refs}, if it has an open editor with unsaved changes, shows
+   * "save before refactoring?" dialog. Saves if the user confirms, discards if the user declines.
+   * Returns {@code false} (abort) if the user cancels any of the dialogs.
+   */
+  public boolean saveChangedEditorsForRefs(List<MetadataObjectReference> refs) {
+    Set<MetadataObjectReference> seen = new LinkedHashSet<>();
+    for (MetadataObjectReference ref : refs) {
+      if (!seen.add(ref)) {
+        continue;
+      }
+      MetadataEditor<?> editor =
+          findEditor(ref.getContainerMetadataKey(), ref.getContainerObjectName());
+      if (editor != null && editor.hasChanged()) {
+        if (!promptSaveBeforeRefactoring(editor)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Shows "Do you want to save '{name}' before refactoring?" for the given editor. Saves on Yes,
+   * discards on No, returns {@code false} (abort) on Cancel.
+   */
+  private boolean promptSaveBeforeRefactoring(MetadataEditor<?> editor) {
+    Class<?> managedClass = editor.getManager().getManagedClass();
+    HopMetadata annotation = managedClass.getAnnotation(HopMetadata.class);
+    String managedName = annotation != null ? annotation.name() : managedClass.getSimpleName();
+
+    MessageBox dialog =
+        new MessageBox(getShell(), SWT.ICON_QUESTION | SWT.YES | SWT.NO | SWT.CANCEL);
+    dialog.setText(TranslateUtil.translate(managedName, managedClass));
+    dialog.setMessage(
+        BaseMessages.getString(
+            PKG,
+            "MetadataPerspective.RenameMetadata.SaveBeforeRefactoring.Message",
+            editor.getTitle()));
+    int answer = dialog.open();
+    if ((answer & SWT.YES) != 0) {
+      try {
+        editor.save();
+      } catch (Exception e) {
+        new ErrorDialog(getShell(), "Error", "Error saving metadata before refactoring", e);
+        return false;
+      }
+    }
+    return (answer & SWT.CANCEL) == 0;
+  }
+
+  /**
+   * Closes and reopens any open metadata tabs whose underlying object was updated (e.g. a reference
+   * inside was replaced). Each object is processed at most once.
+   */
+  public void reloadEditorsForMetadata(List<MetadataObjectReference> refs) {
+    if (refs == null || refs.isEmpty()) {
+      return;
+    }
+    Set<MetadataObjectReference> seen = new LinkedHashSet<>();
+    for (MetadataObjectReference ref : refs) {
+      if (!seen.add(ref)) {
+        continue;
+      }
+      String name = ref.getContainerObjectName();
+      reopenEditorIfOpen(ref.getContainerMetadataKey(), name, name);
+    }
+  }
+
+  /**
+   * If a metadata tab is open for the given key + currentName, force-closes it and reopens it with
+   * newName at the same tab position. When the object was not renamed (only its content changed)
+   * pass the same value for both parameters.
+   */
+  private void reopenEditorIfOpen(String objectKey, String currentName, String newName) {
+    MetadataEditor<?> editor = findEditor(objectKey, currentName);
+    if (editor == null) {
+      return;
+    }
+    int tabIndex = -1;
+    editors.remove(editor);
+    for (CTabItem item : tabFolder.getItems()) {
+      if (editor.equals(item.getData())) {
+        tabIndex = tabFolder.indexOf(item);
+        item.dispose();
+        break;
+      }
+    }
+    try {
+      getMetadataManager(objectKey).editWithEditorAtIndex(newName, tabIndex);
+    } catch (HopException e) {
+      LogChannel.GENERAL.logError("Error reopening metadata tab: " + objectKey + "/" + newName, e);
+    }
+  }
+
+  /**
+   * Captures the active editor's (objectKey, name) as a 2-element array, or {@code null} if no
+   * editor is active. Used to restore focus after close/reopen operations.
+   */
+  private String[] captureActiveEditorLocation() {
+    MetadataEditor<?> active = getActiveEditor();
+    if (active == null) {
+      return null;
+    }
+    HopMetadata ann = HopMetadataUtil.getHopMetadataAnnotation(active.getMetadata().getClass());
+    if (ann == null) {
+      return null;
+    }
+    return new String[] {ann.key(), active.getMetadata().getName()};
+  }
+
+  /**
+   * Restores focus to the editor that was active before a rename/refactor operation. When the
+   * previously active editor was the item being renamed ({@code renamedKey}/{@code oldName}), focus
+   * follows it to its new name ({@code newName}). Otherwise the original editor is re-activated.
+   */
+  private void restoreActiveEditor(
+      String[] capturedLocation, String renamedKey, String oldName, String newName) {
+    if (capturedLocation == null) {
+      return;
+    }
+    String focusKey = capturedLocation[0];
+    String focusName =
+        (focusKey.equals(renamedKey) && capturedLocation[1].equals(oldName))
+            ? newName
+            : capturedLocation[1];
+    MetadataEditor<?> editor = findEditor(focusKey, focusName);
+    if (editor != null) {
+      setActiveEditor(editor);
+    }
+  }
+
+  /**
+   * Returns a warning message for the update-references dialog when the given metadata type has
+   * transforms or actions that are not yet updated by the refactor. Returns {@code null} when no
+   * such warning applies.
+   */
+  private String getNotYetUpdatedWarning(String objectKey) {
+    if (objectKey == null) {
+      return null;
+    }
+    String key;
+    switch (objectKey) {
+      case "pipeline-run-configuration":
+        key = "MetadataPerspective.RenameMetadata.NotYetUpdated.PipelineRunConfig";
+        break;
+      case "workflow-run-configuration":
+        key = "MetadataPerspective.RenameMetadata.NotYetUpdated.WorkflowRunConfig";
+        break;
+      case "execution-info-location":
+        key = "MetadataPerspective.RenameMetadata.NotYetUpdated.ExecutionInfoLocation";
+        break;
+      case "execution-data-profile":
+        key = "MetadataPerspective.RenameMetadata.NotYetUpdated.ExecutionDataProfile";
+        break;
+      default:
+        return null;
+    }
+    return BaseMessages.getString(PKG, key);
+  }
+
+  /**
+   * Shows a dialog asking to update metadata references. Yes/No confirm; Details opens a list of
+   * files and metadata objects that will be modified. When {@code objectKey} is one of the types
+   * that have transforms/actions not yet updated, an extra warning line is shown. An experimental
+   * feature note is always shown. Returns true if the user chose Yes.
+   */
+  private boolean showUpdateMetadataReferencesDialog(
+      String objectKey,
+      int totalRefCount,
+      int fileCount,
+      int metadataObjectCount,
+      List<String> detailLines) {
+    Shell shell =
+        new Shell(hopGui.getShell(), SWT.DIALOG_TRIM | SWT.RESIZE | SWT.APPLICATION_MODAL);
+    shell.setText(
+        BaseMessages.getString(PKG, "MetadataPerspective.RenameMetadata.UpdateReferences.Title"));
+    shell.setImage(GuiResource.getInstance().getImageHop());
+    PropsUi.setLook(shell);
+    FormLayout layout = new FormLayout();
+    layout.marginLeft = PropsUi.getFormMargin();
+    layout.marginRight = PropsUi.getFormMargin();
+    layout.marginTop = PropsUi.getFormMargin();
+    layout.marginBottom = PropsUi.getFormMargin();
+    shell.setLayout(layout);
+    int margin = PropsUi.getMargin();
+
+    // Buttons created first so content labels can attach their bottom edge to them
+    final boolean[] confirmed = new boolean[1];
+    Button wYes = new Button(shell, SWT.PUSH);
+    PropsUi.setLook(wYes);
+    wYes.setText(BaseMessages.getString("System.Button.Yes"));
+    wYes.addListener(
+        SWT.Selection,
+        e -> {
+          confirmed[0] = true;
+          shell.dispose();
+        });
+    Button wDetails = new Button(shell, SWT.PUSH);
+    PropsUi.setLook(wDetails);
+    wDetails.setText(
+        BaseMessages.getString(
+            PKG, "MetadataPerspective.RenameMetadata.UpdateReferences.Button.Details"));
+    wDetails.addListener(
+        SWT.Selection,
+        e -> {
+          DetailsDialog detailsDialog =
+              new DetailsDialog(
+                  shell,
+                  BaseMessages.getString(
+                      PKG, "MetadataPerspective.RenameMetadata.UpdateReferences.Details.Title"),
+                  GuiResource.getInstance().getImageHop(),
+                  BaseMessages.getString(
+                      PKG, "MetadataPerspective.RenameMetadata.UpdateReferences.Details.Message"),
+                  String.join(Const.CR, detailLines));
+          detailsDialog.open();
+        });
+    Button wNo = new Button(shell, SWT.PUSH);
+    PropsUi.setLook(wNo);
+    wNo.setText(BaseMessages.getString("System.Button.No"));
+    wNo.addListener(
+        SWT.Selection,
+        e -> {
+          confirmed[0] = false;
+          shell.dispose();
+        });
+    BaseTransformDialog.positionBottomButtons(
+        shell, new Button[] {wYes, wDetails, wNo}, margin, null);
+
+    // Main message
+    Label wMessage = new Label(shell, SWT.WRAP);
+    PropsUi.setLook(wMessage);
+    wMessage.setText(
+        BaseMessages.getString(
+            PKG,
+            "MetadataPerspective.RenameMetadata.UpdateReferences.MessageWithMetadata",
+            totalRefCount,
+            fileCount,
+            metadataObjectCount));
+    FormData fdMessage = new FormData();
+    fdMessage.left = new FormAttachment(0, margin);
+    fdMessage.right = new FormAttachment(100, -margin);
+    fdMessage.top = new FormAttachment(0, margin);
+    wMessage.setLayoutData(fdMessage);
+
+    // Optional per-type warning (specific transforms/actions not yet supported)
+    Control lastLabel = wMessage;
+    String notYetUpdatedWarning = getNotYetUpdatedWarning(objectKey);
+    if (notYetUpdatedWarning != null && !notYetUpdatedWarning.isEmpty()) {
+      Label wWarning = new Label(shell, SWT.WRAP);
+      PropsUi.setLook(wWarning);
+      wWarning.setText(notYetUpdatedWarning);
+      FormData fdWarning = new FormData();
+      fdWarning.left = new FormAttachment(0, margin);
+      fdWarning.right = new FormAttachment(100, -margin);
+      fdWarning.top = new FormAttachment(lastLabel, margin);
+      wWarning.setLayoutData(fdWarning);
+      lastLabel = wWarning;
+    }
+
+    // Experimental feature note — always shown, fills remaining space above buttons
+    Label wNote = new Label(shell, SWT.WRAP);
+    PropsUi.setLook(wNote);
+    wNote.setText(
+        BaseMessages.getString(PKG, "MetadataPerspective.RenameMetadata.ExperimentalFeatureNote"));
+    FormData fdNote = new FormData();
+    fdNote.left = new FormAttachment(0, margin);
+    fdNote.right = new FormAttachment(100, -margin);
+    fdNote.top = new FormAttachment(lastLabel, margin);
+    fdNote.bottom = new FormAttachment(wYes, -margin);
+    wNote.setLayoutData(fdNote);
+
+    shell.setDefaultButton(wYes);
+
+    BaseDialog.defaultShellHandling(
+        shell,
+        c -> {
+          /* enter in text field: no-op, buttons handle confirmation */
+        },
+        c -> confirmed[0] = false);
+    return confirmed[0];
+  }
+
   @GuiToolbarElement(
       root = GUI_PLUGIN_TOOLBAR_PARENT_ID,
       id = TOOLBAR_ITEM_DELETE,
@@ -692,22 +1360,171 @@ public class MetadataPerspective implements IHopPerspective, TabClosable {
     TreeItem treeItem = tree.getSelection()[0];
 
     // No delete on folder
-    if (treeItem.getData(KEY_TYPE).equals(FILE)) {
-      String objectKey = (String) treeItem.getParentItem().getData();
-      String objectName = treeItem.getText(0);
-
-      try {
-        MetadataManager<IHopMetadata> manager = getMetadataManager(objectKey);
-        manager.deleteMetadata(objectName);
-
-        refresh();
-        updateSelection();
-
-        hopGui.getEventsHandler().fire(HopGuiEvents.MetadataDeleted.name());
-      } catch (Exception e) {
-        new ErrorDialog(getShell(), ERROR, "Error delete metadata", e);
-      }
+    if (!treeItem.getData(KEY_TYPE).equals(FILE)) {
+      return;
     }
+
+    String objectKey = (String) treeItem.getParentItem().getData();
+    String objectName = treeItem.getText(0);
+
+    try {
+      // Check for references in pipelines/workflows and other metadata objects
+      MetadataReferenceFinder finder = new MetadataReferenceFinder(hopGui.getMetadataProvider());
+      String projectHome = hopGui.getVariables().resolve("${PROJECT_HOME}");
+      List<MetadataReferenceResult> fileRefs = Collections.emptyList();
+      if (MetadataRefactorUtil.supportsGlobalReplace(hopGui.getMetadataProvider(), objectKey)) {
+        if (!Utils.isEmpty(projectHome) && !"${PROJECT_HOME}".equals(projectHome)) {
+          fileRefs = finder.findReferences(objectKey, objectName, List.of(projectHome));
+        }
+      }
+      List<MetadataObjectReference> metadataRefs =
+          finder.findReferencesInMetadata(objectKey, objectName);
+
+      int fileRefCount =
+          fileRefs.stream().mapToInt(MetadataReferenceResult::getReferenceCount).sum();
+      int totalRefCount = fileRefCount + metadataRefs.size();
+
+      boolean confirmed;
+      if (totalRefCount > 0) {
+        List<String> detailLines = new ArrayList<>();
+        for (MetadataReferenceResult r : fileRefs) {
+          detailLines.add(toDisplayPath(r.getFilePath(), projectHome));
+        }
+        for (MetadataObjectReference r : metadataRefs) {
+          detailLines.add(
+              BaseMessages.getString(
+                  PKG,
+                  "MetadataPerspective.RenameMetadata.UpdateReferences.Details.MetadataEntry",
+                  r.getContainerMetadataKey(),
+                  r.getContainerObjectName()));
+        }
+        confirmed =
+            showDeleteWithReferencesDialog(
+                objectName, totalRefCount, fileRefs.size(), metadataRefs.size(), detailLines);
+      } else {
+        MessageBox confirmBox = new MessageBox(getShell(), SWT.ICON_QUESTION | SWT.YES | SWT.NO);
+        confirmBox.setText(BaseMessages.getString(PKG, "MetadataPerspective.DeleteMetadata.Title"));
+        confirmBox.setMessage(
+            BaseMessages.getString(
+                PKG, "MetadataPerspective.DeleteMetadata.ConfirmNoRefs", objectName));
+        confirmed = (confirmBox.open() & SWT.YES) != 0;
+      }
+      if (!confirmed) {
+        return;
+      }
+
+      MetadataManager<IHopMetadata> manager = getMetadataManager(objectKey);
+      manager.deleteMetadata(objectName, true);
+
+      refresh();
+      updateSelection();
+
+      hopGui.getEventsHandler().fire(HopGuiEvents.MetadataDeleted.name());
+    } catch (Exception e) {
+      new ErrorDialog(getShell(), ERROR, "Error delete metadata", e);
+    }
+  }
+
+  /**
+   * Replaces the resolved {@code projectHome} prefix in {@code path} with {@code ${PROJECT_HOME}}
+   * so displayed paths are project-relative and shorter.
+   */
+  private static String toDisplayPath(String path, String projectHome) {
+    if (!Utils.isEmpty(projectHome) && path.startsWith(projectHome)) {
+      String rel = path.substring(projectHome.length());
+      return "${PROJECT_HOME}" + (rel.startsWith("/") ? rel : "/" + rel);
+    }
+    return path;
+  }
+
+  /**
+   * Shows a confirmation dialog warning that the item being deleted has active references. Returns
+   * {@code true} if the user confirms the deletion, {@code false} if they cancel.
+   */
+  private boolean showDeleteWithReferencesDialog(
+      String objectName,
+      int totalRefCount,
+      int fileCount,
+      int metadataObjectCount,
+      List<String> detailLines) {
+    Shell shell =
+        new Shell(hopGui.getShell(), SWT.DIALOG_TRIM | SWT.RESIZE | SWT.APPLICATION_MODAL);
+    shell.setText(BaseMessages.getString(PKG, "MetadataPerspective.DeleteMetadata.Title"));
+    shell.setImage(GuiResource.getInstance().getImageHop());
+    PropsUi.setLook(shell);
+    FormLayout layout = new FormLayout();
+    layout.marginLeft = PropsUi.getFormMargin();
+    layout.marginRight = PropsUi.getFormMargin();
+    layout.marginTop = PropsUi.getFormMargin();
+    layout.marginBottom = PropsUi.getFormMargin();
+    shell.setLayout(layout);
+    int margin = PropsUi.getMargin();
+
+    // Buttons first so the message label can attach its bottom to them
+    final boolean[] confirmed = new boolean[1];
+    Button wYes = new Button(shell, SWT.PUSH);
+    PropsUi.setLook(wYes);
+    wYes.setText(BaseMessages.getString("System.Button.Yes"));
+    wYes.addListener(
+        SWT.Selection,
+        e -> {
+          confirmed[0] = true;
+          shell.dispose();
+        });
+    Button wDetails = new Button(shell, SWT.PUSH);
+    PropsUi.setLook(wDetails);
+    wDetails.setText(
+        BaseMessages.getString(PKG, "MetadataPerspective.DeleteMetadata.Button.Details"));
+    wDetails.addListener(
+        SWT.Selection,
+        e -> {
+          new DetailsDialog(
+                  shell,
+                  BaseMessages.getString(
+                      PKG, "MetadataPerspective.DeleteMetadata.Details.Title", objectName),
+                  GuiResource.getInstance().getImageHop(),
+                  BaseMessages.getString(
+                      PKG, "MetadataPerspective.DeleteMetadata.Details.Message", objectName),
+                  String.join(Const.CR, detailLines))
+              .open();
+        });
+    Button wNo = new Button(shell, SWT.PUSH);
+    PropsUi.setLook(wNo);
+    wNo.setText(BaseMessages.getString("System.Button.No"));
+    wNo.addListener(
+        SWT.Selection,
+        e -> {
+          confirmed[0] = false;
+          shell.dispose();
+        });
+    BaseTransformDialog.positionBottomButtons(
+        shell, new Button[] {wYes, wDetails, wNo}, margin, null);
+
+    Label wMessage = new Label(shell, SWT.WRAP);
+    PropsUi.setLook(wMessage);
+    wMessage.setText(
+        BaseMessages.getString(
+            PKG,
+            "MetadataPerspective.DeleteMetadata.Message",
+            totalRefCount,
+            objectName,
+            fileCount,
+            metadataObjectCount));
+    FormData fdMessage = new FormData();
+    fdMessage.left = new FormAttachment(0, margin);
+    fdMessage.right = new FormAttachment(100, -margin);
+    fdMessage.top = new FormAttachment(0, margin);
+    fdMessage.bottom = new FormAttachment(wYes, -margin);
+    wMessage.setLayoutData(fdMessage);
+
+    shell.setDefaultButton(wNo);
+    BaseDialog.defaultShellHandling(
+        shell,
+        c -> {
+          /* enter: no-op */
+        },
+        c -> confirmed[0] = false);
+    return confirmed[0];
   }
 
   @GuiToolbarElement(
@@ -1233,13 +2050,11 @@ public class MetadataPerspective implements IHopPerspective, TabClosable {
     if (!Utils.isEmpty(folder)) {
       for (TreeItem treeItem : item.getItems()) {
         if (folder.equals(treeItem.getText()) && treeItem.getData("type").equals(FOLDER)) {
-          ShowMessageDialog msgDialog =
-              new ShowMessageDialog(
-                  getShell(),
-                  SWT.ICON_INFORMATION | SWT.OK,
-                  BaseMessages.getString(PKG, "MetadataPerspective.CreateFolder.Error.Header"),
-                  BaseMessages.getString(PKG, "MetadataPerspective.CreateFolder.Error.Message"),
-                  false);
+          MessageBox msgDialog = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+          msgDialog.setText(
+              BaseMessages.getString(PKG, "MetadataPerspective.CreateFolder.Error.Header"));
+          msgDialog.setMessage(
+              BaseMessages.getString(PKG, "MetadataPerspective.CreateFolder.Error.Message"));
           msgDialog.open();
           return;
         }

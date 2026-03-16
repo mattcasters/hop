@@ -25,8 +25,11 @@ under the License.
 |
 == Description
 
-The Get Subfolder Names transform gets subfolder names from a directory.
+The `Get Subfolder Names` transform recursively traverses one or more directories and outputs a row for every subfolder found.
+This includes all nested subfolders at any depth, not just the immediate children.
 
+The input directories can be configured statically in the transform's Folder tab, or provided dynamically from a field in a previous transform.
+Each subfolder produces one output row with metadata fields describing the folder.
 |
 == Supported Engines
 [%noheader,cols="2,1a",frame=none, role="table-supported-engines"]
@@ -64,3 +67,28 @@ The Get Subfolder Names transform gets subfolder names from a directory.
 |Rownum fieldname|The field which contains the row number.
 |Limit|Limits the output rows.
 |===
+
+
+== Output fields
+[options="header"]
+|===
+|Field|Type|Description
+|`folderName`|String|Full path of the subfolder
+|`short_folderName`|String|Base name of the subfolder (last path segment)
+|`path`|String|Full path of the subfolder's parent directory
+|`ishidden`|Boolean|Whether the subfolder is hidden
+|`isreadable`|Boolean|Whether the subfolder is readable
+|`iswriteable`|Boolean|Whether the subfolder is writeable
+|`lastmodifiedtime`|Date|Last modified timestamp of the subfolder
+|`uri`|String|Full URI of the subfolder
+|`rooturi`|String|Root URI of the file system
+|`children`|Integer|Number of direct children (files and folders) in the subfolder
+|===
+
+== Cloud storage (VFS)
+This transform works with any file system supported through Apache Hop's VFS integration, including local file systems, S3, Azure Blob Storage, Google Cloud Storage, Google Drive, Dropbox and others.
+When working with cloud storage, be aware of the following:
+
+* The input directory must point to an actual folder, not a scheme root. For example, use `s3://my-bucket/my-folder` rather than `s3://` or `s3://my-bucket`.
+* Some metadata fields (`ishidden`, `isreadable`, `iswriteable`, `lastmodifiedtime`, `children`) may not be available for all cloud storage providers. When a value can't be determined, the field will be `null`. For example, `lastmodifiedtime` may not be available for virtual folders on S3 or MinIO.
+* The transform traverses the full folder tree recursively. On cloud storage with deeply nested or very large folder structures, this may result in a high number of API calls and slow performance.

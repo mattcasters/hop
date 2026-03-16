@@ -1,0 +1,74 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
+
+<transform>
+    <fields>
+        <field>
+            <in_stream_name>desc_t</in_stream_name>
+            <out_stream_name>desc_trimmed</out_stream_name>
+            <trim_type>both</trim_type>
+            <lower_upper>none</lower_upper>
+            <padding_type>none</padding_type>
+            <pad_char/>
+            <pad_len/>
+            <init_cap>no</init_cap>
+            <mask_xml>none</mask_xml>
+            <digits>none</digits>
+            <remove_special_characters>none</remove_special_characters>
+        </field>
+        <field>
+            <in_stream_name>desc_u</in_stream_name>
+            <out_stream_name>desc_upper</out_stream_name>
+            <trim_type>none</trim_type>
+            <lower_upper>upper</lower_upper>
+            <padding_type>none</padding_type>
+            <pad_char/>
+            <pad_len/>
+            <init_cap>no</init_cap>
+            <mask_xml>none</mask_xml>
+            <digits>none</digits>
+            <remove_special_characters>none</remove_special_characters>
+        </field>
+        <field>
+            <in_stream_name>desc_p</in_stream_name>
+            <out_stream_name>desc_padded</out_stream_name>
+            <trim_type>none</trim_type>
+            <lower_upper>none</lower_upper>
+            <padding_type>left</padding_type>
+            <pad_char>#</pad_char>
+            <pad_len>25</pad_len>
+            <init_cap>no</init_cap>
+            <mask_xml>none</mask_xml>
+            <digits>none</digits>
+            <remove_special_characters>none</remove_special_characters>
+        </field>
+        <field>
+            <in_stream_name>desc_i</in_stream_name>
+            <out_stream_name>desc_initcapped</out_stream_name>
+            <trim_type>none</trim_type>
+            <lower_upper>none</lower_upper>
+            <padding_type>none</padding_type>
+            <pad_char/>
+            <pad_len/>
+            <init_cap>yes</init_cap>
+            <mask_xml>none</mask_xml>
+            <digits>none</digits>
+            <remove_special_characters>none</remove_special_characters>
+        </field>
+    </fields>
+</transform>

@@ -17,133 +17,88 @@
 package org.apache.hop.pipeline.transforms.synchronizeaftermerge;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.apache.hop.core.HopEnvironment;
-import org.apache.hop.core.plugins.PluginRegistry;
-import org.apache.hop.junit.rules.RestoreHopEngineEnvironmentExtension;
-import org.apache.hop.pipeline.transform.ITransform;
-import org.apache.hop.pipeline.transforms.loadsave.LoadSaveTester;
-import org.apache.hop.pipeline.transforms.loadsave.initializer.IInitializer;
-import org.apache.hop.pipeline.transforms.loadsave.validator.ArrayLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.BooleanLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.IFieldLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.StringLoadSaveValidator;
-import org.junit.jupiter.api.BeforeEach;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
+import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
+import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
+import org.apache.hop.pipeline.transform.TransformMeta;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-class SynchronizeAfterMergeMetaTest implements IInitializer<ITransform> {
-  LoadSaveTester loadSaveTester;
-  Class<SynchronizeAfterMergeMeta> testMetaClass = SynchronizeAfterMergeMeta.class;
-
-  @RegisterExtension
-  static RestoreHopEngineEnvironmentExtension env = new RestoreHopEngineEnvironmentExtension();
-
-  @BeforeEach
-  void setUpLoadSave() throws Exception {
-    HopEnvironment.init();
-    PluginRegistry.init();
-    List<String> attributes =
-        Arrays.asList(
-            "schemaName",
-            "tableName",
-            "connection",
-            "commitSize",
-            "tableNameInField",
-            "tableNameField",
-            "operationOrderField",
-            "useBatchUpdate",
-            "performLookup",
-            "OrderInsert",
-            "OrderUpdate",
-            "OrderDelete",
-            "keyStream",
-            "keyLookup",
-            "keyCondition",
-            "keyStream2",
-            "updateLookup",
-            "updateStream",
-            "update");
-
-    Map<String, String> getterMap =
-        new HashMap<>() {
-          {
-            put("tableNameInField", "isTableNameInField");
-            put("tableNameField", "getTableNameField");
-            put("useBatchUpdate", "useBatchUpdate");
-          }
-        };
-    Map<String, String> setterMap =
-        new HashMap<>() {
-          {
-            put("tableNameInField", "setTableNameInField");
-            put("tableNameField", "setTableNameField");
-          }
-        };
-    IFieldLoadSaveValidator<String[]> stringArrayLoadSaveValidator =
-        new ArrayLoadSaveValidator<>(new StringLoadSaveValidator(), 5);
-
-    Map<String, IFieldLoadSaveValidator<?>> attrValidatorMap = new HashMap<>();
-    attrValidatorMap.put("keyStream", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("keyStream2", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("keyLookup", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("keyCondition", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("updateLookup", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("updateStream", stringArrayLoadSaveValidator);
-    attrValidatorMap.put("update", new ArrayLoadSaveValidator<>(new BooleanLoadSaveValidator(), 5));
-
-    Map<String, IFieldLoadSaveValidator<?>> typeValidatorMap = new HashMap<>();
-
-    loadSaveTester =
-        new LoadSaveTester(
-            testMetaClass,
-            attributes,
-            getterMap,
-            setterMap,
-            attrValidatorMap,
-            typeValidatorMap,
-            this);
-  }
-
-  // Call the allocate method on the LoadSaveTester meta class
-  @Override
-  public void modify(ITransform someMeta) {
-    if (someMeta instanceof SynchronizeAfterMergeMeta) {
-      ((SynchronizeAfterMergeMeta) someMeta).allocate(5, 5);
-    }
-  }
-
+class SynchronizeAfterMergeMetaTest {
   @Test
-  void testPDI16559() throws Exception {
-    SynchronizeAfterMergeMeta synchronizeAfterMerge = new SynchronizeAfterMergeMeta();
+  void testLoadSave() throws Exception {
+    Path path = Paths.get(Objects.requireNonNull(getClass().getResource("/transform.xml")).toURI());
+    String xml = Files.readString(path);
+    SynchronizeAfterMergeMeta meta = new SynchronizeAfterMergeMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xml, TransformMeta.XML_TAG),
+        SynchronizeAfterMergeMeta.class,
+        meta,
+        new MemoryMetadataProvider());
 
-    synchronizeAfterMerge.setKeyStream(
-        new String[] {"field1", "field2", "field3", "field4", "field5"});
-    synchronizeAfterMerge.setKeyLookup(new String[] {"lookup1", "lookup2"});
-    synchronizeAfterMerge.setKeyCondition(new String[] {"cond1", "cond2", "cond3"});
-    synchronizeAfterMerge.setKeyStream2(
-        new String[] {"stream2-a", "stream2-b", "stream2-x", "stream2-d"});
+    validate(meta);
 
-    synchronizeAfterMerge.setUpdateLookup(
-        new String[] {"updlook1", "updlook2", "updlook3", "updlook4", "updlook5"});
-    synchronizeAfterMerge.setUpdateStream(new String[] {"updstr1", "updstr2", "updstr3"});
-    synchronizeAfterMerge.setUpdate(new Boolean[] {false, true});
+    // Do a round trip:
+    //
+    String xmlCopy =
+        XmlHandler.openTag(TransformMeta.XML_TAG)
+            + XmlMetadataUtil.serializeObjectToXml(meta)
+            + XmlHandler.closeTag(TransformMeta.XML_TAG);
+    SynchronizeAfterMergeMeta metaCopy = new SynchronizeAfterMergeMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xmlCopy, TransformMeta.XML_TAG),
+        SynchronizeAfterMergeMeta.class,
+        metaCopy,
+        new MemoryMetadataProvider());
+    validate(metaCopy);
+  }
 
-    synchronizeAfterMerge.afterInjectionSynchronization();
-    String ktrXml = synchronizeAfterMerge.getXml();
+  private static void validate(SynchronizeAfterMergeMeta m) {
+    assertEquals("connectionName", m.getConnection());
+    assertEquals("123", m.getCommitSize());
+    assertEquals("sourceField", m.getTableNameField());
+    assertTrue(m.isTableNameInField());
+    assertTrue(m.isUsingBatchUpdates());
+    assertTrue(m.isPerformingLookup());
+    assertEquals("operationFieldName", m.getOperationOrderField());
+    assertEquals("insert", m.getOrderInsert());
+    assertEquals("update", m.getOrderUpdate());
+    assertEquals("delete", m.getOrderDelete());
 
-    int targetSz = synchronizeAfterMerge.getKeyStream().length;
-
-    assertEquals(targetSz, synchronizeAfterMerge.getKeyLookup().length);
-    assertEquals(targetSz, synchronizeAfterMerge.getKeyCondition().length);
-    assertEquals(targetSz, synchronizeAfterMerge.getKeyStream2().length);
-
-    targetSz = synchronizeAfterMerge.getUpdateLookup().length;
-    assertEquals(targetSz, synchronizeAfterMerge.getUpdateStream().length);
-    assertEquals(targetSz, synchronizeAfterMerge.getUpdate().length);
+    SynchronizeAfterMergeMeta.Lookup lookup = m.getLookup();
+    assertNotNull(lookup);
+    assertEquals("targetSchema", lookup.getSchemaName());
+    assertEquals("targetTable", lookup.getTableName());
+    assertNotNull(lookup.getKeyConditions());
+    assertEquals(1, lookup.getKeyConditions().size());
+    SynchronizeAfterMergeMeta.KeyCondition k1 = lookup.getKeyConditions().get(0);
+    assertEquals("keyColumn1", k1.getColumnName());
+    assertEquals("keyField1", k1.getFieldName());
+    assertEquals("=", k1.getCondition());
+    assertNotNull(lookup.getValueUpdates());
+    assertEquals(4, lookup.getValueUpdates().size());
+    SynchronizeAfterMergeMeta.ValueUpdate v1 = lookup.getValueUpdates().get(0);
+    assertEquals("column1", v1.getColumnName());
+    assertEquals("field1", v1.getFieldName());
+    assertTrue(v1.isUpdate());
+    SynchronizeAfterMergeMeta.ValueUpdate v2 = lookup.getValueUpdates().get(1);
+    assertEquals("column2", v2.getColumnName());
+    assertEquals("field2", v2.getFieldName());
+    assertFalse(v2.isUpdate());
+    SynchronizeAfterMergeMeta.ValueUpdate v3 = lookup.getValueUpdates().get(2);
+    assertEquals("column3", v3.getColumnName());
+    assertEquals("field3", v3.getFieldName());
+    assertTrue(v3.isUpdate());
+    SynchronizeAfterMergeMeta.ValueUpdate v4 = lookup.getValueUpdates().get(3);
+    assertEquals("column4", v4.getColumnName());
+    assertEquals("field4", v4.getFieldName());
+    assertFalse(v4.isUpdate());
   }
 }

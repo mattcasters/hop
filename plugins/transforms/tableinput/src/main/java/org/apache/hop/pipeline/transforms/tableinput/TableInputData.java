@@ -27,8 +27,8 @@ import org.apache.hop.pipeline.transform.stream.IStream;
 
 @SuppressWarnings("java:S1104")
 public class TableInputData extends BaseTransformData implements ITransformData {
-  public Object[] nextrow;
-  public Object[] thisrow;
+  public Object[] nextRow;
+  public Object[] thisRow;
   public Database db;
   public ResultSet rs;
   public String lookupTransform;
@@ -41,8 +41,8 @@ public class TableInputData extends BaseTransformData implements ITransformData 
     super();
 
     db = null;
-    thisrow = null;
-    nextrow = null;
+    thisRow = null;
+    nextRow = null;
     rs = null;
     lookupTransform = null;
   }

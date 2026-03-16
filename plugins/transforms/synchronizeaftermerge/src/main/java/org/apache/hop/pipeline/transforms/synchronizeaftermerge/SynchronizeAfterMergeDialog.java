@@ -30,7 +30,6 @@ import org.apache.hop.core.database.Database;
 import org.apache.hop.core.database.DatabaseMeta;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.row.IRowMeta;
-import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
@@ -73,6 +72,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
+import org.jetbrains.annotations.Nullable;
 
 public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
   private static final Class<?> PKG = SynchronizeAfterMergeMeta.class;
@@ -100,11 +100,11 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
   private Label wlTableField;
   private CCombo wTableField;
 
-  private Button wTablenameInField;
+  private Button wTableNameInField;
 
-  private Button wBatch;
+  private Button wbBatch;
 
-  private Button wPerformLookup;
+  private Button wbPerformLookup;
 
   private CCombo wOperationField;
 
@@ -168,356 +168,32 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
     CTabFolder wTabFolder = new CTabFolder(shell, SWT.BORDER);
     PropsUi.setLook(wTabFolder, Props.WIDGET_STYLE_TAB);
 
-    // ////////////////////////
-    // START OF GENERAL TAB ///
-    // ////////////////////////
+    addGeneralTab(wTabFolder, lsMod, lsSelection, lsTableMod, lsSimpleSelection);
+    addKeysTab(wTabFolder, lsMod);
+    addUpdatesTab(wTabFolder, lsMod);
+    addAdvancedTab(wTabFolder, lsMod, lsSimpleSelection);
 
-    CTabItem wGeneralTab = new CTabItem(wTabFolder, SWT.NONE);
-    wGeneralTab.setFont(GuiResource.getInstance().getFontDefault());
-    wGeneralTab.setText(
-        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.GeneralTab.TabTitle"));
+    FormData fdTabFolder = new FormData();
+    fdTabFolder.left = new FormAttachment(0, 0);
+    fdTabFolder.top = new FormAttachment(wSpacer, margin);
+    fdTabFolder.right = new FormAttachment(100, 0);
+    fdTabFolder.bottom = new FormAttachment(wOk, -margin);
+    wTabFolder.setLayoutData(fdTabFolder);
 
-    Composite wGeneralComp = new Composite(wTabFolder, SWT.NONE);
-    PropsUi.setLook(wGeneralComp);
+    wTabFolder.setSelection(0);
 
-    FormLayout generalLayout = new FormLayout();
-    generalLayout.marginWidth = 3;
-    generalLayout.marginHeight = 3;
-    wGeneralComp.setLayout(generalLayout);
+    getData();
+    setTableFieldCombo();
+    activeTableNameField();
+    input.setChanged(changed);
+    focusTransformName();
+    BaseDialog.defaultShellHandling(shell, c -> ok(), c -> cancel());
 
-    // Connection line
-    wConnection = addConnectionLine(wGeneralComp, wSpacer, input.getConnection(), lsMod);
-    wConnection.addSelectionListener(lsSelection);
+    return transformName;
+  }
 
-    // Schema line...
-    Label wlSchema = new Label(wGeneralComp, SWT.RIGHT);
-    wlSchema.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TargetSchema.Label"));
-    PropsUi.setLook(wlSchema);
-    FormData fdlSchema = new FormData();
-    fdlSchema.left = new FormAttachment(0, 0);
-    fdlSchema.right = new FormAttachment(middle, -margin);
-    fdlSchema.top = new FormAttachment(wConnection, margin);
-    wlSchema.setLayoutData(fdlSchema);
-
-    Button wbSchema = new Button(wGeneralComp, SWT.PUSH | SWT.CENTER);
-    PropsUi.setLook(wbSchema);
-    wbSchema.setText(BaseMessages.getString(PKG, "System.Button.Browse"));
-    FormData fdbSchema = new FormData();
-    fdbSchema.top = new FormAttachment(wConnection, margin);
-    fdbSchema.right = new FormAttachment(100, 0);
-    wbSchema.setLayoutData(fdbSchema);
-
-    wSchema = new TextVar(variables, wGeneralComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    PropsUi.setLook(wSchema);
-    wSchema.addModifyListener(lsTableMod);
-    FormData fdSchema = new FormData();
-    fdSchema.left = new FormAttachment(middle, 0);
-    fdSchema.top = new FormAttachment(wConnection, margin);
-    fdSchema.right = new FormAttachment(wbSchema, -margin);
-    wSchema.setLayoutData(fdSchema);
-
-    // Table line...
-    wlTable = new Label(wGeneralComp, SWT.RIGHT);
-    wlTable.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TargetTable.Label"));
-    PropsUi.setLook(wlTable);
-    FormData fdlTable = new FormData();
-    fdlTable.left = new FormAttachment(0, 0);
-    fdlTable.right = new FormAttachment(middle, -margin);
-    fdlTable.top = new FormAttachment(wbSchema, margin);
-    wlTable.setLayoutData(fdlTable);
-
-    wbTable = new Button(wGeneralComp, SWT.PUSH | SWT.CENTER);
-    PropsUi.setLook(wbTable);
-    wbTable.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Browse.Button"));
-    FormData fdbTable = new FormData();
-    fdbTable.right = new FormAttachment(100, 0);
-    fdbTable.top = new FormAttachment(wbSchema, margin);
-    wbTable.setLayoutData(fdbTable);
-
-    wTable = new TextVar(variables, wGeneralComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    PropsUi.setLook(wTable);
-    wTable.addModifyListener(lsTableMod);
-    FormData fdTable = new FormData();
-    fdTable.left = new FormAttachment(middle, 0);
-    fdTable.top = new FormAttachment(wbSchema, margin);
-    fdTable.right = new FormAttachment(wbTable, -margin);
-    wTable.setLayoutData(fdTable);
-
-    // Commit line
-    Label wlCommit = new Label(wGeneralComp, SWT.RIGHT);
-    wlCommit.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.CommitSize.Label"));
-    PropsUi.setLook(wlCommit);
-    FormData fdlCommit = new FormData();
-    fdlCommit.left = new FormAttachment(0, 0);
-    fdlCommit.top = new FormAttachment(wTable, margin);
-    fdlCommit.right = new FormAttachment(middle, -margin);
-    wlCommit.setLayoutData(fdlCommit);
-
-    wCommit = new TextVar(variables, wGeneralComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    PropsUi.setLook(wCommit);
-    wCommit.addModifyListener(lsMod);
-    FormData fdCommit = new FormData();
-    fdCommit.left = new FormAttachment(middle, 0);
-    fdCommit.top = new FormAttachment(wTable, margin);
-    fdCommit.right = new FormAttachment(100, 0);
-    wCommit.setLayoutData(fdCommit);
-
-    // UsePart update
-    Label wlBatch = new Label(wGeneralComp, SWT.RIGHT);
-    wlBatch.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Batch.Label"));
-    PropsUi.setLook(wlBatch);
-    FormData fdlBatch = new FormData();
-    fdlBatch.left = new FormAttachment(0, 0);
-    fdlBatch.top = new FormAttachment(wCommit, margin);
-    fdlBatch.right = new FormAttachment(middle, -margin);
-    wlBatch.setLayoutData(fdlBatch);
-    wBatch = new Button(wGeneralComp, SWT.CHECK);
-    wBatch.setToolTipText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Batch.Tooltip"));
-    wBatch.addSelectionListener(lsSimpleSelection);
-    PropsUi.setLook(wBatch);
-    FormData fdBatch = new FormData();
-    fdBatch.left = new FormAttachment(middle, 0);
-    fdBatch.top = new FormAttachment(wlBatch, 0, SWT.CENTER);
-    fdBatch.right = new FormAttachment(100, 0);
-    wBatch.setLayoutData(fdBatch);
-
-    // TablenameInField line
-    Label wlTablenameInField = new Label(wGeneralComp, SWT.RIGHT);
-    wlTablenameInField.setText(
-        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TablenameInField.Label"));
-    PropsUi.setLook(wlTablenameInField);
-    FormData fdlTablenameInField = new FormData();
-    fdlTablenameInField.left = new FormAttachment(0, 0);
-    fdlTablenameInField.top = new FormAttachment(wBatch, margin);
-    fdlTablenameInField.right = new FormAttachment(middle, -margin);
-    wlTablenameInField.setLayoutData(fdlTablenameInField);
-    wTablenameInField = new Button(wGeneralComp, SWT.CHECK);
-    wTablenameInField.setToolTipText(
-        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TablenameInField.Tooltip"));
-    PropsUi.setLook(wTablenameInField);
-    FormData fdTablenameInField = new FormData();
-    fdTablenameInField.left = new FormAttachment(middle, 0);
-    fdTablenameInField.top = new FormAttachment(wlTablenameInField, 0, SWT.CENTER);
-    fdTablenameInField.right = new FormAttachment(100, 0);
-    wTablenameInField.setLayoutData(fdTablenameInField);
-    wTablenameInField.addSelectionListener(
-        new SelectionAdapter() {
-          @Override
-          public void widgetSelected(SelectionEvent e) {
-            activeTablenameField();
-            input.setChanged();
-          }
-        });
-
-    wlTableField = new Label(wGeneralComp, SWT.RIGHT);
-    wlTableField.setText(
-        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TableField.Label"));
-    PropsUi.setLook(wlTableField);
-    FormData fdlTableField = new FormData();
-    fdlTableField.left = new FormAttachment(0, 0);
-    fdlTableField.top = new FormAttachment(wTablenameInField, margin);
-    fdlTableField.right = new FormAttachment(middle, -margin);
-    wlTableField.setLayoutData(fdlTableField);
-    wTableField = new CCombo(wGeneralComp, SWT.BORDER | SWT.READ_ONLY);
-    wTableField.setEditable(true);
-    PropsUi.setLook(wTableField);
-    wTableField.addModifyListener(lsMod);
-    FormData fdTableField = new FormData();
-    fdTableField.left = new FormAttachment(middle, 0);
-    fdTableField.top = new FormAttachment(wTablenameInField, margin);
-    fdTableField.right = new FormAttachment(100, 0);
-    wTableField.setLayoutData(fdTableField);
-    wTableField.addFocusListener(
-        new FocusListener() {
-          @Override
-          public void focusLost(FocusEvent e) {
-            // Do Nothing
-          }
-
-          @Override
-          public void focusGained(FocusEvent e) {
-            Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-            shell.setCursor(busy);
-            getFields();
-            shell.setCursor(null);
-            busy.dispose();
-          }
-        });
-
-    Label wlKey = new Label(wGeneralComp, SWT.NONE);
-    wlKey.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Keys.Label"));
-    PropsUi.setLook(wlKey);
-    FormData fdlKey = new FormData();
-    fdlKey.left = new FormAttachment(0, 0);
-    fdlKey.top = new FormAttachment(wTableField, margin);
-    wlKey.setLayoutData(fdlKey);
-
-    int nrKeyCols = 4;
-    int nrKeyRows = (input.getKeyStream() != null ? input.getKeyStream().length : 1);
-
-    ciKey = new ColumnInfo[nrKeyCols];
-    ciKey[0] =
-        new ColumnInfo(
-            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.TableField"),
-            ColumnInfo.COLUMN_TYPE_CCOMBO,
-            new String[] {""},
-            false);
-    ciKey[1] =
-        new ColumnInfo(
-            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.Comparator"),
-            ColumnInfo.COLUMN_TYPE_CCOMBO,
-            new String[] {
-              "=", "<>", "<", "<=", ">", ">=", "LIKE", "BETWEEN", "IS NULL", "IS NOT NULL"
-            });
-    ciKey[2] =
-        new ColumnInfo(
-            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.StreamField1"),
-            ColumnInfo.COLUMN_TYPE_CCOMBO,
-            new String[] {""},
-            false);
-    ciKey[3] =
-        new ColumnInfo(
-            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.StreamField2"),
-            ColumnInfo.COLUMN_TYPE_CCOMBO,
-            new String[] {""},
-            false);
-    tableFieldColumns.add(ciKey[0]);
-    wKey =
-        new TableView(
-            variables,
-            wGeneralComp,
-            SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL,
-            ciKey,
-            nrKeyRows,
-            lsMod,
-            props);
-
-    wGet = new Button(wGeneralComp, SWT.PUSH);
-    wGet.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.GetFields.Button"));
-    fdGet = new FormData();
-    fdGet.right = new FormAttachment(100, 0);
-    fdGet.top = new FormAttachment(wlKey, margin);
-    wGet.setLayoutData(fdGet);
-
-    FormData fdKey = new FormData();
-    fdKey.left = new FormAttachment(0, 0);
-    fdKey.top = new FormAttachment(wlKey, margin);
-    fdKey.right = new FormAttachment(wGet, -margin);
-    fdKey.bottom = new FormAttachment(wlKey, 160);
-    wKey.setLayoutData(fdKey);
-
-    // THE UPDATE/INSERT TABLE
-    Label wlReturn = new Label(wGeneralComp, SWT.NONE);
-    wlReturn.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.UpdateFields.Label"));
-    PropsUi.setLook(wlReturn);
-    FormData fdlReturn = new FormData();
-    fdlReturn.left = new FormAttachment(0, 0);
-    fdlReturn.top = new FormAttachment(wKey, margin);
-    wlReturn.setLayoutData(fdlReturn);
-
-    int upInsCols = 3;
-    int upInsRows = (input.getUpdateLookup() != null ? input.getUpdateLookup().length : 1);
-
-    ciReturn = new ColumnInfo[upInsCols];
-    ciReturn[0] =
-        new ColumnInfo(
-            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.TableField"),
-            ColumnInfo.COLUMN_TYPE_CCOMBO,
-            new String[] {""},
-            false);
-    ciReturn[1] =
-        new ColumnInfo(
-            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.StreamField"),
-            ColumnInfo.COLUMN_TYPE_CCOMBO,
-            new String[] {""},
-            false);
-    ciReturn[2] =
-        new ColumnInfo(
-            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.Update"),
-            ColumnInfo.COLUMN_TYPE_CCOMBO,
-            new String[] {"Y", "N"});
-    tableFieldColumns.add(ciReturn[0]);
-    wReturn =
-        new TableView(
-            variables,
-            wGeneralComp,
-            SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL,
-            ciReturn,
-            upInsRows,
-            lsMod,
-            props);
-
-    Button wGetLU = new Button(wGeneralComp, SWT.PUSH);
-    wGetLU.setText(
-        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.GetAndUpdateFields.Label"));
-    FormData fdGetLU = new FormData();
-    fdGetLU.top = new FormAttachment(wlReturn, margin);
-    fdGetLU.right = new FormAttachment(100, 0);
-    wGetLU.setLayoutData(fdGetLU);
-
-    FormData fdReturn = new FormData();
-    fdReturn.left = new FormAttachment(0, 0);
-    fdReturn.top = new FormAttachment(wlReturn, margin);
-    fdReturn.right = new FormAttachment(wGetLU, -margin);
-    fdReturn.bottom = new FormAttachment(100, -margin);
-    wReturn.setLayoutData(fdReturn);
-
-    Button wDoMapping = new Button(wGeneralComp, SWT.PUSH);
-    wDoMapping.setText(
-        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.EditMapping.Label"));
-    FormData fdDoMapping = new FormData();
-    fdDoMapping.top = new FormAttachment(wGetLU, margin);
-    fdDoMapping.right = new FormAttachment(100, 0);
-    wDoMapping.setLayoutData(fdDoMapping);
-
-    wDoMapping.addListener(SWT.Selection, arg0 -> generateMappings());
-
-    //
-    // Search the fields in the background
-    //
-
-    final Runnable runnable =
-        () -> {
-          // This is running in a new process: copy some HopVariables info
-          TransformMeta transformMeta = pipelineMeta.findTransform(transformName);
-          if (transformMeta != null) {
-            try {
-              IRowMeta row = pipelineMeta.getPrevTransformFields(variables, transformMeta);
-
-              // Remember these fields...
-              for (int i = 0; i < row.size(); i++) {
-                inputFields.add(row.getValueMeta(i).getName());
-              }
-
-              setComboBoxes();
-            } catch (HopException e) {
-              logError(BaseMessages.getString(PKG, "System.Dialog.GetFieldsFailed.Message"));
-            }
-          }
-        };
-    new Thread(runnable).start();
-
-    // Add listeners
-
-    FormData fdGeneralComp = new FormData();
-    fdGeneralComp.left = new FormAttachment(0, 0);
-    fdGeneralComp.top = new FormAttachment(0, 0);
-    fdGeneralComp.right = new FormAttachment(100, 0);
-    fdGeneralComp.bottom = new FormAttachment(100, 0);
-    wGeneralComp.setLayoutData(fdGeneralComp);
-
-    wGeneralComp.layout();
-    wGeneralTab.setControl(wGeneralComp);
-    PropsUi.setLook(wGeneralComp);
-
-    // ///////////////////////////////////////////////////////////
-    // / END OF GENERAL TAB
-    // ///////////////////////////////////////////////////////////
-
-    // ////////////////////////
-    // START OF ADVANCED TAB ///
-    // ////////////////////////
-
+  private void addAdvancedTab(
+      CTabFolder wTabFolder, ModifyListener lsMod, SelectionListener lsSimpleSelection) {
     CTabItem wAdvancedTab = new CTabItem(wTabFolder, SWT.NONE);
     wAdvancedTab.setFont(GuiResource.getInstance().getFontDefault());
     wAdvancedTab.setText(
@@ -656,16 +332,16 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
     fdlPerformLookup.top = new FormAttachment(wOrderDelete, margin);
     fdlPerformLookup.right = new FormAttachment(middle, -margin);
     wlPerformLookup.setLayoutData(fdlPerformLookup);
-    wPerformLookup = new Button(wOperationOrder, SWT.CHECK);
-    wPerformLookup.setToolTipText(
+    wbPerformLookup = new Button(wOperationOrder, SWT.CHECK);
+    wbPerformLookup.setToolTipText(
         BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.PerformLookup.Tooltip"));
-    wPerformLookup.addSelectionListener(lsSimpleSelection);
-    PropsUi.setLook(wPerformLookup);
+    wbPerformLookup.addSelectionListener(lsSimpleSelection);
+    PropsUi.setLook(wbPerformLookup);
     FormData fdPerformLookup = new FormData();
     fdPerformLookup.left = new FormAttachment(middle, 0);
     fdPerformLookup.top = new FormAttachment(wlPerformLookup, 0, SWT.CENTER);
     fdPerformLookup.right = new FormAttachment(100, 0);
-    wPerformLookup.setLayoutData(fdPerformLookup);
+    wbPerformLookup.setLayoutData(fdPerformLookup);
 
     FormData fdOperationOrder = new FormData();
     fdOperationOrder.left = new FormAttachment(0, margin);
@@ -687,46 +363,410 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
     wAdvancedComp.layout();
     wAdvancedTab.setControl(wAdvancedComp);
     PropsUi.setLook(wAdvancedComp);
+  }
 
-    // ///////////////////////////////////////////////////////////
-    // / END OF ADVANCED TAB
-    // ///////////////////////////////////////////////////////////
+  private void addUpdatesTab(CTabFolder wTabFolder, ModifyListener lsMod) {
+    CTabItem wUpdatesTab = new CTabItem(wTabFolder, SWT.NONE);
+    wUpdatesTab.setFont(GuiResource.getInstance().getFontDefault());
+    wUpdatesTab.setText(
+        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.UpdatesTab.TabTitle"));
 
-    FormData fdTabFolder = new FormData();
-    fdTabFolder.left = new FormAttachment(0, 0);
-    fdTabFolder.top = new FormAttachment(wSpacer, margin);
-    fdTabFolder.right = new FormAttachment(100, 0);
-    fdTabFolder.bottom = new FormAttachment(wOk, -margin);
-    wTabFolder.setLayoutData(fdTabFolder);
+    Composite wUpdatesComp = new Composite(wTabFolder, SWT.NONE);
+    PropsUi.setLook(wUpdatesComp);
 
+    FormLayout updatesLayout = new FormLayout();
+    updatesLayout.marginWidth = 3;
+    updatesLayout.marginHeight = 3;
+    wUpdatesComp.setLayout(updatesLayout);
+
+    // THE UPDATE/INSERT TABLE
+    Label wlReturn = new Label(wUpdatesComp, SWT.NONE);
+    wlReturn.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.UpdateFields.Label"));
+    PropsUi.setLook(wlReturn);
+    FormData fdlReturn = new FormData();
+    fdlReturn.left = new FormAttachment(0, 0);
+    fdlReturn.top = new FormAttachment(wKey, margin);
+    wlReturn.setLayoutData(fdlReturn);
+
+    int upInsCols = 3;
+
+    ciReturn = new ColumnInfo[upInsCols];
+    ciReturn[0] =
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.TableField"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO,
+            new String[] {""},
+            false);
+    ciReturn[1] =
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.StreamField"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO,
+            new String[] {""},
+            false);
+    ciReturn[2] =
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.Update"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO,
+            "Y",
+            "N");
+    tableFieldColumns.add(ciReturn[0]);
+    wReturn =
+        new TableView(
+            variables,
+            wUpdatesComp,
+            SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL,
+            ciReturn,
+            1,
+            lsMod,
+            props);
+
+    Button wbGetLU = new Button(wUpdatesComp, SWT.PUSH);
+    wbGetLU.setText(
+        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.GetAndUpdateFields.Label"));
+    FormData fdGetLU = new FormData();
+    fdGetLU.bottom = new FormAttachment(100, -2 * margin);
+    fdGetLU.left = new FormAttachment(0, 0);
+    wbGetLU.setLayoutData(fdGetLU);
+    wbGetLU.addListener(SWT.Selection, e -> getUpdate());
+
+    FormData fdReturn = new FormData();
+    fdReturn.left = new FormAttachment(0, 0);
+    fdReturn.top = new FormAttachment(wlReturn, margin);
+    fdReturn.right = new FormAttachment(100, 0);
+    fdReturn.bottom = new FormAttachment(wbGetLU, -2 * margin);
+    wReturn.setLayoutData(fdReturn);
+
+    Button wbDoMapping = new Button(wUpdatesComp, SWT.PUSH);
+    wbDoMapping.setText(
+        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.EditMapping.Label"));
+    FormData fdDoMapping = new FormData();
+    fdDoMapping.top = new FormAttachment(wbGetLU, margin);
+    fdDoMapping.right = new FormAttachment(100, 0);
+    wbDoMapping.setLayoutData(fdDoMapping);
+    wbDoMapping.addListener(SWT.Selection, arg0 -> generateMappings());
+
+    //
+    // Search the fields in the background
+    //
+
+    final Runnable runnable =
+        () -> {
+          // This is running in a new process: copy some HopVariables info
+          TransformMeta transformMeta = pipelineMeta.findTransform(transformName);
+          if (transformMeta != null) {
+            try {
+              IRowMeta row = pipelineMeta.getPrevTransformFields(variables, transformMeta);
+
+              // Remember these fields...
+              for (int i = 0; i < row.size(); i++) {
+                inputFields.add(row.getValueMeta(i).getName());
+              }
+
+              setComboBoxes();
+            } catch (HopException e) {
+              logError(BaseMessages.getString(PKG, "System.Dialog.GetFieldsFailed.Message"));
+            }
+          }
+        };
+    new Thread(runnable).start();
+
+    FormData fdUpdatesComp = new FormData();
+    fdUpdatesComp.left = new FormAttachment(0, 0);
+    fdUpdatesComp.top = new FormAttachment(0, 0);
+    fdUpdatesComp.right = new FormAttachment(100, 0);
+    fdUpdatesComp.bottom = new FormAttachment(100, 0);
+    wUpdatesComp.setLayoutData(fdUpdatesComp);
+
+    wUpdatesComp.layout();
+    wUpdatesTab.setControl(wUpdatesComp);
+    PropsUi.setLook(wUpdatesComp);
+  }
+
+  private void addKeysTab(CTabFolder wTabFolder, ModifyListener lsMod) {
+    CTabItem wKeysTab = new CTabItem(wTabFolder, SWT.NONE);
+    wKeysTab.setFont(GuiResource.getInstance().getFontDefault());
+    wKeysTab.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.KeysTab.TabTitle"));
+
+    Composite wKeysComp = new Composite(wTabFolder, SWT.NONE);
+    PropsUi.setLook(wKeysComp);
+
+    FormLayout keysLayout = new FormLayout();
+    keysLayout.marginWidth = 3;
+    keysLayout.marginHeight = 3;
+    wKeysComp.setLayout(keysLayout);
+
+    Label wlKey = new Label(wKeysComp, SWT.NONE);
+    wlKey.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Keys.Label"));
+    PropsUi.setLook(wlKey);
+    FormData fdlKey = new FormData();
+    fdlKey.left = new FormAttachment(0, 0);
+    fdlKey.top = new FormAttachment(wTableField, margin);
+    wlKey.setLayoutData(fdlKey);
+
+    int nrKeyCols = 4;
+
+    ciKey = new ColumnInfo[nrKeyCols];
+    ciKey[0] =
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.TableField"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO,
+            new String[] {""},
+            false);
+    ciKey[1] =
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.Comparator"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO,
+            "=",
+            "<>",
+            "<",
+            "<=",
+            ">",
+            ">=",
+            "LIKE",
+            "BETWEEN",
+            "IS NULL",
+            "IS NOT NULL");
+    ciKey[2] =
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.StreamField1"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO,
+            new String[] {""},
+            false);
+    ciKey[3] =
+        new ColumnInfo(
+            BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.ColumnInfo.StreamField2"),
+            ColumnInfo.COLUMN_TYPE_CCOMBO,
+            new String[] {""},
+            false);
+    tableFieldColumns.add(ciKey[0]);
+    wKey =
+        new TableView(
+            variables,
+            wKeysComp,
+            SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL,
+            ciKey,
+            1,
+            lsMod,
+            props);
+
+    wGet = new Button(wKeysComp, SWT.PUSH);
+    wGet.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.GetFields.Button"));
+    fdGet = new FormData();
+    fdGet.left = new FormAttachment(0, 0);
+    fdGet.bottom = new FormAttachment(100, -2 * margin);
+    wGet.setLayoutData(fdGet);
     wGet.addListener(SWT.Selection, e -> get());
-    wGetLU.addListener(SWT.Selection, e -> getUpdate());
 
-    wbSchema.addSelectionListener(
+    FormData fdKey = new FormData();
+    fdKey.left = new FormAttachment(0, 0);
+    fdKey.top = new FormAttachment(wlKey, margin);
+    fdKey.right = new FormAttachment(100, 0);
+    fdKey.bottom = new FormAttachment(wGet, -2 * margin);
+    wKey.setLayoutData(fdKey);
+
+    FormData fdKeysComp = new FormData();
+    fdKeysComp.left = new FormAttachment(0, 0);
+    fdKeysComp.top = new FormAttachment(0, 0);
+    fdKeysComp.right = new FormAttachment(100, 0);
+    fdKeysComp.bottom = new FormAttachment(100, 0);
+    wKeysComp.setLayoutData(fdKeysComp);
+
+    wKeysComp.layout();
+    wKeysTab.setControl(wKeysComp);
+    PropsUi.setLook(wKeysComp);
+  }
+
+  private void addGeneralTab(
+      CTabFolder wTabFolder,
+      ModifyListener lsMod,
+      SelectionListener lsSelection,
+      ModifyListener lsTableMod,
+      SelectionListener lsSimpleSelection) {
+    CTabItem wGeneralTab = new CTabItem(wTabFolder, SWT.NONE);
+    wGeneralTab.setFont(GuiResource.getInstance().getFontDefault());
+    wGeneralTab.setText(
+        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.GeneralTab.TabTitle"));
+
+    Composite wGeneralComp = new Composite(wTabFolder, SWT.NONE);
+    PropsUi.setLook(wGeneralComp);
+
+    FormLayout generalLayout = new FormLayout();
+    generalLayout.marginWidth = 3;
+    generalLayout.marginHeight = 3;
+    wGeneralComp.setLayout(generalLayout);
+
+    // Connection line
+    wConnection = addConnectionLine(wGeneralComp, wSpacer, input.getConnection(), lsMod);
+    wConnection.addSelectionListener(lsSelection);
+
+    // Schema line...
+    Label wlSchema = new Label(wGeneralComp, SWT.RIGHT);
+    wlSchema.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TargetSchema.Label"));
+    PropsUi.setLook(wlSchema);
+    FormData fdlSchema = new FormData();
+    fdlSchema.left = new FormAttachment(0, 0);
+    fdlSchema.right = new FormAttachment(middle, -margin);
+    fdlSchema.top = new FormAttachment(wConnection, margin);
+    wlSchema.setLayoutData(fdlSchema);
+
+    Button wbSchema = new Button(wGeneralComp, SWT.PUSH | SWT.CENTER);
+    PropsUi.setLook(wbSchema);
+    wbSchema.setText(BaseMessages.getString(PKG, "System.Button.Browse"));
+    FormData fdbSchema = new FormData();
+    fdbSchema.top = new FormAttachment(wConnection, margin);
+    fdbSchema.right = new FormAttachment(100, 0);
+    wbSchema.setLayoutData(fdbSchema);
+    wbSchema.addListener(SWT.Selection, e -> getSchemaNames());
+
+    wSchema = new TextVar(variables, wGeneralComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+    PropsUi.setLook(wSchema);
+    wSchema.addModifyListener(lsTableMod);
+    FormData fdSchema = new FormData();
+    fdSchema.left = new FormAttachment(middle, 0);
+    fdSchema.top = new FormAttachment(wConnection, margin);
+    fdSchema.right = new FormAttachment(wbSchema, -margin);
+    wSchema.setLayoutData(fdSchema);
+
+    // Table line...
+    wlTable = new Label(wGeneralComp, SWT.RIGHT);
+    wlTable.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TargetTable.Label"));
+    PropsUi.setLook(wlTable);
+    FormData fdlTable = new FormData();
+    fdlTable.left = new FormAttachment(0, 0);
+    fdlTable.right = new FormAttachment(middle, -margin);
+    fdlTable.top = new FormAttachment(wbSchema, margin);
+    wlTable.setLayoutData(fdlTable);
+
+    wbTable = new Button(wGeneralComp, SWT.PUSH | SWT.CENTER);
+    PropsUi.setLook(wbTable);
+    wbTable.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Browse.Button"));
+    FormData fdbTable = new FormData();
+    fdbTable.right = new FormAttachment(100, 0);
+    fdbTable.top = new FormAttachment(wbSchema, margin);
+    wbTable.setLayoutData(fdbTable);
+    wbTable.addListener(SWT.Selection, e -> getTableName());
+
+    wTable = new TextVar(variables, wGeneralComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+    PropsUi.setLook(wTable);
+    wTable.addModifyListener(lsTableMod);
+    FormData fdTable = new FormData();
+    fdTable.left = new FormAttachment(middle, 0);
+    fdTable.top = new FormAttachment(wbSchema, margin);
+    fdTable.right = new FormAttachment(wbTable, -margin);
+    wTable.setLayoutData(fdTable);
+
+    // Commit line
+    Label wlCommit = new Label(wGeneralComp, SWT.RIGHT);
+    wlCommit.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.CommitSize.Label"));
+    PropsUi.setLook(wlCommit);
+    FormData fdlCommit = new FormData();
+    fdlCommit.left = new FormAttachment(0, 0);
+    fdlCommit.top = new FormAttachment(wTable, margin);
+    fdlCommit.right = new FormAttachment(middle, -margin);
+    wlCommit.setLayoutData(fdlCommit);
+
+    wCommit = new TextVar(variables, wGeneralComp, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+    PropsUi.setLook(wCommit);
+    wCommit.addModifyListener(lsMod);
+    FormData fdCommit = new FormData();
+    fdCommit.left = new FormAttachment(middle, 0);
+    fdCommit.top = new FormAttachment(wTable, margin);
+    fdCommit.right = new FormAttachment(100, 0);
+    wCommit.setLayoutData(fdCommit);
+
+    // UsePart update
+    Label wlBatch = new Label(wGeneralComp, SWT.RIGHT);
+    wlBatch.setText(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Batch.Label"));
+    PropsUi.setLook(wlBatch);
+    FormData fdlBatch = new FormData();
+    fdlBatch.left = new FormAttachment(0, 0);
+    fdlBatch.top = new FormAttachment(wCommit, margin);
+    fdlBatch.right = new FormAttachment(middle, -margin);
+    wlBatch.setLayoutData(fdlBatch);
+    wbBatch = new Button(wGeneralComp, SWT.CHECK);
+    wbBatch.setToolTipText(
+        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Batch.Tooltip"));
+    wbBatch.addSelectionListener(lsSimpleSelection);
+    PropsUi.setLook(wbBatch);
+    FormData fdBatch = new FormData();
+    fdBatch.left = new FormAttachment(middle, 0);
+    fdBatch.top = new FormAttachment(wlBatch, 0, SWT.CENTER);
+    fdBatch.right = new FormAttachment(100, 0);
+    wbBatch.setLayoutData(fdBatch);
+
+    // TablenameInField line
+    Label wlTablenameInField = new Label(wGeneralComp, SWT.RIGHT);
+    wlTablenameInField.setText(
+        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TablenameInField.Label"));
+    PropsUi.setLook(wlTablenameInField);
+    FormData fdlTablenameInField = new FormData();
+    fdlTablenameInField.left = new FormAttachment(0, 0);
+    fdlTablenameInField.top = new FormAttachment(wbBatch, margin);
+    fdlTablenameInField.right = new FormAttachment(middle, -margin);
+    wlTablenameInField.setLayoutData(fdlTablenameInField);
+    wTableNameInField = new Button(wGeneralComp, SWT.CHECK);
+    wTableNameInField.setToolTipText(
+        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TablenameInField.Tooltip"));
+    PropsUi.setLook(wTableNameInField);
+    FormData fdTablenameInField = new FormData();
+    fdTablenameInField.left = new FormAttachment(middle, 0);
+    fdTablenameInField.top = new FormAttachment(wlTablenameInField, 0, SWT.CENTER);
+    fdTablenameInField.right = new FormAttachment(100, 0);
+    wTableNameInField.setLayoutData(fdTablenameInField);
+    wTableNameInField.addSelectionListener(
         new SelectionAdapter() {
           @Override
           public void widgetSelected(SelectionEvent e) {
-            getSchemaNames();
+            activeTableNameField();
+            input.setChanged();
           }
         });
-    wbTable.addSelectionListener(
-        new SelectionAdapter() {
+
+    wlTableField = new Label(wGeneralComp, SWT.RIGHT);
+    wlTableField.setText(
+        BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.TableField.Label"));
+    PropsUi.setLook(wlTableField);
+    FormData fdlTableField = new FormData();
+    fdlTableField.left = new FormAttachment(0, 0);
+    fdlTableField.top = new FormAttachment(wTableNameInField, margin);
+    fdlTableField.right = new FormAttachment(middle, -margin);
+    wlTableField.setLayoutData(fdlTableField);
+    wTableField = new CCombo(wGeneralComp, SWT.BORDER | SWT.READ_ONLY);
+    wTableField.setEditable(true);
+    PropsUi.setLook(wTableField);
+    wTableField.addModifyListener(lsMod);
+    FormData fdTableField = new FormData();
+    fdTableField.left = new FormAttachment(middle, 0);
+    fdTableField.top = new FormAttachment(wTableNameInField, margin);
+    fdTableField.right = new FormAttachment(100, 0);
+    wTableField.setLayoutData(fdTableField);
+    wTableField.addFocusListener(
+        new FocusListener() {
           @Override
-          public void widgetSelected(SelectionEvent e) {
-            getTableName();
+          public void focusLost(FocusEvent e) {
+            // Do Nothing
+          }
+
+          @Override
+          public void focusGained(FocusEvent e) {
+            Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+            shell.setCursor(busy);
+            getFields();
+            shell.setCursor(null);
+            busy.dispose();
           }
         });
 
-    wTabFolder.setSelection(0);
+    FormData fdGeneralComp = new FormData();
+    fdGeneralComp.left = new FormAttachment(0, 0);
+    fdGeneralComp.top = new FormAttachment(0, 0);
+    fdGeneralComp.right = new FormAttachment(100, 0);
+    fdGeneralComp.bottom = new FormAttachment(100, 0);
+    wGeneralComp.setLayoutData(fdGeneralComp);
 
-    getData();
-    setTableFieldCombo();
-    activeTablenameField();
-    input.setChanged(changed);
-    focusTransformName();
-    BaseDialog.defaultShellHandling(shell, c -> ok(), c -> cancel());
-
-    return transformName;
+    wGeneralComp.layout();
+    wGeneralTab.setControl(wGeneralComp);
+    PropsUi.setLook(wGeneralComp);
   }
 
   /**
@@ -735,46 +775,17 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
    * put into the Select/Rename table.
    */
   private void generateMappings() {
-
     // Determine the source and target fields...
     //
-    IRowMeta sourceFields;
-    IRowMeta targetFields;
-
-    try {
-      sourceFields = pipelineMeta.getPrevTransformFields(variables, transformMeta);
-    } catch (HopException e) {
-      new ErrorDialog(
-          shell,
-          BaseMessages.getString(
-              PKG, "SynchronizeAfterMergeDialog.DoMapping.UnableToFindSourceFields.Title"),
-          BaseMessages.getString(
-              PKG, "SynchronizeAfterMergeDialog.DoMapping.UnableToFindSourceFields.Message"),
-          e);
-      return;
-    }
+    IRowMeta sourceFields = findSourceFields();
+    if (sourceFields == null) return;
 
     // refresh data
     input.setConnection(wConnection.getText());
-    input.setTableName(variables.resolve(wTable.getText()));
-    ITransformMeta transformMetaInterface = transformMeta.getTransform();
-    try {
-      targetFields = transformMetaInterface.getRequiredFields(variables);
-    } catch (HopException e) {
-      new ErrorDialog(
-          shell,
-          BaseMessages.getString(
-              PKG, "SynchronizeAfterMergeDialog.DoMapping.UnableToFindTargetFields.Title"),
-          BaseMessages.getString(
-              PKG, "SynchronizeAfterMergeDialog.DoMapping.UnableToFindTargetFields.Message"),
-          e);
+    input.getLookup().setTableName(variables.resolve(wTable.getText()));
+    IRowMeta targetFields = findTargetFields();
+    if (targetFields == null) {
       return;
-    }
-
-    String[] inputNames = new String[sourceFields.size()];
-    for (int i = 0; i < sourceFields.size(); i++) {
-      IValueMeta value = sourceFields.getValueMeta(i);
-      inputNames[i] = value.getName();
     }
 
     // Create the existing mapping list...
@@ -833,7 +844,7 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
             BaseMessages.getString(
                     PKG,
                     "SynchronizeAfterMergeDialog.DoMapping.SomeTargetFieldsNotFound",
-                    missingSourceFields.toString())
+                    missingTargetFields.toString())
                 + Const.CR;
       }
       message += Const.CR;
@@ -879,6 +890,42 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
       wReturn.setRowNums();
       wReturn.optWidth(true);
     }
+  }
+
+  private @Nullable IRowMeta findTargetFields() {
+    IRowMeta targetFields;
+    ITransformMeta transformMetaInterface = transformMeta.getTransform();
+    try {
+      targetFields = transformMetaInterface.getRequiredFields(variables);
+    } catch (HopException e) {
+      new ErrorDialog(
+          shell,
+          BaseMessages.getString(
+              PKG, "SynchronizeAfterMergeDialog.DoMapping.UnableToFindTargetFields.Title"),
+          BaseMessages.getString(
+              PKG, "SynchronizeAfterMergeDialog.DoMapping.UnableToFindTargetFields.Message"),
+          e);
+      return null;
+    }
+    return targetFields;
+  }
+
+  private @Nullable IRowMeta findSourceFields() {
+    IRowMeta sourceFields;
+
+    try {
+      sourceFields = pipelineMeta.getPrevTransformFields(variables, transformMeta);
+    } catch (HopException e) {
+      new ErrorDialog(
+          shell,
+          BaseMessages.getString(
+              PKG, "SynchronizeAfterMergeDialog.DoMapping.UnableToFindSourceFields.Title"),
+          BaseMessages.getString(
+              PKG, "SynchronizeAfterMergeDialog.DoMapping.UnableToFindSourceFields.Message"),
+          e);
+      return null;
+    }
+    return sourceFields;
   }
 
   private void setTableFieldCombo() {
@@ -933,13 +980,13 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
     ciReturn[1].setComboValues(fieldNames);
   }
 
-  private void activeTablenameField() {
-    wlTableField.setEnabled(wTablenameInField.getSelection());
-    wTableField.setEnabled(wTablenameInField.getSelection());
-    wlTable.setEnabled(!wTablenameInField.getSelection());
-    wTable.setEnabled(!wTablenameInField.getSelection());
-    wbTable.setEnabled(!wTablenameInField.getSelection());
-    wSql.setEnabled(!wTablenameInField.getSelection());
+  private void activeTableNameField() {
+    wlTableField.setEnabled(wTableNameInField.getSelection());
+    wTableField.setEnabled(wTableNameInField.getSelection());
+    wlTable.setEnabled(!wTableNameInField.getSelection());
+    wTable.setEnabled(!wTableNameInField.getSelection());
+    wbTable.setEnabled(!wTableNameInField.getSelection());
+    wSql.setEnabled(!wTableNameInField.getSelection());
   }
 
   private void getFields() {
@@ -973,79 +1020,36 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
 
   /** Copy information from the meta-data input to the dialog fields. */
   public void getData() {
-    if (log.isDebug()) {
-      logDebug(BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Log.GettingKeyInfo"));
-    }
+    wConnection.setText(Const.NVL(input.getConnection(), ""));
+    wSchema.setText(Const.NVL(input.getLookup().getSchemaName(), ""));
+    wTable.setText(Const.NVL(input.getLookup().getTableName(), ""));
 
     wCommit.setText(input.getCommitSize());
-    wTablenameInField.setSelection(input.isTableNameInField());
-    if (input.getTableNameField() != null) {
-      wTableField.setText(input.getTableNameField());
-    }
-    wBatch.setSelection(input.useBatchUpdate());
-    if (input.getOperationOrderField() != null) {
-      wOperationField.setText(input.getOperationOrderField());
-    }
-    if (input.getOrderInsert() != null) {
-      wOrderInsert.setText(input.getOrderInsert());
-    }
-    if (input.getOrderUpdate() != null) {
-      wOrderUpdate.setText(input.getOrderUpdate());
-    }
-    if (input.getOrderDelete() != null) {
-      wOrderDelete.setText(input.getOrderDelete());
-    }
-    wPerformLookup.setSelection(input.isPerformLookup());
+    wTableNameInField.setSelection(input.isTableNameInField());
+    wTableField.setText(Const.NVL(input.getTableNameField(), ""));
+    wbBatch.setSelection(input.isUsingBatchUpdates());
+    wOperationField.setText(Const.NVL(input.getOperationOrderField(), ""));
+    wOrderInsert.setText(Const.NVL(input.getOrderInsert(), ""));
+    wOrderUpdate.setText(Const.NVL(input.getOrderUpdate(), ""));
+    wOrderDelete.setText(Const.NVL(input.getOrderDelete(), ""));
+    wbPerformLookup.setSelection(input.isPerformingLookup());
 
-    if (input.getKeyStream() != null) {
-      for (int i = 0; i < input.getKeyStream().length; i++) {
-        TableItem item = wKey.table.getItem(i);
-        if (input.getKeyLookup()[i] != null) {
-          item.setText(1, input.getKeyLookup()[i]);
-        }
-        if (input.getKeyCondition()[i] != null) {
-          item.setText(2, input.getKeyCondition()[i]);
-        }
-        if (input.getKeyStream()[i] != null) {
-          item.setText(3, input.getKeyStream()[i]);
-        }
-        if (input.getKeyStream2()[i] != null) {
-          item.setText(4, input.getKeyStream2()[i]);
-        }
-      }
+    for (SynchronizeAfterMergeMeta.KeyCondition keyLookup : input.getLookup().getKeyConditions()) {
+      TableItem item = new TableItem(wKey.table, SWT.NONE);
+      item.setText(1, Const.NVL(keyLookup.getColumnName(), ""));
+      item.setText(2, Const.NVL(keyLookup.getCondition(), ""));
+      item.setText(3, Const.NVL(keyLookup.getFieldName(), ""));
+      item.setText(4, Const.NVL(keyLookup.getFieldName2(), ""));
     }
+    wKey.optimizeTableView();
 
-    if (input.getUpdateLookup() != null) {
-      for (int i = 0; i < input.getUpdateLookup().length; i++) {
-        TableItem item = wReturn.table.getItem(i);
-        if (input.getUpdateLookup()[i] != null) {
-          item.setText(1, input.getUpdateLookup()[i]);
-        }
-        if (input.getUpdateStream()[i] != null) {
-          item.setText(2, input.getUpdateStream()[i]);
-        }
-        if (input.getUpdate()[i] == null || input.getUpdate()[i]) {
-          item.setText(3, "Y");
-        } else {
-          item.setText(3, "N");
-        }
-      }
+    for (SynchronizeAfterMergeMeta.ValueUpdate valueUpdate : input.getLookup().getValueUpdates()) {
+      TableItem item = new TableItem(wReturn.table, SWT.NONE);
+      item.setText(1, Const.NVL(valueUpdate.getColumnName(), ""));
+      item.setText(2, Const.NVL(valueUpdate.getFieldName(), ""));
+      item.setText(3, valueUpdate.isUpdate() ? "Y" : "N");
     }
-
-    if (input.getSchemaName() != null) {
-      wSchema.setText(input.getSchemaName());
-    }
-    if (input.getTableName() != null) {
-      wTable.setText(input.getTableName());
-    }
-    if (input.getConnection() != null) {
-      wConnection.setText(input.getConnection());
-    }
-
-    wKey.setRowNums();
-    wKey.optWidth(true);
-    wReturn.setRowNums();
-    wReturn.optWidth(true);
+    wReturn.optimizeTableView();
   }
 
   private void cancel() {
@@ -1055,50 +1059,43 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
   }
 
   private void getInfo(SynchronizeAfterMergeMeta inf) {
-    int nrkeys = wKey.nrNonEmpty();
-    int nrFields = wReturn.nrNonEmpty();
+    SynchronizeAfterMergeMeta.Lookup lookup = inf.getLookup();
 
-    inf.allocate(nrkeys, nrFields);
+    inf.setConnection(wConnection.getText());
+    lookup.setSchemaName(wSchema.getText());
+    lookup.setTableName(wTable.getText());
 
     inf.setCommitSize(wCommit.getText());
-    inf.setTableNameInField(wTablenameInField.getSelection());
+    inf.setTableNameInField(wTableNameInField.getSelection());
     inf.setTableNameField(wTableField.getText());
-    inf.setUseBatchUpdate(wBatch.getSelection());
-    inf.setPerformLookup(wPerformLookup.getSelection());
+    inf.setUsingBatchUpdates(wbBatch.getSelection());
+    inf.setPerformingLookup(wbPerformLookup.getSelection());
 
     inf.setOperationOrderField(wOperationField.getText());
     inf.setOrderInsert(wOrderInsert.getText());
     inf.setOrderUpdate(wOrderUpdate.getText());
     inf.setOrderDelete(wOrderDelete.getText());
 
-    if (log.isDebug()) {
-      logDebug(
-          BaseMessages.getString(PKG, "SynchronizeAfterMergeDialog.Log.FoundKeys", nrkeys + ""));
+    lookup.getKeyConditions().clear();
+    for (TableItem item : wKey.getNonEmptyItems()) {
+      SynchronizeAfterMergeMeta.KeyCondition keyCondition =
+          new SynchronizeAfterMergeMeta.KeyCondition();
+      keyCondition.setColumnName(item.getText(1));
+      keyCondition.setCondition(item.getText(2));
+      keyCondition.setFieldName(item.getText(3));
+      keyCondition.setFieldName2(item.getText(4));
+      lookup.getKeyConditions().add(keyCondition);
     }
 
-    for (int i = 0; i < nrkeys; i++) {
-      TableItem item = wKey.getNonEmpty(i);
-      inf.getKeyLookup()[i] = item.getText(1);
-      inf.getKeyCondition()[i] = item.getText(2);
-      inf.getKeyStream()[i] = item.getText(3);
-      inf.getKeyStream2()[i] = item.getText(4);
+    lookup.getValueUpdates().clear();
+    for (TableItem item : wReturn.getNonEmptyItems()) {
+      SynchronizeAfterMergeMeta.ValueUpdate valueUpdate =
+          new SynchronizeAfterMergeMeta.ValueUpdate();
+      valueUpdate.setColumnName(item.getText(1));
+      valueUpdate.setFieldName(item.getText(2));
+      valueUpdate.setUpdate("Y".equals(item.getText(3)));
+      lookup.getValueUpdates().add(valueUpdate);
     }
-
-    if (log.isDebug()) {
-      logDebug(
-          BaseMessages.getString(
-              PKG, "SynchronizeAfterMergeDialog.Log.FoundFields", nrFields + ""));
-    }
-    for (int i = 0; i < nrFields; i++) {
-      TableItem item = wReturn.getNonEmpty(i);
-      inf.getUpdateLookup()[i] = item.getText(1);
-      inf.getUpdateStream()[i] = item.getText(2);
-      inf.getUpdate()[i] = "Y".equals(item.getText(3));
-    }
-
-    inf.setConnection(wConnection.getText());
-    inf.setSchemaName(wSchema.getText());
-    inf.setTableName(wTable.getText());
 
     transformName = wTransformName.getText(); // return value
   }
@@ -1260,11 +1257,11 @@ public class SynchronizeAfterMergeDialog extends BaseTransformDialog {
         String[] schemas = database.getSchemas();
 
         if (null != schemas && schemas.length > 0) {
-          schemas = Const.sortStrings(schemas);
+          String[] sortedSchemas = Const.sortStrings(schemas);
           EnterSelectionDialog dialog =
               new EnterSelectionDialog(
                   shell,
-                  schemas,
+                  sortedSchemas,
                   BaseMessages.getString(
                       PKG,
                       "SynchronizeAfterMergeDialog.AvailableSchemas.Title",

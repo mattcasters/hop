@@ -1,0 +1,101 @@
+{
+  "database_replacements": [],
+  "autoOpening": true,
+  "description": "",
+  "persist_filename": "",
+  "test_type": "UNIT_TEST",
+  "variableValues": [],
+  "basePath": "${HOP_UNIT_TESTS_FOLDER}",
+  "golden_data_sets": [
+    {
+      "field_mappings": [
+        {
+          "transform_field": "s1",
+          "data_set_field": "s1"
+        },
+        {
+          "transform_field": "s2",
+          "data_set_field": "s2"
+        },
+        {
+          "transform_field": "s3",
+          "data_set_field": "s3"
+        },
+        {
+          "transform_field": "s4",
+          "data_set_field": "s4"
+        },
+        {
+          "transform_field": "s5",
+          "data_set_field": "s5"
+        },
+        {
+          "transform_field": "s6",
+          "data_set_field": "s6"
+        },
+        {
+          "transform_field": "s7",
+          "data_set_field": "s7"
+        }
+      ],
+      "field_order": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7"
+      ],
+      "data_set_name": "golden-string-operations",
+      "transform_name": "Validate"
+    },
+    {
+      "field_mappings": [
+        {
+          "transform_field": "s1",
+          "data_set_field": "s1"
+        },
+        {
+          "transform_field": "s2",
+          "data_set_field": "s2"
+        },
+        {
+          "transform_field": "s3",
+          "data_set_field": "s3"
+        },
+        {
+          "transform_field": "s4",
+          "data_set_field": "s4"
+        },
+        {
+          "transform_field": "s5",
+          "data_set_field": "s5"
+        },
+        {
+          "transform_field": "s6",
+          "data_set_field": "s6"
+        },
+        {
+          "transform_field": "s7",
+          "data_set_field": "s7"
+        }
+      ],
+      "field_order": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7"
+      ],
+      "data_set_name": "golden-string-operations2",
+      "transform_name": "Validate 2"
+    }
+  ],
+  "input_data_sets": [],
+  "name": "0086-string-operations UNIT",
+  "trans_test_tweaks": [],
+  "pipeline_filename": "./0086-string-operations.hpl"
+}

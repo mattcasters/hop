@@ -1,0 +1,3 @@
+column,condition,field1,field2
+keyCol1,BETWEEN,keyField1,keyField2
+keyCol2,BETWEEN,keyField2,keyField2

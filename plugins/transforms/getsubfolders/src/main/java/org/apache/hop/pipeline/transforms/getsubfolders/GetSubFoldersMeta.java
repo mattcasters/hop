@@ -79,6 +79,10 @@ public class GetSubFoldersMeta extends BaseTransformMeta<GetSubFolders, GetSubFo
   @HopMetadataProperty(key = "limit")
   private long rowLimit;
 
+  /** The name of the children count output field. Null means legacy default ("childrens"). */
+  @HopMetadataProperty(key = "children_field")
+  private String childrenFieldName;
+
   public GetSubFoldersMeta() {
     super();
     files = new ArrayList<>();
@@ -91,6 +95,7 @@ public class GetSubFoldersMeta extends BaseTransformMeta<GetSubFolders, GetSubFo
     this.dynamicFolderNameField = m.dynamicFolderNameField;
     this.folderNameDynamic = m.folderNameDynamic;
     this.rowLimit = m.rowLimit;
+    this.childrenFieldName = m.childrenFieldName;
     m.files.forEach(f -> this.files.add(new GSFile(f)));
   }
 
@@ -105,6 +110,7 @@ public class GetSubFoldersMeta extends BaseTransformMeta<GetSubFolders, GetSubFo
     includeRowNumber = false;
     rowNumberField = "";
     dynamicFolderNameField = "";
+    childrenFieldName = "children";
   }
 
   @Override
@@ -168,7 +174,8 @@ public class GetSubFoldersMeta extends BaseTransformMeta<GetSubFolders, GetSubFo
     row.addValueMeta(rootUriValueMeta);
 
     // children
-    IValueMeta childrenValueMeta = new ValueMetaInteger(variables.resolve("childrens"));
+    String resolvedChildrenField = childrenFieldName != null ? childrenFieldName : "childrens";
+    IValueMeta childrenValueMeta = new ValueMetaInteger(variables.resolve(resolvedChildrenField));
     childrenValueMeta.setLength(IValueMeta.DEFAULT_INTEGER_LENGTH, 0);
     childrenValueMeta.setOrigin(name);
     row.addValueMeta(childrenValueMeta);
@@ -482,5 +489,23 @@ public class GetSubFoldersMeta extends BaseTransformMeta<GetSubFolders, GetSubFo
    */
   public void setRowLimit(long rowLimit) {
     this.rowLimit = rowLimit;
+  }
+
+  /**
+   * Gets childrenFieldName
+   *
+   * @return value of childrenFieldName
+   */
+  public String getChildrenFieldName() {
+    return childrenFieldName;
+  }
+
+  /**
+   * Sets childrenFieldName
+   *
+   * @param childrenFieldName value of childrenFieldName
+   */
+  public void setChildrenFieldName(String childrenFieldName) {
+    this.childrenFieldName = childrenFieldName;
   }
 }

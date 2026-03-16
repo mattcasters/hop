@@ -24,16 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.hop.core.row.RowMeta;
-import org.apache.hop.junit.rules.RestoreHopEnvironmentExtension;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(RestoreHopEnvironmentExtension.class)
 class HttpDataTest {
-
   private HttpData data;
 
   @BeforeEach
@@ -102,13 +98,13 @@ class HttpDataTest {
 
   @Test
   void testArgnrs() {
-    assertNull(data.argnrs, "argnrs should be null initially");
+    assertNull(data.argNrs, "argnrs should be null initially");
 
-    data.argnrs = new int[] {0, 1, 2};
-    assertEquals(3, data.argnrs.length);
-    assertEquals(0, data.argnrs[0]);
-    assertEquals(1, data.argnrs[1]);
-    assertEquals(2, data.argnrs[2]);
+    data.argNrs = new int[] {0, 1, 2};
+    assertEquals(3, data.argNrs.length);
+    assertEquals(0, data.argNrs[0]);
+    assertEquals(1, data.argNrs[1]);
+    assertEquals(2, data.argNrs[2]);
   }
 
   @Test
@@ -143,19 +139,18 @@ class HttpDataTest {
     assertFalse(data.useHeaderParameters, "useHeaderParameters should be false by default");
 
     data.useHeaderParameters = true;
-    assertEquals(true, data.useHeaderParameters);
+    assertTrue(data.useHeaderParameters);
   }
 
   @Test
   void testHeaderParameters() {
     assertNull(data.headerParameters, "headerParameters should be null initially");
 
-    NameValuePair[] params =
+    data.headerParameters =
         new NameValuePair[] {
           new BasicNameValuePair("Authorization", "Bearer token"),
           new BasicNameValuePair("Content-Type", "application/json")
         };
-    data.headerParameters = params;
 
     assertNotNull(data.headerParameters);
     assertEquals(2, data.headerParameters.length);
@@ -217,9 +212,9 @@ class HttpDataTest {
 
   @Test
   void testArgnrsWithEmptyArray() {
-    data.argnrs = new int[0];
-    assertNotNull(data.argnrs);
-    assertEquals(0, data.argnrs.length);
+    data.argNrs = new int[0];
+    assertNotNull(data.argNrs);
+    assertEquals(0, data.argNrs.length);
   }
 
   @Test

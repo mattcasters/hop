@@ -72,7 +72,7 @@ public class TableInputDialog extends BaseTransformDialog {
 
   private MetaSelectionLine<DatabaseMeta> wConnection;
 
-  private TextComposite wSql;
+  private TextComposite wSqlComposite;
 
   private CCombo wDataFrom;
 
@@ -87,9 +87,7 @@ public class TableInputDialog extends BaseTransformDialog {
 
   private Label wlPosition;
 
-  private Label wlSqlFromFile;
   private TextVar wSqlFromFile;
-  private Button wbSqlFromFile;
 
   public TableInputDialog(
       Shell parent, IVariables variables, TableInputMeta transformMeta, PipelineMeta pipelineMeta) {
@@ -108,7 +106,7 @@ public class TableInputDialog extends BaseTransformDialog {
     wConnection.addListener(SWT.Selection, e -> getSqlReservedWords());
 
     // Load SQL from file
-    wlSqlFromFile = new Label(shell, SWT.RIGHT);
+    Label wlSqlFromFile = new Label(shell, SWT.RIGHT);
     wlSqlFromFile.setText(BaseMessages.getString(PKG, "TableInputDialog.LoadSqlFromFile"));
     PropsUi.setLook(wlSqlFromFile);
     FormData fdlSqlFromFile = new FormData();
@@ -116,7 +114,7 @@ public class TableInputDialog extends BaseTransformDialog {
     fdlSqlFromFile.right = new FormAttachment(middle, -margin);
     fdlSqlFromFile.top = new FormAttachment(wConnection, margin);
     wlSqlFromFile.setLayoutData(fdlSqlFromFile);
-    wbSqlFromFile = new Button(shell, SWT.PUSH);
+    Button wbSqlFromFile = new Button(shell, SWT.PUSH);
     PropsUi.setLook(wbSqlFromFile);
     wbSqlFromFile.setText(BaseMessages.getString(PKG, "TableInputDialog.Browse"));
     FormData fdbSqlFromFile = new FormData();
@@ -153,7 +151,7 @@ public class TableInputDialog extends BaseTransformDialog {
     wSqlFromFile.addModifyListener(
         e -> {
           if (Utils.isEmpty(wSqlFromFile.getText())) {
-            wSql.setEditable(true);
+            wSqlComposite.setEditable(true);
           }
         });
 
@@ -277,30 +275,30 @@ public class TableInputDialog extends BaseTransformDialog {
     wbTable.setLayoutData(fdbTable);
 
     if (EnvironmentUtils.getInstance().isWeb()) {
-      wSql =
+      wSqlComposite =
           new StyledTextComp(
               variables, shell, SWT.MULTI | SWT.LEFT | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
     } else {
-      wSql =
+      wSqlComposite =
           new SQLStyledTextComp(
               variables, shell, SWT.MULTI | SWT.LEFT | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
     }
-    PropsUi.setLook(wSql, Props.WIDGET_STYLE_FIXED);
-    wSql.addModifyListener(lsMod);
+    PropsUi.setLook(wSqlComposite, Props.WIDGET_STYLE_FIXED);
+    wSqlComposite.addModifyListener(lsMod);
     FormData fdSql = new FormData();
     fdSql.left = new FormAttachment(0, 0);
     fdSql.top = new FormAttachment(wbTable, margin);
     fdSql.right = new FormAttachment(100, -margin);
     fdSql.bottom = new FormAttachment(wlPosition, -margin);
     fdSql.height = 200;
-    wSql.setLayoutData(fdSql);
-    wSql.addModifyListener(
+    wSqlComposite.setLayoutData(fdSql);
+    wSqlComposite.addModifyListener(
         arg0 -> {
           setSqlToolTip();
           setPosition();
         });
 
-    wSql.addKeyListener(
+    wSqlComposite.addKeyListener(
         new KeyAdapter() {
           @Override
           public void keyPressed(KeyEvent e) {
@@ -312,7 +310,7 @@ public class TableInputDialog extends BaseTransformDialog {
             setPosition();
           }
         });
-    wSql.addFocusListener(
+    wSqlComposite.addFocusListener(
         new FocusAdapter() {
           @Override
           public void focusGained(FocusEvent e) {
@@ -324,7 +322,7 @@ public class TableInputDialog extends BaseTransformDialog {
             setPosition();
           }
         });
-    wSql.addMouseListener(
+    wSqlComposite.addMouseListener(
         new MouseAdapter() {
           @Override
           public void mouseDoubleClick(MouseEvent e) {
@@ -349,7 +347,7 @@ public class TableInputDialog extends BaseTransformDialog {
 
     final List<String> sqlKeywords = getSqlReservedWords();
 
-    wSql.addLineStyleListener(sqlKeywords);
+    wSqlComposite.addLineStyleListener(sqlKeywords);
     getData();
     input.setChanged(changed);
 
@@ -379,8 +377,8 @@ public class TableInputDialog extends BaseTransformDialog {
   }
 
   public void setPosition() {
-    int lineNumber = wSql.getLineNumber();
-    int columnNumber = wSql.getColumnNumber();
+    int lineNumber = wSqlComposite.getLineNumber();
+    int columnNumber = wSqlComposite.getColumnNumber();
     wlPosition.setText(
         BaseMessages.getString(
             PKG, "TableInputDialog.Position.Label", "" + lineNumber, "" + columnNumber));
@@ -389,13 +387,13 @@ public class TableInputDialog extends BaseTransformDialog {
   private void loadSqlFromFileAndSetReadOnly() {
     String path = variables.resolve(wSqlFromFile.getText());
     if (Utils.isEmpty(path)) {
-      wSql.setEditable(true);
+      wSqlComposite.setEditable(true);
       return;
     }
     try {
       String content = HopVfs.getTextFileContent(path, Const.XML_ENCODING);
-      wSql.setText(content);
-      wSql.setEditable(false);
+      wSqlComposite.setText(content);
+      wSqlComposite.setEditable(false);
     } catch (HopFileException e) {
       MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_WARNING);
       mb.setText(BaseMessages.getString(PKG, "TableInputDialog.DialogCaptionError"));
@@ -404,13 +402,13 @@ public class TableInputDialog extends BaseTransformDialog {
               + Const.CR
               + e.getMessage());
       mb.open();
-      wSql.setEditable(true);
+      wSqlComposite.setEditable(true);
     }
   }
 
   protected void setSqlToolTip() {
     if (wVariables.getSelection()) {
-      wSql.setToolTipText(variables.resolve(wSql.getText()));
+      wSqlComposite.setToolTipText(variables.resolve(wSqlComposite.getText()));
     }
   }
 
@@ -418,7 +416,7 @@ public class TableInputDialog extends BaseTransformDialog {
   public void getData() {
 
     if (input.getSql() != null) {
-      wSql.setText(input.getSql());
+      wSqlComposite.setText(input.getSql());
     }
     if (input.getConnection() != null) {
       wConnection.setText(input.getConnection());
@@ -428,7 +426,7 @@ public class TableInputDialog extends BaseTransformDialog {
     if (!Utils.isEmpty(wSqlFromFile.getText())) {
       loadSqlFromFileAndSetReadOnly();
     } else {
-      wSql.setEditable(true);
+      wSqlComposite.setEditable(true);
     }
 
     wLimit.setText(Const.NVL(input.getRowLimit(), ""));
@@ -451,9 +449,9 @@ public class TableInputDialog extends BaseTransformDialog {
     meta.setConnection(wConnection.getText());
 
     meta.setSql(
-        preview && !Utils.isEmpty(wSql.getSelectionText())
-            ? wSql.getSelectionText()
-            : wSql.getText());
+        preview && !Utils.isEmpty(wSqlComposite.getSelectionText())
+            ? wSqlComposite.getSelectionText()
+            : wSqlComposite.getText());
     meta.setSqlFromFile(wSqlFromFile.getText());
 
     meta.setRowLimit(wLimit.getText());
@@ -498,7 +496,7 @@ public class TableInputDialog extends BaseTransformDialog {
                 + databaseMeta.getQuotedSchemaTableCombination(
                     variables, std.getSchemaName(), std.getTableName())
                 + Const.CR;
-        wSql.setText(sql);
+        wSqlComposite.setText(sql);
 
         MessageBox yn = new MessageBox(shell, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION);
         yn.setMessage(BaseMessages.getString(PKG, "TableInputDialog.IncludeFieldNamesInSQL"));
@@ -508,7 +506,7 @@ public class TableInputDialog extends BaseTransformDialog {
           case SWT.CANCEL:
             break;
           case SWT.NO:
-            wSql.setText(sql);
+            wSqlComposite.setText(sql);
             break;
           case SWT.YES:
             Database db = new Database(loggingObject, variables, databaseMeta);
@@ -531,7 +529,7 @@ public class TableInputDialog extends BaseTransformDialog {
                         + databaseMeta.getQuotedSchemaTableCombination(
                             variables, std.getSchemaName(), std.getTableName())
                         + Const.CR;
-                wSql.setText(sql);
+                wSqlComposite.setText(sql);
               } else {
                 MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
                 mb.setMessage(

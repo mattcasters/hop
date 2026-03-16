@@ -24,9 +24,11 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.hop.core.HopEnvironment;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.logging.LogLevel;
+import org.apache.hop.core.logging.HopLogStore;
 import org.apache.hop.workflow.engine.IWorkflowEngine;
 import org.apache.hop.workflow.engines.local.LocalWorkflowEngine;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class WorkflowTest {
@@ -90,6 +92,13 @@ class WorkflowTest {
   @BeforeAll
   static void beforeClass() throws HopException {
     HopEnvironment.init();
+  }
+
+  @BeforeEach
+  void before() {
+    if (!HopLogStore.isInitialized()) {
+      HopLogStore.init();
+    }
   }
 
   /**

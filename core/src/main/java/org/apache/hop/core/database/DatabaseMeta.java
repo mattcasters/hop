@@ -63,7 +63,8 @@ import org.apache.hop.metadata.api.IHopMetadataProvider;
     description = "i18n::DatabaseMeta.description",
     image = "ui/images/database.svg",
     documentationUrl = "/metadata-types/rdbms-connection.html",
-    hopMetadataPropertyType = HopMetadataPropertyType.RDBMS_CONNECTION)
+    hopMetadataPropertyType = HopMetadataPropertyType.RDBMS_CONNECTION,
+    supportsGlobalReplace = true)
 public class DatabaseMeta extends HopMetadataBase implements Cloneable, IHopMetadata {
   private static final Class<?> PKG = Database.class;
 
@@ -2326,5 +2327,71 @@ public class DatabaseMeta extends HopMetadataBase implements Cloneable, IHopMeta
    */
   public boolean isHideUrlInTestConnection() {
     return iDatabase.isHideUrlInTestConnection();
+  }
+
+  // SSH Tunnel delegation methods
+
+  public boolean isSshTunnelEnabled() {
+    return iDatabase.isSshTunnelEnabled();
+  }
+
+  public void setSshTunnelEnabled(boolean enabled) {
+    iDatabase.setSshTunnelEnabled(enabled);
+  }
+
+  public String getSshTunnelHost() {
+    return iDatabase.getSshTunnelHost();
+  }
+
+  public void setSshTunnelHost(String host) {
+    iDatabase.setSshTunnelHost(host);
+  }
+
+  public String getSshTunnelPort() {
+    return iDatabase.getSshTunnelPort();
+  }
+
+  public void setSshTunnelPort(String port) {
+    iDatabase.setSshTunnelPort(port);
+  }
+
+  public String getSshTunnelUsername() {
+    return iDatabase.getSshTunnelUsername();
+  }
+
+  public void setSshTunnelUsername(String username) {
+    iDatabase.setSshTunnelUsername(username);
+  }
+
+  public String getSshTunnelPassword() {
+    return iDatabase.getSshTunnelPassword();
+  }
+
+  public void setSshTunnelPassword(String password) {
+    iDatabase.setSshTunnelPassword(password);
+  }
+
+  public boolean isSshTunnelUsePrivateKey() {
+    return iDatabase.isSshTunnelUsePrivateKey();
+  }
+
+  public void setSshTunnelUsePrivateKey(boolean usePrivateKey) {
+    iDatabase.setSshTunnelUsePrivateKey(usePrivateKey);
+  }
+
+  public String getSshTunnelPrivateKeyFile() {
+    return iDatabase.getSshTunnelPrivateKeyFile();
+  }
+
+  public void setSshTunnelPrivateKeyFile(String privateKeyFile) {
+    iDatabase.setSshTunnelPrivateKeyFile(privateKeyFile);
+  }
+
+  public String getSshTunnelPassphrase() {
+    return iDatabase.getSshTunnelPassphrase();
+  }
+
+  public void setSshTunnelPassphrase(String passphrase) {
+    iDatabase.setSshTunnelPassphrase(passphrase);
   }
 }

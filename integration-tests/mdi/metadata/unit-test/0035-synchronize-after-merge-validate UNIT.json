@@ -1,0 +1,142 @@
+{
+  "database_replacements": [],
+  "autoOpening": true,
+  "description": "",
+  "persist_filename": "",
+  "test_type": "UNIT_TEST",
+  "variableValues": [],
+  "basePath": "",
+  "golden_data_sets": [
+    {
+      "field_mappings": [
+        {
+          "transform_field": "connection",
+          "data_set_field": "connection"
+        },
+        {
+          "transform_field": "tablename_in_field",
+          "data_set_field": "tablename_in_field"
+        },
+        {
+          "transform_field": "tablename_field",
+          "data_set_field": "tablename_field"
+        },
+        {
+          "transform_field": "commit",
+          "data_set_field": "commit"
+        },
+        {
+          "transform_field": "use_batch",
+          "data_set_field": "use_batch"
+        },
+        {
+          "transform_field": "order_delete",
+          "data_set_field": "order_delete"
+        },
+        {
+          "transform_field": "order_update",
+          "data_set_field": "order_update"
+        },
+        {
+          "transform_field": "order_insert",
+          "data_set_field": "order_insert"
+        },
+        {
+          "transform_field": "operation_order_field",
+          "data_set_field": "operation_order_field"
+        },
+        {
+          "transform_field": "perform_lookup",
+          "data_set_field": "perform_lookup"
+        }
+      ],
+      "field_order": [
+        "connection",
+        "tablename_in_field",
+        "tablename_field",
+        "commit",
+        "use_batch",
+        "order_delete",
+        "order_update",
+        "order_insert",
+        "operation_order_field",
+        "perform_lookup"
+      ],
+      "data_set_name": "golden-synchronize-after-merge-general",
+      "transform_name": "validate general"
+    },
+    {
+      "field_mappings": [
+        {
+          "transform_field": "schema",
+          "data_set_field": "schema"
+        },
+        {
+          "transform_field": "table",
+          "data_set_field": "table"
+        }
+      ],
+      "field_order": [
+        "schema",
+        "table"
+      ],
+      "data_set_name": "golden-synchronize-after-merge-lookup",
+      "transform_name": "validate lookup"
+    },
+    {
+      "field_mappings": [
+        {
+          "transform_field": "column",
+          "data_set_field": "column"
+        },
+        {
+          "transform_field": "condition",
+          "data_set_field": "condition"
+        },
+        {
+          "transform_field": "field1",
+          "data_set_field": "field1"
+        },
+        {
+          "transform_field": "field2",
+          "data_set_field": "field2"
+        }
+      ],
+      "field_order": [
+        "column",
+        "condition",
+        "field1",
+        "field2"
+      ],
+      "data_set_name": "golden-synchronize-after-merge-keys",
+      "transform_name": "validate keys"
+    },
+    {
+      "field_mappings": [
+        {
+          "transform_field": "update",
+          "data_set_field": "update"
+        },
+        {
+          "transform_field": "rename",
+          "data_set_field": "rename"
+        },
+        {
+          "transform_field": "name",
+          "data_set_field": "name"
+        }
+      ],
+      "field_order": [
+        "update",
+        "rename",
+        "name"
+      ],
+      "data_set_name": "golden-synchronize-after-merge-values",
+      "transform_name": "validate values"
+    }
+  ],
+  "input_data_sets": [],
+  "name": "0035-synchronize-after-merge-validate UNIT",
+  "trans_test_tweaks": [],
+  "pipeline_filename": "./0035-synchronize-after-merge-validate.hpl"
+}

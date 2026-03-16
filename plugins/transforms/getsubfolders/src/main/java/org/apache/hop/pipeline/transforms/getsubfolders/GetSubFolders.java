@@ -122,16 +122,19 @@ public class GetSubFolders extends BaseTransform<GetSubFoldersMeta, GetSubFolder
         extraData[outputIndex++] = HopVfs.getFilename(data.file.getParent());
 
         // is hidden?
-        extraData[outputIndex++] = data.file.isHidden();
+        extraData[outputIndex++] = getFileAttributeSafe(() -> data.file.isHidden(), "isHidden");
 
         // is readable?
-        extraData[outputIndex++] = data.file.isReadable();
+        extraData[outputIndex++] = getFileAttributeSafe(() -> data.file.isReadable(), "isReadable");
 
         // is writeable?
-        extraData[outputIndex++] = data.file.isWriteable();
+        extraData[outputIndex++] =
+            getFileAttributeSafe(() -> data.file.isWriteable(), "isWriteable");
 
         // last modified time
-        extraData[outputIndex++] = new Date(data.file.getContent().getLastModifiedTime());
+        extraData[outputIndex++] =
+            getFileAttributeSafe(
+                () -> new Date(data.file.getContent().getLastModifiedTime()), "lastModifiedTime");
 
         // uri
         extraData[outputIndex++] = data.file.getName().getURI();
@@ -140,7 +143,8 @@ public class GetSubFolders extends BaseTransform<GetSubFoldersMeta, GetSubFolder
         extraData[outputIndex++] = data.file.getName().getRootURI();
 
         // nr of child files
-        extraData[outputIndex++] = (long) data.file.getChildren().length;
+        extraData[outputIndex++] =
+            getFileAttributeSafe(() -> (long) data.file.getChildren().length, "childrenCount");
 
         // See if we need to add the row number to the row...
         if (meta.isIncludeRowNumber() && !Utils.isEmpty(meta.getRowNumberField())) {
@@ -228,6 +232,24 @@ public class GetSubFolders extends BaseTransform<GetSubFoldersMeta, GetSubFolder
       throw new HopException(
           BaseMessages.getString(PKG, "GetSubFolders.Exception.NoAccessibleFiles", message));
     }
+  }
+
+  private <T> T getFileAttributeSafe(FileAttributeSupplier<T> supplier, String attributeName) {
+    try {
+      return supplier.get();
+    } catch (Exception e) {
+      if (isDebug()) {
+        logDebug(
+            "Could not determine ''{0}'' for {1}: {2}",
+            attributeName, data.file.getName().getFriendlyURI(), e.getMessage());
+      }
+      return null;
+    }
+  }
+
+  @FunctionalInterface
+  private interface FileAttributeSupplier<T> {
+    T get() throws Exception;
   }
 
   @Override

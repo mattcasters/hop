@@ -27,38 +27,10 @@ public class StringOperationsData extends BaseTransformData implements ITransfor
 
   public int[] inStreamNrs; // string infields
 
-  public String[] outStreamNrs;
-
-  /** Runtime trim operators */
-  public int[] trimOperators;
-
-  /** Runtime trim operators */
-  public int[] lowerUpperOperators;
-
-  public int[] padType;
-
-  public String[] padChar;
-
-  public int[] padLen;
-
-  public int[] initCap;
-
-  public int[] maskHTML;
-
-  public int[] digits;
-
-  public int[] removeSpecialCharacters;
-
   public IRowMeta outputRowMeta;
-
-  public int inputFieldsNr;
-
-  public int nrFieldsInStream;
 
   /** Default constructor. */
   public StringOperationsData() {
     super();
-    this.inputFieldsNr = 0;
-    this.nrFieldsInStream = 0;
   }
 }
