@@ -1,0 +1,48 @@
+{
+  "database_replacements": [],
+  "autoOpening": true,
+  "description": "",
+  "persist_filename": "",
+  "test_type": "UNIT_TEST",
+  "variableValues": [],
+  "basePath": "${HOP_UNIT_TESTS_FOLDER}",
+  "golden_data_sets": [
+    {
+      "field_mappings": [
+        {
+          "transform_field": "field_name",
+          "data_set_field": "field_name"
+        },
+        {
+          "transform_field": "formula_string",
+          "data_set_field": "formula_string"
+        },
+        {
+          "transform_field": "value_type",
+          "data_set_field": "value_type"
+        },
+        {
+          "transform_field": "value_length",
+          "data_set_field": "value_length"
+        },
+        {
+          "transform_field": "value_precision",
+          "data_set_field": "value_precision"
+        },
+        {
+          "transform_field": "replace_field",
+          "data_set_field": "replace_field"
+        }
+      ],
+      "field_order": [
+        "field_name"
+      ],
+      "data_set_name": "golden-user-defined-java-expression",
+      "transform_name": "Validate"
+    }
+  ],
+  "input_data_sets": [],
+  "name": "0042-user-defined-java-expression-validate UNIT",
+  "trans_test_tweaks": [],
+  "pipeline_filename": "./0042-user-defined-java-expression-validate.hpl"
+}

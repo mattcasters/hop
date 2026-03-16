@@ -1,0 +1,4 @@
+field_name,formula_string,value_type,value_length,value_precision,replace_field
+f1,expression1,String,100,-1,replace1
+f2,expression2,Integer,7,-1,replace2
+f3,expression3,Number,9,2,replace3

@@ -72,17 +72,17 @@ public class Janino extends BaseTransform<JaninoMeta, JaninoData> {
 
       // Calculate replace indexes...
       //
-      data.replaceIndex = new int[meta.getFormula().length];
-      data.returnType = new IValueMeta[meta.getFormula().length];
-      for (int i = 0; i < meta.getFormula().length; i++) {
-        JaninoMetaFunction fn = meta.getFormula()[i];
-        data.returnType[i] = ValueMetaFactory.createValueMeta(fn.getValueType());
-        if (!Utils.isEmpty(fn.getReplaceField())) {
-          data.replaceIndex[i] = getInputRowMeta().indexOfValue(fn.getReplaceField());
+      data.replaceIndex = new int[meta.getFunctions().size()];
+      data.returnType = new IValueMeta[meta.getFunctions().size()];
+      for (int i = 0; i < meta.getFunctions().size(); i++) {
+        JaninoMetaFunction function = meta.getFunctions().get(i);
+        data.returnType[i] = ValueMetaFactory.createValueMeta(function.getValueType());
+        if (!Utils.isEmpty(function.getReplaceField())) {
+          data.replaceIndex[i] = getInputRowMeta().indexOfValue(function.getReplaceField());
           if (data.replaceIndex[i] < 0) {
             throw new HopException(
                 "Unknown field specified to replace with a formula result: ["
-                    + fn.getReplaceField()
+                    + function.getReplaceField()
                     + "]");
           }
         } else {
@@ -128,15 +128,15 @@ public class Janino extends BaseTransform<JaninoMeta, JaninoData> {
       // Initialize evaluators etc. Only do it once.
       //
       if (data.expressionEvaluators == null) {
-        data.expressionEvaluators = new ExpressionEvaluator[meta.getFormula().length];
+        data.expressionEvaluators = new ExpressionEvaluator[meta.getFunctions().size()];
         data.argumentIndexes = new ArrayList<>();
 
-        for (int i = 0; i < meta.getFormula().length; i++) {
+        for (int i = 0; i < meta.getFunctions().size(); i++) {
           List<Integer> argIndexes = new ArrayList<>();
           data.argumentIndexes.add(argIndexes);
         }
 
-        for (int m = 0; m < meta.getFormula().length; m++) {
+        for (int m = 0; m < meta.getFunctions().size(); m++) {
           List<Integer> argIndexes = data.argumentIndexes.get(m);
           List<String> parameterNames = new ArrayList<>();
           List<Class<?>> parameterTypes = new ArrayList<>();
@@ -147,7 +147,7 @@ public class Janino extends BaseTransform<JaninoMeta, JaninoData> {
 
             // See if the value is being used in a formula...
             //
-            if (meta.getFormula()[m].getFormula().contains(valueMeta.getName())) {
+            if (meta.getFunctions().get(m).getFormula().contains(valueMeta.getName())) {
               // If so, add it to the indexes...
               argIndexes.add(i);
 
@@ -156,8 +156,8 @@ public class Janino extends BaseTransform<JaninoMeta, JaninoData> {
             }
           }
 
-          JaninoMetaFunction fn = meta.getFormula()[m];
-          if (!Utils.isEmpty(fn.getFieldName())) {
+          JaninoMetaFunction function = meta.getFunctions().get(m);
+          if (!Utils.isEmpty(function.getFieldName())) {
 
             // Create the expression evaluator: is relatively slow so we do it only for the first
             // row...
@@ -168,8 +168,7 @@ public class Janino extends BaseTransform<JaninoMeta, JaninoData> {
             FunctionLib functionLib = new FunctionLib();
             data.expressionEvaluators[m] = new ExpressionEvaluator();
             data.expressionEvaluators[m].setParameters(
-                parameterNames.toArray(new String[parameterNames.size()]),
-                parameterTypes.toArray(new Class<?>[parameterTypes.size()]));
+                parameterNames.toArray(new String[0]), parameterTypes.toArray(new Class<?>[0]));
             data.expressionEvaluators[m].setReturnType(Object.class);
             data.expressionEvaluators[m].setThrownExceptions(new Class<?>[] {Exception.class});
             data.expressionEvaluators[m].setParentClassLoader(loader);
@@ -177,22 +176,22 @@ public class Janino extends BaseTransform<JaninoMeta, JaninoData> {
 
             // Validate Formula
             JaninoCheckerUtil janinoCheckerUtil = new JaninoCheckerUtil();
-            List<String> codeCheck = janinoCheckerUtil.checkCode(fn.getFormula());
+            List<String> codeCheck = janinoCheckerUtil.checkCode(function.getFormula());
             if (!codeCheck.isEmpty()) {
               throw new HopException("Script contains code that is not allowed : " + codeCheck);
             }
 
-            data.expressionEvaluators[m].cook(fn.getFormula());
+            data.expressionEvaluators[m].cook(function.getFormula());
           } else {
             throw new HopException(
                 "Unable to find field name for formula ["
-                    + (!StringUtil.isEmpty(fn.getFormula()) ? fn.getFormula() : "")
+                    + (!StringUtil.isEmpty(function.getFormula()) ? function.getFormula() : "")
                     + "]");
           }
         }
       }
 
-      for (int i = 0; i < meta.getFormula().length; i++) {
+      for (int i = 0; i < meta.getFunctions().size(); i++) {
         List<Integer> argumentIndexes = data.argumentIndexes.get(i);
 
         // This method can only accept the specified number of values...
@@ -222,9 +221,9 @@ public class Janino extends BaseTransform<JaninoMeta, JaninoData> {
                     PKG,
                     "Janino.Error.ValueTypeMismatch",
                     valueMeta.getTypeDesc(),
-                    meta.getFormula()[i].getFieldName(),
+                    meta.getFunctions().get(i).getFieldName(),
                     formulaResult.getClass(),
-                    meta.getFormula()[i].getFormula()));
+                    meta.getFunctions().get(i).getFormula()));
           }
         }
 

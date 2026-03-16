@@ -17,75 +17,92 @@
 
 package org.apache.hop.pipeline.transforms.janino;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import org.apache.hop.core.exception.HopException;
-import org.apache.hop.core.exception.HopPluginException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
 import org.apache.hop.core.plugins.PluginRegistry;
-import org.apache.hop.core.row.value.ValueMetaFactory;
+import org.apache.hop.core.row.IValueMeta;
+import org.apache.hop.core.row.value.ValueMetaDate;
+import org.apache.hop.core.row.value.ValueMetaInteger;
+import org.apache.hop.core.row.value.ValueMetaNumber;
+import org.apache.hop.core.row.value.ValueMetaPlugin;
 import org.apache.hop.core.row.value.ValueMetaPluginType;
-import org.apache.hop.junit.rules.RestoreHopEngineEnvironmentExtension;
-import org.apache.hop.pipeline.transforms.loadsave.LoadSaveTester;
-import org.apache.hop.pipeline.transforms.loadsave.validator.ArrayLoadSaveValidator;
-import org.apache.hop.pipeline.transforms.loadsave.validator.IFieldLoadSaveValidator;
-import org.junit.jupiter.api.BeforeAll;
+import org.apache.hop.core.row.value.ValueMetaString;
+import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
+import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
+import org.apache.hop.pipeline.transform.TransformMeta;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 class JaninoMetaTest {
-  @RegisterExtension
-  static RestoreHopEngineEnvironmentExtension env = new RestoreHopEngineEnvironmentExtension();
-
-  @BeforeAll
-  static void setUpBeforeClass() throws HopPluginException {
-    PluginRegistry.addPluginType(ValueMetaPluginType.getInstance());
-    PluginRegistry.init();
+  @BeforeEach
+  void beforeEach() throws Exception {
+    PluginRegistry registry = PluginRegistry.getInstance();
+    String[] classNames = {
+      ValueMetaString.class.getName(), ValueMetaInteger.class.getName(),
+      ValueMetaDate.class.getName(), ValueMetaNumber.class.getName()
+    };
+    for (String className : classNames) {
+      registry.registerPluginClass(className, ValueMetaPluginType.class, ValueMetaPlugin.class);
+    }
   }
 
   @Test
-  void testRoundTrip() throws HopException {
-    List<String> attributes = Arrays.asList("formula");
+  void testLoadSave() throws Exception {
+    Path path = Paths.get(Objects.requireNonNull(getClass().getResource("/janino.xml")).toURI());
+    String xml = Files.readString(path);
+    JaninoMeta meta = new JaninoMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xml, TransformMeta.XML_TAG),
+        JaninoMeta.class,
+        meta,
+        new MemoryMetadataProvider());
 
-    Map<String, IFieldLoadSaveValidator<?>> fieldLoadSaveValidatorAttributeMap = new HashMap<>();
+    validate(meta);
 
-    IFieldLoadSaveValidator<JaninoMetaFunction[]> janinoMetaFunctionArrayLoadSaveValidator =
-        new ArrayLoadSaveValidator<>(new JaninoMetaFunctionFieldLoadSaveValidator(), 25);
-
-    fieldLoadSaveValidatorAttributeMap.put("formula", janinoMetaFunctionArrayLoadSaveValidator);
-
-    LoadSaveTester loadSaveTester =
-        new LoadSaveTester(
-            JaninoMeta.class,
-            attributes,
-            new HashMap<>(),
-            new HashMap<>(),
-            fieldLoadSaveValidatorAttributeMap,
-            new HashMap<>());
-
-    loadSaveTester.testSerialization();
+    // Do a round trip:
+    //
+    String xmlCopy =
+        XmlHandler.openTag(TransformMeta.XML_TAG)
+            + XmlMetadataUtil.serializeObjectToXml(meta)
+            + XmlHandler.closeTag(TransformMeta.XML_TAG);
+    JaninoMeta metaCopy = new JaninoMeta();
+    XmlMetadataUtil.deSerializeFromXml(
+        XmlHandler.loadXmlString(xmlCopy, TransformMeta.XML_TAG),
+        JaninoMeta.class,
+        metaCopy,
+        new MemoryMetadataProvider());
+    validate(metaCopy);
   }
 
-  public class JaninoMetaFunctionFieldLoadSaveValidator
-      implements IFieldLoadSaveValidator<JaninoMetaFunction> {
-    @Override
-    public JaninoMetaFunction getTestObject() {
-      Random random = new Random();
-      return new JaninoMetaFunction(
-          UUID.randomUUID().toString(),
-          UUID.randomUUID().toString(),
-          random.nextInt(ValueMetaFactory.getAllValueMetaNames().length),
-          random.nextInt(Integer.MAX_VALUE),
-          random.nextInt(Integer.MAX_VALUE),
-          UUID.randomUUID().toString());
-    }
+  private static void validate(JaninoMeta meta) {
+    assertEquals(3, meta.getFunctions().size());
+    JaninoMetaFunction f = meta.getFunctions().getFirst();
+    assertEquals("f1", f.getFieldName());
+    assertEquals("expression1", f.getFormula());
+    assertEquals(IValueMeta.TYPE_STRING, f.getValueType());
+    assertEquals(100, f.getValueLength());
+    assertEquals(-1, f.getValuePrecision());
+    assertEquals("replace1", f.getReplaceField());
 
-    @Override
-    public boolean validateTestObject(JaninoMetaFunction testObject, Object actual) {
-      return testObject.equals(actual);
-    }
+    f = meta.getFunctions().get(1);
+    assertEquals("f2", f.getFieldName());
+    assertEquals("expression2", f.getFormula());
+    assertEquals(IValueMeta.TYPE_INTEGER, f.getValueType());
+    assertEquals(7, f.getValueLength());
+    assertEquals(-1, f.getValuePrecision());
+    assertEquals("replace2", f.getReplaceField());
+
+    f = meta.getFunctions().get(2);
+    assertEquals("f3", f.getFieldName());
+    assertEquals("expression3", f.getFormula());
+    assertEquals(IValueMeta.TYPE_NUMBER, f.getValueType());
+    assertEquals(9, f.getValueLength());
+    assertEquals(2, f.getValuePrecision());
+    assertEquals("replace3", f.getReplaceField());
   }
 }

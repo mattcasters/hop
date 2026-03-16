@@ -17,60 +17,67 @@
 package org.apache.hop.pipeline.transforms.janino;
 
 import java.util.Objects;
-import org.apache.hop.core.Const;
-import org.apache.hop.core.injection.Injection;
-import org.apache.hop.core.row.value.ValueMetaFactory;
-import org.apache.hop.core.xml.XmlHandler;
-import org.w3c.dom.Node;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.hop.core.row.value.ValueMetaBase;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 
+@Getter
+@Setter
 public class JaninoMetaFunction implements Cloneable {
-  public static final String XML_TAG = "formula";
-
-  @Injection(name = "FIELD_NAME", group = "FORMULA")
+  @HopMetadataProperty(
+      key = "field_name",
+      injectionKey = "FIELD_NAME",
+      injectionKeyDescription = "Janino.Injection.FIELD_NAME")
   private String fieldName;
 
-  @Injection(name = "FIELD_FORMULA", group = "FORMULA")
+  @HopMetadataProperty(
+      key = "formula_string",
+      injectionKey = "FIELD_FORMULA",
+      injectionKeyDescription = "Janino.Injection.FIELD_FORMULA")
   private String formula;
 
+  @HopMetadataProperty(
+      key = "value_type",
+      intCodeConverter = ValueMetaBase.ValueTypeCodeConverter.class,
+      injectionKey = "VALUE_TYPE",
+      injectionKeyDescription = "Janino.Injection.VALUE_TYPE")
   private int valueType;
 
-  @Injection(name = "VALUE_LENGTH", group = "FORMULA")
+  @HopMetadataProperty(
+      key = "value_length",
+      injectionKey = "VALUE_LENGTH",
+      injectionKeyDescription = "Janino.Injection.VALUE_LENGTH")
   private int valueLength;
 
-  @Injection(name = "VALUE_PRECISION", group = "FORMULA")
+  @HopMetadataProperty(
+      key = "value_precision",
+      injectionKey = "VALUE_PRECISION",
+      injectionKeyDescription = "Janino.Injection.VALUE_PRECISION")
   private int valuePrecision;
 
-  @Injection(name = "REPLACE_FIELD", group = "FORMULA")
+  @HopMetadataProperty(
+      key = "replace_field",
+      injectionKey = "REPLACE_FIELD",
+      injectionKeyDescription = "Janino.Injection.REPLACE_FIELD")
   private String replaceField;
 
   public JaninoMetaFunction() {}
 
-  /**
-   * @param fieldName
-   * @param formula
-   * @param valueType
-   * @param valueLength
-   * @param valuePrecision
-   */
-  public JaninoMetaFunction(
-      String fieldName,
-      String formula,
-      int valueType,
-      int valueLength,
-      int valuePrecision,
-      String replaceField) {
-    this.fieldName = fieldName;
-    this.formula = formula;
-    this.valueType = valueType;
-    this.valueLength = valueLength;
-    this.valuePrecision = valuePrecision;
-    this.replaceField = replaceField;
+  public JaninoMetaFunction(JaninoMetaFunction f) {
+    this();
+    this.fieldName = f.fieldName;
+    this.formula = f.formula;
+    this.valueType = f.valueType;
+    this.valueLength = f.valueLength;
+    this.valuePrecision = f.valuePrecision;
+    this.replaceField = f.replaceField;
   }
 
   public boolean equals(Object obj) {
     if (obj != null && (obj.getClass().equals(this.getClass()))) {
       JaninoMetaFunction mf = (JaninoMetaFunction) obj;
-      return (getXml().equals(mf.getXml()));
+      return fieldName.equals(mf.getFieldName());
     }
 
     return false;
@@ -83,125 +90,6 @@ public class JaninoMetaFunction implements Cloneable {
 
   @Override
   public Object clone() {
-    try {
-      return super.clone();
-    } catch (CloneNotSupportedException e) {
-      return null;
-    }
-  }
-
-  public String getXml() {
-    StringBuilder xml = new StringBuilder();
-
-    xml.append(XmlHandler.openTag(XML_TAG));
-
-    xml.append(XmlHandler.addTagValue("field_name", fieldName));
-    xml.append(XmlHandler.addTagValue("formula_string", formula));
-    xml.append(XmlHandler.addTagValue("value_type", ValueMetaFactory.getValueMetaName(valueType)));
-    xml.append(XmlHandler.addTagValue("value_length", valueLength));
-    xml.append(XmlHandler.addTagValue("value_precision", valuePrecision));
-    xml.append(XmlHandler.addTagValue("replace_field", replaceField));
-
-    xml.append(XmlHandler.closeTag(XML_TAG));
-
-    return xml.toString();
-  }
-
-  public JaninoMetaFunction(Node calcnode) {
-    fieldName = XmlHandler.getTagValue(calcnode, "field_name");
-    formula = XmlHandler.getTagValue(calcnode, "formula_string");
-    valueType = ValueMetaFactory.getIdForValueMeta(XmlHandler.getTagValue(calcnode, "value_type"));
-    valueLength = Const.toInt(XmlHandler.getTagValue(calcnode, "value_length"), -1);
-    valuePrecision = Const.toInt(XmlHandler.getTagValue(calcnode, "value_precision"), -1);
-    replaceField = XmlHandler.getTagValue(calcnode, "replace_field");
-  }
-
-  /**
-   * @return Returns the fieldName.
-   */
-  public String getFieldName() {
-    return fieldName;
-  }
-
-  /**
-   * @param fieldName The fieldName to set.
-   */
-  public void setFieldName(String fieldName) {
-    this.fieldName = fieldName;
-  }
-
-  /**
-   * @return Returns the valueLength.
-   */
-  public int getValueLength() {
-    return valueLength;
-  }
-
-  /**
-   * @param valueLength The valueLength to set.
-   */
-  public void setValueLength(int valueLength) {
-    this.valueLength = valueLength;
-  }
-
-  /**
-   * @return Returns the valuePrecision.
-   */
-  public int getValuePrecision() {
-    return valuePrecision;
-  }
-
-  /**
-   * @param valuePrecision The valuePrecision to set.
-   */
-  public void setValuePrecision(int valuePrecision) {
-    this.valuePrecision = valuePrecision;
-  }
-
-  /**
-   * @return Returns the valueType.
-   */
-  public int getValueType() {
-    return valueType;
-  }
-
-  /**
-   * @param valueType The valueType to set.
-   */
-  public void setValueType(int valueType) {
-    this.valueType = valueType;
-  }
-
-  @Injection(name = "VALUE_TYPE", group = "FORMULA")
-  public void setValueType(String typeDesc) {
-    this.valueType = ValueMetaFactory.getIdForValueMeta(typeDesc);
-  }
-
-  /**
-   * @return the formula
-   */
-  public String getFormula() {
-    return formula;
-  }
-
-  /**
-   * @param formula the formula to set
-   */
-  public void setFormula(String formula) {
-    this.formula = formula;
-  }
-
-  /**
-   * @return the replaceField
-   */
-  public String getReplaceField() {
-    return replaceField;
-  }
-
-  /**
-   * @param replaceField the replaceField to set
-   */
-  public void setReplaceField(String replaceField) {
-    this.replaceField = replaceField;
+    return new JaninoMetaFunction(this);
   }
 }
