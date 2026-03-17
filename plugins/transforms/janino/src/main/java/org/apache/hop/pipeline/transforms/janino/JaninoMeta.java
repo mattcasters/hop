@@ -16,29 +16,26 @@
  */
 package org.apache.hop.pipeline.transforms.janino;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.CheckResult;
-import org.apache.hop.core.Const;
 import org.apache.hop.core.ICheckResult;
 import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopTransformException;
-import org.apache.hop.core.exception.HopXmlException;
-import org.apache.hop.core.injection.InjectionDeep;
 import org.apache.hop.core.injection.InjectionSupported;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.w3c.dom.Node;
 
 @InjectionSupported(
     localizationPrefix = "Janino.Injection.",
@@ -53,82 +50,31 @@ import org.w3c.dom.Node;
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Scripting",
     keywords = "i18n::JaninoMeta.keyword",
     documentationUrl = "/pipeline/transforms/userdefinedjavaexpression.html")
+@Getter
+@Setter
 public class JaninoMeta extends BaseTransformMeta<Janino, JaninoData> {
   private static final Class<?> PKG = JaninoMeta.class;
 
   /** The formula calculations to be performed */
-  @InjectionDeep private JaninoMetaFunction[] formula;
+  @HopMetadataProperty(
+      key = "formula",
+      injectionGroupKey = "FORMULA",
+      injectionGroupDescription = "Janino.Injection.FORMULA")
+  private List<JaninoMetaFunction> functions;
 
   public JaninoMeta() {
-    super(); // allocate BaseTransformMeta
+    super();
+    this.functions = new ArrayList<>();
   }
 
-  public JaninoMetaFunction[] getFormula() {
-    return formula;
-  }
-
-  public void setFormula(JaninoMetaFunction[] calcTypes) {
-    this.formula = calcTypes;
-  }
-
-  public void allocate(int nrCalcs) {
-    formula = new JaninoMetaFunction[nrCalcs];
-  }
-
-  @Override
-  public void loadXml(Node transformNode, IHopMetadataProvider metadataProvider)
-      throws HopXmlException {
-    int nrCalcs = XmlHandler.countNodes(transformNode, JaninoMetaFunction.XML_TAG);
-    allocate(nrCalcs);
-    for (int i = 0; i < nrCalcs; i++) {
-      Node calcnode = XmlHandler.getSubNodeByNr(transformNode, JaninoMetaFunction.XML_TAG, i);
-      formula[i] = new JaninoMetaFunction(calcnode);
-    }
-  }
-
-  @Override
-  public String getXml() {
-    StringBuilder retval = new StringBuilder();
-
-    if (formula != null) {
-      for (JaninoMetaFunction janinoMetaFunction : formula) {
-        retval.append("       " + janinoMetaFunction.getXml() + Const.CR);
-      }
-    }
-
-    return retval.toString();
-  }
-
-  public boolean equals(Object obj) {
-    if (obj != null && (obj.getClass().equals(this.getClass()))) {
-      JaninoMeta m = (JaninoMeta) obj;
-      return Objects.equals(getXml(), m.getXml());
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode() {
-    return Arrays.hashCode(formula);
+  public JaninoMeta(JaninoMeta m) {
+    this();
+    m.functions.forEach(f -> this.functions.add(new JaninoMetaFunction(f)));
   }
 
   @Override
   public Object clone() {
-    JaninoMeta retval = (JaninoMeta) super.clone();
-    if (formula != null) {
-      retval.allocate(formula.length);
-      for (int i = 0; i < formula.length; i++) {
-        retval.getFormula()[i] = (JaninoMetaFunction) formula[i].clone();
-      }
-    } else {
-      retval.allocate(0);
-    }
-    return retval;
-  }
-
-  @Override
-  public void setDefault() {
-    formula = new JaninoMetaFunction[0];
+    return new JaninoMeta(this);
   }
 
   @Override
@@ -140,7 +86,7 @@ public class JaninoMeta extends BaseTransformMeta<Janino, JaninoData> {
       IVariables variables,
       IHopMetadataProvider metadataProvider)
       throws HopTransformException {
-    for (JaninoMetaFunction fn : formula) {
+    for (JaninoMetaFunction fn : functions) {
       if (Utils.isEmpty(fn.getReplaceField())) {
         // Not replacing a field.
         if (!Utils.isEmpty(fn.getFieldName())) {

@@ -83,7 +83,7 @@ public class JaninoDialog extends BaseTransformDialog {
     fdlFields.top = new FormAttachment(wSpacer, margin);
     wlFields.setLayoutData(fdlFields);
 
-    final int FieldsRows = currentMeta.getFormula() != null ? currentMeta.getFormula().length : 1;
+    final int nrFields = currentMeta.getFunctions().size();
 
     colinf =
         new ColumnInfo[] {
@@ -119,7 +119,7 @@ public class JaninoDialog extends BaseTransformDialog {
             shell,
             SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI,
             colinf,
-            FieldsRows,
+            nrFields,
             null,
             props);
 
@@ -214,20 +214,20 @@ public class JaninoDialog extends BaseTransformDialog {
 
   /** Copy information from the meta-data currentMeta to the dialog fields. */
   public void getData() {
-    if (currentMeta.getFormula() != null) {
-      for (int i = 0; i < currentMeta.getFormula().length; i++) {
-        JaninoMetaFunction fn = currentMeta.getFormula()[i];
+    if (currentMeta.getFunctions() != null) {
+      for (int i = 0; i < currentMeta.getFunctions().size(); i++) {
+        JaninoMetaFunction function = currentMeta.getFunctions().get(i);
         TableItem item = wFields.table.getItem(i);
-        item.setText(1, Const.NVL(fn.getFieldName(), ""));
-        item.setText(2, Const.NVL(fn.getFormula(), ""));
-        item.setText(3, Const.NVL(ValueMetaFactory.getValueMetaName(fn.getValueType()), ""));
-        if (fn.getValueLength() >= 0) {
-          item.setText(4, "" + fn.getValueLength());
+        item.setText(1, Const.NVL(function.getFieldName(), ""));
+        item.setText(2, Const.NVL(function.getFormula(), ""));
+        item.setText(3, Const.NVL(ValueMetaFactory.getValueMetaName(function.getValueType()), ""));
+        if (function.getValueLength() >= 0) {
+          item.setText(4, "" + function.getValueLength());
         }
-        if (fn.getValuePrecision() >= 0) {
-          item.setText(5, "" + fn.getValuePrecision());
+        if (function.getValuePrecision() >= 0) {
+          item.setText(5, "" + function.getValuePrecision());
         }
-        item.setText(6, Const.NVL(fn.getReplaceField(), ""));
+        item.setText(6, Const.NVL(function.getReplaceField(), ""));
       }
     }
 
@@ -265,21 +265,16 @@ public class JaninoDialog extends BaseTransformDialog {
 
     transformName = wTransformName.getText(); // return value
 
-    currentMeta.allocate(wFields.nrNonEmpty());
-
-    for (int i = 0; i < nrNonEmptyFields; i++) {
-      TableItem item = wFields.getNonEmpty(i);
-
-      String fieldName = item.getText(1);
-      String formula = item.getText(2);
-      int valueType = ValueMetaFactory.getIdForValueMeta(item.getText(3));
-      int valueLength = Const.toInt(item.getText(4), -1);
-      int valuePrecision = Const.toInt(item.getText(5), -1);
-      String replaceField = item.getText(6);
-
-      currentMeta.getFormula()[i] =
-          new JaninoMetaFunction(
-              fieldName, formula, valueType, valueLength, valuePrecision, replaceField);
+    currentMeta.getFunctions().clear();
+    for (TableItem item : wFields.getNonEmptyItems()) {
+      JaninoMetaFunction function = new JaninoMetaFunction();
+      function.setFieldName(item.getText(1));
+      function.setFormula(item.getText(2));
+      function.setValueType(ValueMetaFactory.getIdForValueMeta(item.getText(3)));
+      function.setValueLength(Const.toInt(item.getText(4), -1));
+      function.setValuePrecision(Const.toInt(item.getText(5), -1));
+      function.setReplaceField(item.getText(6));
+      currentMeta.getFunctions().add(function);
     }
 
     if (!originalMeta.equals(currentMeta)) {

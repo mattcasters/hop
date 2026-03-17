@@ -17,25 +17,26 @@
 
 package org.apache.hop.pipeline.transforms.rowsfromresult;
 
+import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.CheckResult;
-import org.apache.hop.core.Const;
 import org.apache.hop.core.ICheckResult;
 import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopPluginException;
 import org.apache.hop.core.exception.HopTransformException;
-import org.apache.hop.core.exception.HopXmlException;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
+import org.apache.hop.core.row.value.ValueMetaBase;
 import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.w3c.dom.Node;
 
 @Transform(
     id = "RowsFromResult",
@@ -45,137 +46,72 @@ import org.w3c.dom.Node;
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Workflow",
     keywords = "i18n::RowsFromResultMeta.keyword",
     documentationUrl = "/pipeline/transforms/getrowsfromresult.html")
+@Getter
+@Setter
 public class RowsFromResultMeta extends BaseTransformMeta<RowsFromResult, RowsFromResultData> {
   private static final Class<?> PKG = RowsFromResult.class;
-  public static final String CONST_SPACES = "        ";
 
-  private String[] fieldname;
-  private int[] type;
-  private int[] length;
-  private int[] precision;
+  @Getter
+  @Setter
+  public static class ResultRowField {
+    @HopMetadataProperty(
+        key = "name",
+        injectionKey = "FIELD_NAME",
+        injectionKeyDescription = "RowsFromResultMeta.Injection.FIELD_NAME")
+    private String name;
 
-  /**
-   * @return Returns the length.
-   */
-  public int[] getLength() {
-    return length;
+    @HopMetadataProperty(
+        key = "type",
+        intCodeConverter = ValueMetaBase.ValueTypeCodeConverter.class,
+        injectionKey = "FIELD_TYPE",
+        injectionKeyDescription = "RowsFromResultMeta.Injection.FIELD_TYPE")
+    private int hopType;
+
+    @HopMetadataProperty(
+        key = "length",
+        injectionKey = "FIELD_LENGTH",
+        injectionKeyDescription = "RowsFromResultMeta.Injection.FIELD_LENGTH")
+    private int length;
+
+    @HopMetadataProperty(
+        key = "precision",
+        injectionKey = "FIELD_PRECISION",
+        injectionKeyDescription = "RowsFromResultMeta.Injection.FIELD_PRECISION")
+    private int precision;
+
+    public ResultRowField() {}
+
+    public ResultRowField(ResultRowField f) {
+      this();
+      this.name = f.name;
+      this.hopType = f.hopType;
+      this.length = f.length;
+      this.precision = f.precision;
+    }
   }
 
-  /**
-   * @param length The length to set.
-   */
-  public void setLength(int[] length) {
-    this.length = length;
-  }
-
-  /**
-   * @return Returns the name.
-   */
-  public String[] getFieldname() {
-    return fieldname;
-  }
-
-  /**
-   * @param name The name to set.
-   */
-  public void setFieldname(String[] name) {
-    this.fieldname = name;
-  }
-
-  /**
-   * @return Returns the precision.
-   */
-  public int[] getPrecision() {
-    return precision;
-  }
-
-  /**
-   * @param precision The precision to set.
-   */
-  public void setPrecision(int[] precision) {
-    this.precision = precision;
-  }
-
-  /**
-   * @return Returns the type.
-   */
-  public int[] getType() {
-    return type;
-  }
-
-  /**
-   * @param type The type to set.
-   */
-  public void setType(int[] type) {
-    this.type = type;
-  }
+  @HopMetadataProperty(
+      key = "field",
+      groupKey = "fields",
+      injectionKey = "FIELD",
+      injectionGroupKey = "FIELDS",
+      injectionKeyDescription = "RowsFromResultMeta.Injection.FIELD",
+      injectionGroupDescription = "RowsFromResultMeta.Injection.FIELDS")
+  private List<ResultRowField> resultFields;
 
   public RowsFromResultMeta() {
-    super(); // allocate BaseTransformMeta
+    super();
+    this.resultFields = new ArrayList<>();
   }
 
-  @Override
-  public void loadXml(Node transformNode, IHopMetadataProvider metadataProvider)
-      throws HopXmlException {
-    readData(transformNode);
+  public RowsFromResultMeta(RowsFromResultMeta m) {
+    this();
+    m.resultFields.forEach(field -> this.resultFields.add(new ResultRowField(field)));
   }
 
   @Override
   public Object clone() {
-    RowsFromResultMeta retval = (RowsFromResultMeta) super.clone();
-    int nrFields = fieldname.length;
-    retval.allocate(nrFields);
-    System.arraycopy(fieldname, 0, retval.fieldname, 0, nrFields);
-    System.arraycopy(type, 0, retval.type, 0, nrFields);
-    System.arraycopy(length, 0, retval.length, 0, nrFields);
-    System.arraycopy(precision, 0, retval.precision, 0, nrFields);
-    return retval;
-  }
-
-  public void allocate(int nrFields) {
-    fieldname = new String[nrFields];
-    type = new int[nrFields];
-    length = new int[nrFields];
-    precision = new int[nrFields];
-  }
-
-  @Override
-  public String getXml() {
-    StringBuilder retval = new StringBuilder();
-    retval.append("    <fields>");
-    for (int i = 0; i < fieldname.length; i++) {
-      retval.append("      <field>");
-      retval.append(CONST_SPACES + XmlHandler.addTagValue("name", fieldname[i]));
-      retval.append(
-          CONST_SPACES
-              + XmlHandler.addTagValue("type", ValueMetaFactory.getValueMetaName(type[i])));
-      retval.append(CONST_SPACES + XmlHandler.addTagValue("length", length[i]));
-      retval.append(CONST_SPACES + XmlHandler.addTagValue("precision", precision[i]));
-      retval.append("        </field>");
-    }
-    retval.append("      </fields>");
-
-    return retval.toString();
-  }
-
-  private void readData(Node transformNode) {
-    Node fields = XmlHandler.getSubNode(transformNode, "fields");
-    int nrFields = XmlHandler.countNodes(fields, "field");
-
-    allocate(nrFields);
-
-    for (int i = 0; i < nrFields; i++) {
-      Node line = XmlHandler.getSubNodeByNr(fields, "field", i);
-      fieldname[i] = XmlHandler.getTagValue(line, "name");
-      type[i] = ValueMetaFactory.getIdForValueMeta(XmlHandler.getTagValue(line, "type"));
-      length[i] = Const.toInt(XmlHandler.getTagValue(line, "length"), -2);
-      precision[i] = Const.toInt(XmlHandler.getTagValue(line, "precision"), -2);
-    }
-  }
-
-  @Override
-  public void setDefault() {
-    allocate(0);
+    return new RowsFromResultMeta(this);
   }
 
   @Override
@@ -187,10 +123,12 @@ public class RowsFromResultMeta extends BaseTransformMeta<RowsFromResult, RowsFr
       IVariables variables,
       IHopMetadataProvider metadataProvider)
       throws HopTransformException {
-    for (int i = 0; i < this.fieldname.length; i++) {
+    for (ResultRowField field : resultFields) {
       IValueMeta v;
       try {
-        v = ValueMetaFactory.createValueMeta(fieldname[i], type[i], length[i], precision[i]);
+        v =
+            ValueMetaFactory.createValueMeta(
+                field.getName(), field.getHopType(), field.getLength(), field.getPrecision());
         v.setOrigin(origin);
         r.addValueMeta(v);
       } catch (HopPluginException e) {

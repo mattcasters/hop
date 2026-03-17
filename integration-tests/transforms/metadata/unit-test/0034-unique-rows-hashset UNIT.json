@@ -1,0 +1,34 @@
+{
+  "database_replacements": [],
+  "autoOpening": true,
+  "description": "",
+  "persist_filename": "",
+  "test_type": "UNIT_TEST",
+  "variableValues": [],
+  "basePath": "${HOP_UNIT_TESTS_FOLDER}",
+  "golden_data_sets": [
+    {
+      "field_mappings": [
+        {
+          "transform_field": "Field_A",
+          "data_set_field": "Field_A"
+        },
+        {
+          "transform_field": "Field_B",
+          "data_set_field": "Field_B"
+        },
+        {
+          "transform_field": "Field_C",
+          "data_set_field": "Field_C"
+        }
+      ],
+      "field_order": [],
+      "data_set_name": "golden-unique-rows-hashset",
+      "transform_name": "Result"
+    }
+  ],
+  "input_data_sets": [],
+  "name": "0034-unique-rows-hashset UNIT",
+  "trans_test_tweaks": [],
+  "pipeline_filename": "./0034-unique-rows-hashset.hpl"
+}

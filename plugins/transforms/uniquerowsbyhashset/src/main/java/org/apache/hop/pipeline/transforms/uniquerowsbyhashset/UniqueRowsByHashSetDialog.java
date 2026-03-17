@@ -27,6 +27,7 @@ import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
+import org.apache.hop.pipeline.transforms.uniquerowsbyhashset.UniqueRowsByHashSetMeta.CompareField;
 import org.apache.hop.ui.core.ConstUi;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.dialog.BaseDialog;
@@ -184,7 +185,7 @@ public class UniqueRowsByHashSetDialog extends BaseTransformDialog {
     fdlFields.top = new FormAttachment(wSettings, margin);
     wlFields.setLayoutData(fdlFields);
 
-    final int FieldsRows = input.getCompareFields() == null ? 0 : input.getCompareFields().length;
+    final int FieldsRows = input.getCompareFields().size();
 
     colinf =
         new ColumnInfo[] {
@@ -257,16 +258,14 @@ public class UniqueRowsByHashSetDialog extends BaseTransformDialog {
 
   /** Copy information from the meta-data input to the dialog fields. */
   public void getData() {
-    wStoreValues.setSelection(input.getStoreValues());
+    wStoreValues.setSelection(input.isStoreValues());
     wRejectDuplicateRow.setSelection(input.isRejectDuplicateRow());
     if (input.getErrorDescription() != null) {
       wErrorDesc.setText(input.getErrorDescription());
     }
-    for (int i = 0; i < input.getCompareFields().length; i++) {
+    for (int i = 0; i < input.getCompareFields().size(); i++) {
       TableItem item = wFields.table.getItem(i);
-      if (input.getCompareFields()[i] != null) {
-        item.setText(1, input.getCompareFields()[i]);
-      }
+      item.setText(1, Const.NVL(input.getCompareFields().get(i).getName(), ""));
     }
     wFields.setRowNums();
     wFields.optWidth(true);
@@ -284,12 +283,10 @@ public class UniqueRowsByHashSetDialog extends BaseTransformDialog {
     }
 
     int nrFields = wFields.nrNonEmpty();
-    input.allocate(nrFields);
 
-    for (int i = 0; i < nrFields; i++) {
-      TableItem item = wFields.getNonEmpty(i);
-
-      input.getCompareFields()[i] = item.getText(1);
+    input.getCompareFields().clear();
+    for (TableItem item : wFields.getNonEmptyItems()) {
+      input.getCompareFields().add(new CompareField(item.getText(1)));
     }
 
     transformName = wTransformName.getText(); // return value

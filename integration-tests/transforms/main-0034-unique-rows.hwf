@@ -36,21 +36,22 @@ limitations under the License.
       <description/>
       <type>SPECIAL</type>
       <attributes/>
+      <DayOfMonth>1</DayOfMonth>
+      <doNotWaitOnFirstExecution>N</doNotWaitOnFirstExecution>
+      <hour>12</hour>
+      <intervalMinutes>60</intervalMinutes>
+      <intervalSeconds>0</intervalSeconds>
+      <minutes>0</minutes>
       <repeat>N</repeat>
       <schedulerType>0</schedulerType>
-      <intervalSeconds>0</intervalSeconds>
-      <intervalMinutes>60</intervalMinutes>
-      <hour>12</hour>
-      <minutes>0</minutes>
       <weekDay>1</weekDay>
-      <DayOfMonth>1</DayOfMonth>
       <parallel>N</parallel>
       <xloc>128</xloc>
       <yloc>80</yloc>
       <attributes_hac/>
     </action>
     <action>
-      <name>Run Clone Row Tests</name>
+      <name>Unique Rows Tests</name>
       <description/>
       <type>RunPipelineTests</type>
       <attributes/>
@@ -68,7 +69,7 @@ limitations under the License.
   <hops>
     <hop>
       <from>Start</from>
-      <to>Run Clone Row Tests</to>
+      <to>Unique Rows Tests</to>
       <enabled>Y</enabled>
       <evaluation>N</evaluation>
       <unconditional>Y</unconditional>

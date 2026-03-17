@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.exception.HopXmlException;
 import org.apache.hop.core.logging.LogChannel;
 import org.apache.hop.core.xml.XmlHandler;
@@ -28,38 +30,41 @@ import org.apache.hop.i18n.BaseMessages;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-public class UserDefinedJavaClassCodeSnippits {
+@Getter
+@Setter
+public class UserDefinedJavaClassCodeSnippets {
   private static final Class<?> PKG = UserDefinedJavaClass.class;
-  private static UserDefinedJavaClassCodeSnippits snippitsHelper = null;
+  private static UserDefinedJavaClassCodeSnippets snippetsHelper = null;
 
-  private final List<Snippit> snippits = new ArrayList<>();
-  private final Map<String, Snippit> snippitsMap = new HashMap<>();
-  private final LogChannel log = new LogChannel("UserDefinedJavaClassCodeSnippits");
+  private final List<Snippet> snippets = new ArrayList<>();
+  private final Map<String, Snippet> snippetsMap = new HashMap<>();
+  private final LogChannel log = new LogChannel("UserDefinedJavaClassCodeSnippets");
 
-  public static synchronized UserDefinedJavaClassCodeSnippits getSnippitsHelper()
+  public static synchronized UserDefinedJavaClassCodeSnippets getSnippetsHelper()
       throws HopXmlException {
-    if (snippitsHelper == null) {
-      snippitsHelper = new UserDefinedJavaClassCodeSnippits();
-      snippitsHelper.addSnippits(
-          "org/apache/hop/pipeline/transforms/userdefinedjavaclass/codeSnippits.xml");
+    if (snippetsHelper == null) {
+      snippetsHelper = new UserDefinedJavaClassCodeSnippets();
+      snippetsHelper.addSnippets(
+          "org/apache/hop/pipeline/transforms/userdefinedjavaclass/codeSnippets.xml");
     }
-    return snippitsHelper;
+    return snippetsHelper;
   }
 
-  private UserDefinedJavaClassCodeSnippits() {}
+  private UserDefinedJavaClassCodeSnippets() {}
 
-  public void addSnippits(String strFileName) throws HopXmlException {
+  public void addSnippets(String strFileName) throws HopXmlException {
     Document doc =
         XmlHandler.loadXmlFile(
-            UserDefinedJavaClassCodeSnippits.class
+            UserDefinedJavaClassCodeSnippets.class
                 .getClassLoader()
                 .getResourceAsStream(strFileName),
             null,
             false,
             false);
-    buildSnippitList(doc);
+    buildSnippetList(doc);
   }
 
+  @Getter
   public enum Category {
     COMMON(BaseMessages.getString(PKG, "UserDefinedJavaClassCodeSnippits.categories.COMMON")),
     STATUS(BaseMessages.getString(PKG, "UserDefinedJavaClassCodeSnippits.categories.STATUS")),
@@ -68,14 +73,10 @@ public class UserDefinedJavaClassCodeSnippits {
     ROW(BaseMessages.getString(PKG, "UserDefinedJavaClassCodeSnippits.categories.ROW")),
     OTHER(BaseMessages.getString(PKG, "UserDefinedJavaClassCodeSnippits.categories.OTHER"));
 
-    private String description;
+    private final String description;
 
-    private Category(String description) {
+    Category(String description) {
       this.description = description;
-    }
-
-    public String getDescription() {
-      return description;
     }
 
     @Override
@@ -84,52 +85,54 @@ public class UserDefinedJavaClassCodeSnippits {
     }
   }
 
-  public static class Snippit {
-    private Snippit(Category category, String name, String sample, String code) {
+  @Getter
+  @Setter
+  public static class Snippet {
+    private Snippet(Category category, String name, String sample, String code) {
       this.category = category;
       this.name = name;
       this.sample = sample;
       this.code = code;
     }
 
-    public final Category category;
-    public final String name;
-    public final String sample;
-    public final String code;
+    private final Category category;
+    private final String name;
+    private final String sample;
+    private final String code;
   }
 
-  public List<Snippit> getSnippits() {
-    return Collections.unmodifiableList(snippits);
+  public List<Snippet> getSnippets() {
+    return Collections.unmodifiableList(snippets);
   }
 
   public String getDefaultCode() {
     return getCode("Implement processRow");
   }
 
-  public String getCode(String snippitName) {
-    Snippit snippit = snippitsMap.get(snippitName);
-    return (snippit == null) ? "" : snippit.code;
+  public String getCode(String snippetName) {
+    Snippet snippet = snippetsMap.get(snippetName);
+    return (snippet == null) ? "" : snippet.code;
   }
 
-  public String getSample(String snippitName) {
-    Snippit snippit = snippitsMap.get(snippitName);
-    return (snippit == null) ? "" : snippit.sample;
+  public String getSample(String snippetName) {
+    Snippet snippet = snippetsMap.get(snippetName);
+    return (snippet == null) ? "" : snippet.sample;
   }
 
-  private void buildSnippitList(Document doc) {
+  private void buildSnippetList(Document doc) {
     List<Node> nodes =
-        XmlHandler.getNodes(XmlHandler.getSubNode(doc, "codeSnippits"), "codeSnippit");
+        XmlHandler.getNodes(XmlHandler.getSubNode(doc, "codeSnippets"), "codeSnippet");
     for (Node node : nodes) {
-      Snippit snippit =
-          new Snippit(
+      Snippet snippet =
+          new Snippet(
               Category.valueOf(XmlHandler.getTagValue(node, "category")),
               XmlHandler.getTagValue(node, "name"),
               XmlHandler.getTagValue(node, "sample"),
               XmlHandler.getTagValue(node, "code"));
-      snippits.add(snippit);
-      Snippit oldSnippit = snippitsMap.put(snippit.name, snippit);
-      if (oldSnippit != null) {
-        log.logError("Multiple code snippits for name: " + snippit.name);
+      snippets.add(snippet);
+      Snippet oldSnippet = snippetsMap.put(snippet.name, snippet);
+      if (oldSnippet != null) {
+        log.logError("Multiple code snippets for name: " + snippet.name);
       }
     }
   }

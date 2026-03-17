@@ -17,21 +17,21 @@
 
 package org.apache.hop.pipeline.transforms.uniquerowsbyhashset;
 
+import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.core.CheckResult;
 import org.apache.hop.core.ICheckResult;
 import org.apache.hop.core.annotations.Transform;
-import org.apache.hop.core.exception.HopTransformException;
-import org.apache.hop.core.exception.HopXmlException;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.w3c.dom.Node;
 
 @Transform(
     id = "UniqueRowsByHashSet",
@@ -41,169 +41,84 @@ import org.w3c.dom.Node;
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Transform",
     keywords = "i18n::UniqueRowsByHashSetMeta.keyword",
     documentationUrl = "/pipeline/transforms/uniquerowsbyhashset.html")
+@Getter
+@Setter
 public class UniqueRowsByHashSetMeta
     extends BaseTransformMeta<UniqueRowsByHashSet, UniqueRowsByHashSetData> {
   private static final Class<?> PKG = UniqueRowsByHashSetMeta.class;
-  public static final String CONST_FIELD = "field";
-  public static final String CONST_SPACES = "      ";
+
+  @Getter
+  @Setter
+  public static class CompareField {
+    @HopMetadataProperty(
+        key = "name",
+        injectionKey = "COMPARE_FIELD_NAME",
+        injectionKeyDescription = "UniqueRowsByHashSetMeta.Injection.COMPARE_FIELD_NAME")
+    private String name;
+
+    public CompareField() {}
+
+    public CompareField(CompareField f) {
+      this();
+      this.name = f.name;
+    }
+
+    public CompareField(String name) {
+      this.name = name;
+    }
+  }
 
   /**
    * Whether to compare strictly by hash value or to store the row values for strict equality
    * checking
    */
+  @HopMetadataProperty(
+      key = "store_values",
+      injectionKey = "STORE_VALUES",
+      injectionKeyDescription = "UniqueRowsByHashSetMeta.Injection.STORE_VALUES")
   private boolean storeValues;
 
   /** The fields to compare for duplicates, null means all */
-  private String[] compareFields;
+  @HopMetadataProperty(
+      key = "field",
+      groupKey = "fields",
+      injectionKey = "COMPARE_FIELD",
+      injectionGroupKey = "COMPARE_FIELDS",
+      injectionKeyDescription = "UniqueRowsByHashSetMeta.Injection.COMPARE_FIELD",
+      injectionGroupDescription = "UniqueRowsByHashSetMeta.Injection.COMPARE_FIELDS")
+  private List<CompareField> compareFields;
 
+  @HopMetadataProperty(
+      key = "reject_duplicate_row",
+      injectionKey = "REJECT_DUPLICATE_ROW",
+      injectionKeyDescription = "UniqueRowsByHashSetMeta.Injection.REJECT_DUPLICATE_ROW")
   private boolean rejectDuplicateRow;
+
+  @HopMetadataProperty(
+      key = "error_description",
+      injectionKey = "ERROR_DESCRIPTION",
+      injectionKeyDescription = "UniqueRowsByHashSetMeta.Injection.ERROR_DESCRIPTION")
   private String errorDescription;
 
   public UniqueRowsByHashSetMeta() {
-    super(); // allocate BaseTransformMeta
+    super();
+    compareFields = new ArrayList<>();
+    rejectDuplicateRow = false;
+    errorDescription = null;
+    storeValues = true;
   }
 
-  /**
-   * @param compareField The compareField to set.
-   */
-  public void setCompareFields(String[] compareField) {
-    this.compareFields = compareField;
-  }
-
-  public boolean getStoreValues() {
-    return storeValues;
-  }
-
-  public void setStoreValues(boolean storeValues) {
-    this.storeValues = storeValues;
-  }
-
-  /**
-   * @return Returns the compareField.
-   */
-  public String[] getCompareFields() {
-    return compareFields;
-  }
-
-  public void allocate(int nrFields) {
-    compareFields = new String[nrFields];
-  }
-
-  /**
-   * @param rejectDuplicateRow The rejectDuplicateRow to set.
-   */
-  public void setRejectDuplicateRow(boolean rejectDuplicateRow) {
-    this.rejectDuplicateRow = rejectDuplicateRow;
-  }
-
-  /**
-   * @return Returns the rejectDuplicateRow.
-   */
-  public boolean isRejectDuplicateRow() {
-    return rejectDuplicateRow;
-  }
-
-  /**
-   * @param errorDescription The errorDescription to set.
-   */
-  public void setErrorDescription(String errorDescription) {
-    this.errorDescription = errorDescription;
-  }
-
-  /**
-   * @return Returns the errorDescription.
-   */
-  public String getErrorDescription() {
-    return errorDescription;
-  }
-
-  @Override
-  public void loadXml(Node transformNode, IHopMetadataProvider metadataProvider)
-      throws HopXmlException {
-    readData(transformNode);
+  public UniqueRowsByHashSetMeta(UniqueRowsByHashSetMeta m) {
+    this();
+    this.storeValues = m.storeValues;
+    this.rejectDuplicateRow = m.rejectDuplicateRow;
+    this.errorDescription = m.errorDescription;
+    m.compareFields.forEach(f -> this.compareFields.add(new CompareField(f)));
   }
 
   @Override
   public Object clone() {
-    UniqueRowsByHashSetMeta retval = (UniqueRowsByHashSetMeta) super.clone();
-
-    int nrFields = compareFields.length;
-
-    retval.allocate(nrFields);
-
-    System.arraycopy(compareFields, 0, retval.compareFields, 0, nrFields);
-    return retval;
-  }
-
-  private void readData(Node transformNode) throws HopXmlException {
-    try {
-      storeValues = "Y".equalsIgnoreCase(XmlHandler.getTagValue(transformNode, "store_values"));
-      rejectDuplicateRow =
-          "Y".equalsIgnoreCase(XmlHandler.getTagValue(transformNode, "reject_duplicate_row"));
-      errorDescription = XmlHandler.getTagValue(transformNode, "error_description");
-
-      Node fields = XmlHandler.getSubNode(transformNode, "fields");
-      int nrFields = XmlHandler.countNodes(fields, CONST_FIELD);
-
-      allocate(nrFields);
-
-      for (int i = 0; i < nrFields; i++) {
-        Node fnode = XmlHandler.getSubNodeByNr(fields, CONST_FIELD, i);
-
-        compareFields[i] = XmlHandler.getTagValue(fnode, "name");
-      }
-
-    } catch (Exception e) {
-      throw new HopXmlException(
-          BaseMessages.getString(
-              PKG, "UniqueRowsByHashSetMeta.Exception.UnableToLoadTransformMetaFromXML"),
-          e);
-    }
-  }
-
-  @Override
-  public void setDefault() {
-    rejectDuplicateRow = false;
-    errorDescription = null;
-    storeValues = true;
-    int nrFields = 0;
-
-    allocate(nrFields);
-
-    for (int i = 0; i < nrFields; i++) {
-      compareFields[i] = CONST_FIELD + i;
-    }
-  }
-
-  @Override
-  public void getFields(
-      IRowMeta row,
-      String name,
-      IRowMeta[] info,
-      TransformMeta nextTransform,
-      IVariables variables,
-      IHopMetadataProvider metadataProvider)
-      throws HopTransformException {
-    // Do Nothing
-  }
-
-  @Override
-  public String getXml() {
-    StringBuilder retval = new StringBuilder();
-
-    retval.append(CONST_SPACES + XmlHandler.addTagValue("store_values", storeValues));
-    retval.append(
-        CONST_SPACES + XmlHandler.addTagValue("reject_duplicate_row", rejectDuplicateRow));
-    retval.append(CONST_SPACES + XmlHandler.addTagValue("error_description", errorDescription));
-    retval.append("    <fields>");
-    for (String compareField : compareFields) {
-      retval.append("      <field>");
-      retval.append("        " + XmlHandler.addTagValue("name", compareField));
-      retval.append("        </field>");
-    }
-    retval.append("      </fields>");
-
-    return retval.toString();
+    return new UniqueRowsByHashSetMeta(this);
   }
 
   @Override
