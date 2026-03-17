@@ -29,101 +29,59 @@ import org.apache.hop.metadata.api.HopMetadataProperty;
 @Getter
 @Setter
 public class FileSettings {
-  /** Flag: add the stepNr in the filename */
-  @HopMetadataProperty(
-      key = "split",
-      injectionKey = "INC_TRANSFORMNR_IN_FILENAME",
-      injectionKeyDescription = "JsonOutput.Injection.INC_TRANSFORMNR_IN_FILENAME")
-  protected boolean transformNrInFilename;
-
-  /** Flag: add the partition number in the filename */
-  @HopMetadataProperty(
-      key = "haspartno",
-      injectionKey = "INC_PARTNR_IN_FILENAME",
-      injectionKeyDescription = "JsonOutput.Injection.INC_PARTNR_IN_FILENAME")
-  protected boolean partNrInFilename;
-
   /** Flag: add the date in the filename */
   @HopMetadataProperty(
       key = "add_date",
       injectionKey = "INC_DATE_IN_FILENAME",
-      injectionKeyDescription = "JsonOutput.Injection.INC_DATE_IN_FILENAME")
+      injectionKeyDescription = "JsonEOutput.Injection.INC_DATE_IN_FILENAME")
   protected boolean dateInFileName;
 
   /** Flag: add the time in the filename */
   @HopMetadataProperty(
       key = "add_time",
       injectionKey = "INC_TIME_IN_FILENAME",
-      injectionKeyDescription = "JsonOutput.Injection.INC_TIME_IN_FILENAME")
+      injectionKeyDescription = "JsonEOutput.Injection.INC_TIME_IN_FILENAME")
   protected boolean timeInFileName;
 
   /** The file extension in case of a generated filename */
   @HopMetadataProperty(
       key = "extension",
       injectionKey = "EXTENSION",
-      injectionKeyDescription = "JsonOutput.Injection.EXTENSION")
+      injectionKeyDescription = "JsonEOutput.Injection.EXTENSION")
   protected String extension;
 
   /** The base name of the output file */
   @HopMetadataProperty(
       key = "name",
       injectionKey = "FILENAME",
-      injectionKeyDescription = "JsonOutput.Injection.FILENAME")
+      injectionKeyDescription = "JsonEOutput.Injection.FILENAME")
   protected String fileName;
 
-  /** Whether to treat this as a command to be executed and piped into */
-  @HopMetadataProperty(
-      key = "fileAsCommand",
-      injectionKey = "RUN_AS_COMMAND",
-      injectionKeyDescription = "JsonOutput.Injection.RUN_AS_COMMAND")
-  private boolean fileAsCommand;
-
-  /** Flag : Do not open new file when transformation start */
-  @HopMetadataProperty(
-      key = "SpecifyFormat",
-      injectionKey = "SPECIFY_DATE_FORMAT",
-      injectionKeyDescription = "JsonOutput.Injection.SPECIFY_DATE_FORMAT")
-  private boolean specifyingFormat;
-
-  /** The date format appended to the file name */
-  @HopMetadataProperty(
-      key = "date_time_format",
-      injectionKey = "DATE_FORMAT",
-      injectionKeyDescription = "JsonOutput.Injection.DATE_FORMAT")
-  private String dateTimeFormat;
-
-  /** Choose if you want the output prittyfied */
+  /** Choose if you want the output prettyfied */
   @HopMetadataProperty(
       key = "split_output_after",
       injectionKey = "SPLIT_OUTPUT_AFTER",
-      injectionKeyDescription = "JsonOutput.Injection.SPLIT_OUTPUT_AFTER")
+      injectionKeyDescription = "JsonEOutput.Injection.SPLIT_OUTPUT_AFTER")
   protected int splitOutputAfter;
-
-  /** The file compression: None, Zip or Gzip */
-  @HopMetadataProperty(
-      key = "compression",
-      injectionKey = "COMPRESSION",
-      injectionKeyDescription = "JsonOutput.Injection.COMPRESSION")
-  private String fileCompression;
 
   /** Flag: create parent folder if needed */
   @HopMetadataProperty(
       key = "create_parent_folder",
       injectionKey = "CREATE_PARENT_FOLDER",
-      injectionKeyDescription = "JsonOutput.Injection.")
+      injectionKeyDescription = "JsonEOutput.Injection.CREATE_PARENT_FOLDER")
   private boolean createParentFolder;
 
   /** Flag to indicate that we want to append to the end of an existing file (if it exists) */
   @HopMetadataProperty(
       key = "append",
       injectionKey = "APPEND",
-      injectionKeyDescription = "JsonOutput.Injection.APPEND")
+      injectionKeyDescription = "JsonEOutput.Injection.APPEND")
   private boolean fileAppended;
 
   @HopMetadataProperty(
       key = "doNotOpenNewFileInit",
-      injectionKey = "",
-      injectionKeyDescription = "JsonOutput.Injection.")
+      injectionKey = "DONT_CREATE_AT_START",
+      injectionKeyDescription = "JsonEOutput.Injection.DONT_CREATE_AT_START")
   private boolean doNotOpenNewFileInit;
 
   public FileSettings() {
@@ -133,16 +91,10 @@ public class FileSettings {
   public FileSettings(FileSettings f) {
     this();
     this.dateInFileName = f.dateInFileName;
-    this.dateTimeFormat = f.dateTimeFormat;
     this.extension = f.extension;
-    this.fileAsCommand = f.fileAsCommand;
-    this.fileCompression = f.fileCompression;
     this.fileName = f.fileName;
-    this.partNrInFilename = f.partNrInFilename;
-    this.specifyingFormat = f.specifyingFormat;
     this.splitOutputAfter = f.splitOutputAfter;
     this.timeInFileName = f.timeInFileName;
-    this.transformNrInFilename = f.transformNrInFilename;
     this.createParentFolder = f.createParentFolder;
     this.fileAppended = f.fileAppended;
     this.doNotOpenNewFileInit = f.doNotOpenNewFileInit;
@@ -159,10 +111,10 @@ public class FileSettings {
 
   public String buildFilename(
       final IVariables variables,
-      final String stepNr,
-      final String partNr,
+      final String copyNr,
+      final String partitionId,
       final String splitNr,
-      final boolean ziparchive,
+      final boolean zipArchive,
       final boolean showSamples) {
 
     String realFileName = variables.resolve(fileName);
@@ -172,25 +124,15 @@ public class FileSettings {
     // Replace possible environment variables...
     String retval = realFileName;
 
-    if (isFileAsCommand()) {
-      return retval;
-    }
-
     Date now = new Date();
 
-    if (isSpecifyingFormat() && !Utils.isEmpty(getDateTimeFormat())) {
-      daf.applyPattern(getDateTimeFormat());
-      String dt = daf.format(now);
-      retval += dt;
-    } else {
-      if (isDateInFileName()) {
-        if (showSamples) {
-          daf.applyPattern("yyyMMdd");
-          String d = daf.format(now);
-          retval += "_" + d;
-        } else {
-          retval += "_<yyyMMdd>";
-        }
+    if (isDateInFileName()) {
+      if (showSamples) {
+        daf.applyPattern("yyyMMdd");
+        String d = daf.format(now);
+        retval += "_" + d;
+      } else {
+        retval += "_<yyyMMdd>";
       }
       if (isTimeInFileName()) {
         if (showSamples) {
@@ -206,28 +148,8 @@ public class FileSettings {
       retval += "_" + splitNr;
     }
 
-    if (isTransformNrInFilename()) {
-      retval += "_" + stepNr;
-    }
-    if (isPartNrInFilename()) {
-      retval += "_" + partNr;
-    }
-
-    if ("Zip".equalsIgnoreCase(getFileCompression())) {
-      if (ziparchive) {
-        retval += ".zip";
-      } else {
-        if (!Utils.isEmpty(realExtension)) {
-          retval += "." + realExtension;
-        }
-      }
-    } else {
-      if (!Utils.isEmpty(realExtension)) {
-        retval += "." + realExtension;
-      }
-      if ("GZip".equalsIgnoreCase(getFileCompression())) {
-        retval += ".gz";
-      }
+    if (!Utils.isEmpty(realExtension)) {
+      retval += "." + realExtension;
     }
     return retval;
   }
@@ -237,14 +159,6 @@ public class FileSettings {
       int copies = 1;
       int splits = 1;
       int parts = 1;
-
-      if (isTransformNrInFilename()) {
-        copies = 3;
-      }
-
-      if (isPartNrInFilename()) {
-        parts = 3;
-      }
 
       int nr = copies * parts * splits;
       if (nr > 1) {

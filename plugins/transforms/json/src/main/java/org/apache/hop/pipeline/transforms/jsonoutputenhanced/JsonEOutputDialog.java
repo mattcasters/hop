@@ -147,7 +147,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
   @Override
   public String open() {
-    createShell(BaseMessages.getString(PKG, "JsonOutputDialog.DialogTitle"));
+    createShell(BaseMessages.getString(PKG, "JsonEOutputDialog.DialogTitle"));
 
     buildButtonBar().ok(e -> ok()).cancel(e -> cancel()).build();
 
@@ -164,7 +164,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     // /
     CTabItem wGeneralTab = new CTabItem(wTabFolder, SWT.NONE);
     wGeneralTab.setFont(GuiResource.getInstance().getFontDefault());
-    wGeneralTab.setText(BaseMessages.getString(PKG, "JsonOutputDialog.GeneralTab.TabTitle"));
+    wGeneralTab.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.GeneralTab.TabTitle"));
 
     FormLayout generalLayout = new FormLayout();
     generalLayout.marginWidth = 3;
@@ -176,7 +176,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     // Operation
     wlOperation = new Label(wGeneralComp, SWT.RIGHT);
-    wlOperation.setText(BaseMessages.getString(PKG, "JsonOutputDialog.Operation.Label"));
+    wlOperation.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.Operation.Label"));
     PropsUi.setLook(wlOperation);
     FormData fdlOperation = new FormData();
     fdlOperation.left = new FormAttachment(0, 0);
@@ -223,7 +223,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     // ///////////////////////////////////////////////////////////
     CTabItem wKeyConfigTab = new CTabItem(wTabFolder, SWT.NONE);
     wKeyConfigTab.setFont(GuiResource.getInstance().getFontDefault());
-    wKeyConfigTab.setText(BaseMessages.getString(PKG, "JsonOutputDialog.KeyConfigTab.TabTitle"));
+    wKeyConfigTab.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.KeyConfigTab.TabTitle"));
 
     FormLayout keyConfigLayout = new FormLayout();
     keyConfigLayout.marginWidth = 3;
@@ -237,12 +237,12 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     keyColInf =
         new ColumnInfo[] {
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.FieldName.Column"),
+              BaseMessages.getString(PKG, "JsonEOutputDialog.FieldName.Column"),
               ColumnInfo.COLUMN_TYPE_CCOMBO,
               new String[] {""},
               false),
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.ElementName.Column"),
+              BaseMessages.getString(PKG, "JsonEOutputDialog.ElementName.Column"),
               ColumnInfo.COLUMN_TYPE_TEXT,
               false)
         };
@@ -277,7 +277,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     // ///////////////////////////////////////////////////////////
     CTabItem wFieldsTab = new CTabItem(wTabFolder, SWT.NONE);
     wFieldsTab.setFont(GuiResource.getInstance().getFontDefault());
-    wFieldsTab.setText(BaseMessages.getString(PKG, "JsonOutputDialog.FieldsTab.TabTitle"));
+    wFieldsTab.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.FieldsTab.TabTitle"));
 
     FormLayout fieldsLayout = new FormLayout();
     fieldsLayout.marginWidth = PropsUi.getFormMargin();
@@ -288,8 +288,8 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     PropsUi.setLook(wFieldsComp);
 
     wGet = new Button(wFieldsComp, SWT.PUSH);
-    wGet.setText(BaseMessages.getString(PKG, "JsonOutputDialog.Get.Button"));
-    wGet.setToolTipText(BaseMessages.getString(PKG, "JsonOutputDialog.Get.Tooltip"));
+    wGet.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.Get.Button"));
+    wGet.setToolTipText(BaseMessages.getString(PKG, "JsonEOutputDialog.Get.Tooltip"));
 
     setButtonPositions(new Button[] {wGet}, margin, null);
 
@@ -298,16 +298,16 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     colinf =
         new ColumnInfo[] {
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.FieldName.Column"),
+              BaseMessages.getString(PKG, "JsonEOutputDialog.FieldName.Column"),
               ColumnInfo.COLUMN_TYPE_CCOMBO,
               new String[] {""},
               false),
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.ElementName.Column"),
+              BaseMessages.getString(PKG, "JsonEOutputDialog.ElementName.Column"),
               ColumnInfo.COLUMN_TYPE_TEXT,
               false),
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.JSONFragment.Column"),
+              BaseMessages.getString(PKG, "JsonEOutputDialog.JSONFragment.Column"),
               ColumnInfo.COLUMN_TYPE_CCOMBO,
               new String[] {
                 BaseMessages.getString(PKG, SYSTEM_COMBO_YES),
@@ -315,7 +315,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
               },
               true),
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.NoEnclosure.Column"),
+              BaseMessages.getString(PKG, "JsonEOutputDialog.NoEnclosure.Column"),
               ColumnInfo.COLUMN_TYPE_CCOMBO,
               new String[] {
                 BaseMessages.getString(PKG, SYSTEM_COMBO_YES),
@@ -323,7 +323,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
               },
               false),
           new ColumnInfo(
-              BaseMessages.getString(PKG, "JsonOutputDialog.RemoveIfBlank.Column"),
+              BaseMessages.getString(PKG, "JsonEOutputDialog.RemoveIfBlank.Column"),
               ColumnInfo.COLUMN_TYPE_CCOMBO,
               new String[] {
                 BaseMessages.getString(PKG, SYSTEM_COMBO_YES),
@@ -355,7 +355,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     CTabItem wAdditionalFieldsConfigTab = new CTabItem(wTabFolder, SWT.NONE);
     wAdditionalFieldsConfigTab.setFont(GuiResource.getInstance().getFontDefault());
     wAdditionalFieldsConfigTab.setText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.AdditionalFieldsConfigTab.TabTitle"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.AdditionalFieldsConfigTab.TabTitle"));
 
     FormLayout additionalFieldsConfigLayout = new FormLayout();
     additionalFieldsConfigLayout.marginWidth = 3;
@@ -366,7 +366,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     // JSON Size field
     Label wlJSONSizeFieldname = new Label(wAdditionalFieldsConfigComp, SWT.RIGHT);
-    wlJSONSizeFieldname.setText(BaseMessages.getString(PKG, "JsonOutputDialog.JSONSize.Label"));
+    wlJSONSizeFieldname.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.JSONSize.Label"));
     PropsUi.setLook(wlJSONSizeFieldname);
     FormData fdlJSONSizeFieldname = new FormData();
     fdlJSONSizeFieldname.left = new FormAttachment(0, 0);
@@ -461,7 +461,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     wSettings = new Group(wGeneralComp, SWT.SHADOW_NONE);
     PropsUi.setLook(wSettings);
-    wSettings.setText(BaseMessages.getString(PKG, "JsonOutputDialog.Group.Settings.Label"));
+    wSettings.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.Group.Settings.Label"));
 
     FormLayout groupFileLayout = new FormLayout();
     groupFileLayout.marginWidth = 10;
@@ -469,7 +469,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wSettings.setLayout(groupFileLayout);
 
     wlBlocName = new Label(wSettings, SWT.RIGHT);
-    wlBlocName.setText(BaseMessages.getString(PKG, "JsonOutputDialog.BlocName.Label"));
+    wlBlocName.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.BlocName.Label"));
     PropsUi.setLook(wlBlocName);
     FormData fdlBlocName = new FormData();
     fdlBlocName.left = new FormAttachment(0, 0);
@@ -487,7 +487,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wBlocName.setLayoutData(fdBlocName);
 
     Label wlOutputValue = new Label(wSettings, SWT.RIGHT);
-    wlOutputValue.setText(BaseMessages.getString(PKG, "JsonOutputDialog.OutputValue.Label"));
+    wlOutputValue.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.OutputValue.Label"));
     PropsUi.setLook(wlOutputValue);
     FormData fdlOutputValue = new FormData();
     fdlOutputValue.left = new FormAttachment(0, 0);
@@ -496,7 +496,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wlOutputValue.setLayoutData(fdlOutputValue);
     wOutputValue = new TextVar(variables, wSettings, SWT.BORDER | SWT.READ_ONLY);
     wOutputValue.setEditable(true);
-    wOutputValue.setToolTipText("JsonOutputDialog.OutputValue.Tooltip");
+    wOutputValue.setToolTipText("JsonEOutputDialog.OutputValue.Tooltip");
     PropsUi.setLook(wOutputValue);
     wOutputValue.addModifyListener(lsMod);
     FormData fdOutputValue = new FormData();
@@ -507,7 +507,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     Label wlUseArrayWithSingleInstance = new Label(wSettings, SWT.RIGHT);
     wlUseArrayWithSingleInstance.setText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.UseArrayWihSingleInstanceMode.Label"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.UseArrayWihSingleInstanceMode.Label"));
     PropsUi.setLook(wlUseArrayWithSingleInstance);
     FormData fdlUseArrayWithSingleInstance = new FormData();
     fdlUseArrayWithSingleInstance.left = new FormAttachment(0, 0);
@@ -516,7 +516,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wlUseArrayWithSingleInstance.setLayoutData(fdlUseArrayWithSingleInstance);
     wUseArrayWithSingleInstance = new Button(wSettings, SWT.CHECK);
     wUseArrayWithSingleInstance.setToolTipText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.UseArrayWihSingleInstanceMode.Tooltip"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.UseArrayWihSingleInstanceMode.Tooltip"));
     PropsUi.setLook(wUseArrayWithSingleInstance);
     FormData fdUseArrayWithSingleInstance = new FormData();
     fdUseArrayWithSingleInstance.left = new FormAttachment(middle, 0);
@@ -534,7 +534,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     Label wlUseSingleItemPerGroup = new Label(wSettings, SWT.RIGHT);
     wlUseSingleItemPerGroup.setText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.UseSingleItemPerGroup.Label"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.UseSingleItemPerGroup.Label"));
     PropsUi.setLook(wlUseSingleItemPerGroup);
     FormData fdlUseSingleItemPerGroup = new FormData();
     fdlUseSingleItemPerGroup.left = new FormAttachment(0, 0);
@@ -543,7 +543,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wlUseSingleItemPerGroup.setLayoutData(fdlUseSingleItemPerGroup);
     wUseSingleItemPerGroup = new Button(wSettings, SWT.CHECK);
     wUseSingleItemPerGroup.setToolTipText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.UseSingleItemPerGroup.Tooltip"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.UseSingleItemPerGroup.Tooltip"));
     PropsUi.setLook(wUseSingleItemPerGroup);
     FormData fdUseSingleItemPerGroup = new FormData();
     fdUseSingleItemPerGroup.left = new FormAttachment(middle, 0);
@@ -559,7 +559,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
         });
 
     Label wlJSONPrittified = new Label(wSettings, SWT.RIGHT);
-    wlJSONPrittified.setText(BaseMessages.getString(PKG, "JsonOutputDialog.JSONPrettified.Label"));
+    wlJSONPrittified.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.JSONPrettified.Label"));
     PropsUi.setLook(wlJSONPrittified);
     FormData fdlJSONPrittified = new FormData();
     fdlJSONPrittified.left = new FormAttachment(0, 0);
@@ -568,7 +568,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wlJSONPrittified.setLayoutData(fdlJSONPrittified);
     wJSONPrittified = new Button(wSettings, SWT.CHECK);
     wJSONPrittified.setToolTipText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.JSONPrettified.Tooltip"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.JSONPrettified.Tooltip"));
     PropsUi.setLook(wJSONPrittified);
     FormData fdJSONPrittified = new FormData();
     fdJSONPrittified.left = new FormAttachment(middle, 0);
@@ -603,7 +603,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     wFilenameGroup = new Group(wGeneralComp, SWT.SHADOW_NONE);
     PropsUi.setLook(wFilenameGroup);
-    wFilenameGroup.setText(BaseMessages.getString(PKG, "JsonOutputDialog.Group.File.Label"));
+    wFilenameGroup.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.Group.File.Label"));
 
     FormLayout groupfilenameayout = new FormLayout();
     groupfilenameayout.marginWidth = 10;
@@ -612,7 +612,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     // Filename line
     wlFilename = new Label(wFilenameGroup, SWT.RIGHT);
-    wlFilename.setText(BaseMessages.getString(PKG, "JsonOutputDialog.Filename.Label"));
+    wlFilename.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.Filename.Label"));
     PropsUi.setLook(wlFilename);
     FormData fdlFilename = new FormData();
     fdlFilename.left = new FormAttachment(0, 0);
@@ -654,7 +654,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     // Append to end of file?
     wlAppend = new Label(wFilenameGroup, SWT.RIGHT);
-    wlAppend.setText(BaseMessages.getString(PKG, "JsonOutputDialog.Append.Label"));
+    wlAppend.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.Append.Label"));
     PropsUi.setLook(wlAppend);
     FormData fdlAppend = new FormData();
     fdlAppend.left = new FormAttachment(0, 0);
@@ -662,7 +662,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     fdlAppend.right = new FormAttachment(middle, -margin);
     wlAppend.setLayoutData(fdlAppend);
     wAppend = new Button(wFilenameGroup, SWT.CHECK);
-    wAppend.setToolTipText(BaseMessages.getString(PKG, "JsonOutputDialog.Append.Tooltip"));
+    wAppend.setToolTipText(BaseMessages.getString(PKG, "JsonEOutputDialog.Append.Tooltip"));
     PropsUi.setLook(wAppend);
     FormData fdAppend = new FormData();
     fdAppend.left = new FormAttachment(middle, 0);
@@ -679,7 +679,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     wlSplitOutputAfter = new Label(wFilenameGroup, SWT.RIGHT);
     wlSplitOutputAfter.setText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.splitOutputAfter.Label"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.splitOutputAfter.Label"));
     PropsUi.setLook(wlSplitOutputAfter);
     FormData fdlSplitOutputAfter = new FormData();
     fdlSplitOutputAfter.left = new FormAttachment(0, 0);
@@ -689,7 +689,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wSplitOutputAfter = new TextVar(variables, wFilenameGroup, SWT.BORDER | SWT.READ_ONLY);
     wSplitOutputAfter.setEditable(true);
     wSplitOutputAfter.setToolTipText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.splitOutputAfter.Tooltip"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.splitOutputAfter.Tooltip"));
     PropsUi.setLook(wSplitOutputAfter);
     FormData fdSplitOutputAfter = new FormData();
     fdSplitOutputAfter.left = new FormAttachment(middle, 0);
@@ -707,7 +707,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     // Create Parent Folder
     wlCreateParentFolder = new Label(wFilenameGroup, SWT.RIGHT);
     wlCreateParentFolder.setText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.CreateParentFolder.Label"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.CreateParentFolder.Label"));
     PropsUi.setLook(wlCreateParentFolder);
     FormData fdlCreateParentFolder = new FormData();
     fdlCreateParentFolder.left = new FormAttachment(0, 0);
@@ -716,7 +716,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wlCreateParentFolder.setLayoutData(fdlCreateParentFolder);
     wCreateParentFolder = new Button(wFilenameGroup, SWT.CHECK);
     wCreateParentFolder.setToolTipText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.CreateParentFolder.Tooltip"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.CreateParentFolder.Tooltip"));
     PropsUi.setLook(wCreateParentFolder);
     FormData fdCreateParentFolder = new FormData();
     fdCreateParentFolder.left = new FormAttachment(middle, 0);
@@ -734,7 +734,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     // Open new File at Init
     wlDoNotOpenNewFileInit = new Label(wFilenameGroup, SWT.RIGHT);
     wlDoNotOpenNewFileInit.setText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.DoNotOpenNewFileInit.Label"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.DoNotOpenNewFileInit.Label"));
     PropsUi.setLook(wlDoNotOpenNewFileInit);
     FormData fdlDoNotOpenNewFileInit = new FormData();
     fdlDoNotOpenNewFileInit.left = new FormAttachment(0, 0);
@@ -743,7 +743,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wlDoNotOpenNewFileInit.setLayoutData(fdlDoNotOpenNewFileInit);
     wDoNotOpenNewFileInit = new Button(wFilenameGroup, SWT.CHECK);
     wDoNotOpenNewFileInit.setToolTipText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.DoNotOpenNewFileInit.Tooltip"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.DoNotOpenNewFileInit.Tooltip"));
     PropsUi.setLook(wDoNotOpenNewFileInit);
     FormData fdDoNotOpenNewFileInit = new FormData();
     fdDoNotOpenNewFileInit.left = new FormAttachment(middle, 0);
@@ -762,7 +762,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     // Create multi-part file?
     wlAddDate = new Label(wFilenameGroup, SWT.RIGHT);
-    wlAddDate.setText(BaseMessages.getString(PKG, "JsonOutputDialog.AddDate.Label"));
+    wlAddDate.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.AddDate.Label"));
     PropsUi.setLook(wlAddDate);
     FormData fdlAddDate = new FormData();
     fdlAddDate.left = new FormAttachment(0, 0);
@@ -786,7 +786,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     // Create multi-part file?
     wlAddTime = new Label(wFilenameGroup, SWT.RIGHT);
-    wlAddTime.setText(BaseMessages.getString(PKG, "JsonOutputDialog.AddTime.Label"));
+    wlAddTime.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.AddTime.Label"));
     PropsUi.setLook(wlAddTime);
     FormData fdlAddTime = new FormData();
     fdlAddTime.left = new FormAttachment(0, 0);
@@ -810,7 +810,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     wbShowFiles = new Button(wFilenameGroup, SWT.PUSH | SWT.CENTER);
     PropsUi.setLook(wbShowFiles);
-    wbShowFiles.setText(BaseMessages.getString(PKG, "JsonOutputDialog.ShowFiles.Button"));
+    wbShowFiles.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.ShowFiles.Button"));
     FormData fdbShowFiles = new FormData();
     fdbShowFiles.left = new FormAttachment(middle, 0);
     fdbShowFiles.top = new FormAttachment(wlAddTime, margin);
@@ -827,15 +827,16 @@ public class JsonEOutputDialog extends BaseTransformDialog {
                   new EnterSelectionDialog(
                       shell,
                       files,
-                      BaseMessages.getString(PKG, "JsonOutputDialog.SelectOutputFiles.DialogTitle"),
                       BaseMessages.getString(
-                          PKG, "JsonOutputDialog.SelectOutputFiles.DialogMessage"));
+                          PKG, "JsonEOutputDialog.SelectOutputFiles.DialogTitle"),
+                      BaseMessages.getString(
+                          PKG, "JsonEOutputDialog.SelectOutputFiles.DialogMessage"));
               esd.setViewOnly();
               esd.open();
             } else {
               MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_ERROR);
               mb.setMessage(
-                  BaseMessages.getString(PKG, "JsonOutputDialog.NoFilesFound.DialogMessage"));
+                  BaseMessages.getString(PKG, "JsonEOutputDialog.NoFilesFound.DialogMessage"));
               mb.setText(BaseMessages.getString(PKG, "System.DialogTitle.Error"));
               mb.open();
             }
@@ -844,7 +845,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
 
     // Add File to the result files name
     wlAddToResult = new Label(wFilenameGroup, SWT.RIGHT);
-    wlAddToResult.setText(BaseMessages.getString(PKG, "JsonOutputDialog.AddFileToResult.Label"));
+    wlAddToResult.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.AddFileToResult.Label"));
     PropsUi.setLook(wlAddToResult);
     FormData fdlAddToResult = new FormData();
     fdlAddToResult.left = new FormAttachment(0, 0);
@@ -853,7 +854,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wlAddToResult.setLayoutData(fdlAddToResult);
     wAddToResult = new Button(wFilenameGroup, SWT.CHECK);
     wAddToResult.setToolTipText(
-        BaseMessages.getString(PKG, "JsonOutputDialog.AddFileToResult.Tooltip"));
+        BaseMessages.getString(PKG, "JsonEOutputDialog.AddFileToResult.Tooltip"));
     PropsUi.setLook(wAddToResult);
     FormData fdAddToResult = new FormData();
     fdAddToResult.left = new FormAttachment(middle, 0);
@@ -901,7 +902,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wExtension.setLayoutData(fdExtension);
 
     wlEncoding = new Label(wFilenameGroup, SWT.RIGHT);
-    wlEncoding.setText(BaseMessages.getString(PKG, "JsonOutputDialog.Encoding.Label"));
+    wlEncoding.setText(BaseMessages.getString(PKG, "JsonEOutputDialog.Encoding.Label"));
     PropsUi.setLook(wlEncoding);
     FormData fdlEncoding = new FormData();
     fdlEncoding.left = new FormAttachment(0, 0);
@@ -991,7 +992,7 @@ public class JsonEOutputDialog extends BaseTransformDialog {
     wJSONSizeFieldname.setText(Const.NVL(input.getJsonSizeFieldName(), ""));
 
     if (isDebug()) {
-      logDebug(BaseMessages.getString(PKG, "JsonOutputDialog.Log.GettingFieldsInfo"));
+      logDebug(BaseMessages.getString(PKG, "JsonEOutputDialog.Log.GettingFieldsInfo"));
     }
 
     for (int i = 0; i < input.getKeyFields().size(); i++) {
@@ -1105,12 +1106,12 @@ public class JsonEOutputDialog extends BaseTransformDialog {
       MessageDialogWithToggle md =
           new MessageDialogWithToggle(
               shell,
-              BaseMessages.getString(PKG, "JsonOutputDialog.InputNeedSort.DialogTitle"),
-              BaseMessages.getString(PKG, "JsonOutputDialog.InputNeedSort.DialogMessage", Const.CR)
+              BaseMessages.getString(PKG, "JsonEOutputDialog.InputNeedSort.DialogTitle"),
+              BaseMessages.getString(PKG, "JsonEOutputDialog.InputNeedSort.DialogMessage", Const.CR)
                   + Const.CR,
               SWT.ICON_WARNING,
-              new String[] {BaseMessages.getString(PKG, "JsonOutputDialog.InputNeedSort.Option1")},
-              BaseMessages.getString(PKG, "JsonOutputDialog.InputNeedSort.Option2"),
+              new String[] {BaseMessages.getString(PKG, "JsonEOutputDialog.InputNeedSort.Option1")},
+              BaseMessages.getString(PKG, "JsonEOutputDialog.InputNeedSort.Option2"),
               "N".equalsIgnoreCase(props.getCustomParameter(STRING_SORT_WARNING_PARAMETER, "Y")));
       md.open();
       props.setCustomParameter(STRING_SORT_WARNING_PARAMETER, md.getToggleState() ? "N" : "Y");

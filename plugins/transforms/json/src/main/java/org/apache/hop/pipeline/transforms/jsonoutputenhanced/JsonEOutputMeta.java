@@ -50,7 +50,7 @@ import org.w3c.dom.Node;
     name = "i18n::EnhancedJsonOutput.name",
     description = "i18n::EnhancedJsonOutput.description",
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Output",
-    keywords = "i18n::JsonOutputMeta.keyword",
+    keywords = "i18n::JsonEOutputMeta.keyword",
     documentationUrl = "/pipeline/transforms/enhancedjsonoutput.html")
 @Getter
 @Setter
@@ -65,10 +65,10 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
   @Getter
   public enum OperationType implements IEnumHasCodeAndDescription {
     OUTPUT_VALUE(
-        "outputvalue", BaseMessages.getString(PKG, "JsonOutputMeta.operationType.OutputValue")),
+        "outputvalue", BaseMessages.getString(PKG, "JsonEOutputMeta.operationType.OutputValue")),
     WRITE_TO_FILE(
-        "writetofile", BaseMessages.getString(PKG, "JsonOutputMeta.operationType.WriteToFile")),
-    BOTH("both", BaseMessages.getString(PKG, "JsonOutputMeta.operationType.Both")),
+        "writetofile", BaseMessages.getString(PKG, "JsonEOutputMeta.operationType.WriteToFile")),
+    BOTH("both", BaseMessages.getString(PKG, "JsonEOutputMeta.operationType.Both")),
     ;
 
     private final String code;
@@ -95,66 +95,64 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
       key = "operation_type",
       storeWithCode = true,
       injectionKey = "OPERATION",
-      injectionKeyDescription = "JsonOutput.Injection.OPERATION")
+      injectionKeyDescription = "JsonEOutput.Injection.OPERATION")
   private OperationType operationType;
 
   /** The encoding to use for reading: null or empty string means system default encoding */
   @HopMetadataProperty(
       key = "encoding",
       injectionKey = "ENCODING",
-      injectionKeyDescription = "JsonOutput.Injection.ENCODING")
+      injectionKeyDescription = "JsonEOutput.Injection.ENCODING")
   private String encoding;
 
   /** The name value containing the resulting JSON fragment */
   @HopMetadataProperty(
       key = "outputValue",
       injectionKey = "OUTPUT_VALUE",
-      injectionKeyDescription = "JsonOutput.Injection.OUTPUT_VALUE")
+      injectionKeyDescription = "JsonEOutput.Injection.OUTPUT_VALUE")
   private String outputValue;
 
   /** The name of the JSON bloc */
   @HopMetadataProperty(
       key = "jsonBloc",
       injectionKey = "JSON_BLOC_NAME",
-      injectionKeyDescription = "JsonOutput.Injection.JSON_BLOC_NAME")
+      injectionKeyDescription = "JsonEOutput.Injection.JSON_BLOC_NAME")
   private String jsonBloc;
 
   /** Choose if you want the output prettyfied */
   @HopMetadataProperty(
       key = "json_prittified",
       injectionKey = "PRITTIFY",
-      injectionKeyDescription = "JsonOutput.Injection.PRITTIFY")
+      injectionKeyDescription = "JsonEOutput.Injection.PRITTIFY")
   private boolean jsonPrettified;
 
   @HopMetadataProperty(
       key = "addToResult",
       injectionKey = "ADD_TO_RESULT",
-      injectionKeyDescription = "JsonOutput.Injection.ADD_TO_RESULT")
+      injectionKeyDescription = "JsonEOutput.Injection.ADD_TO_RESULT")
   private boolean addingToResult;
 
   /** Flag to indicate to force unmarshall to JSON Arrays even with a single occurrence in a list */
   @HopMetadataProperty(
       key = "use_arrays_with_single_instance",
       injectionKey = "FORCE_JSON_ARRAYS",
-      injectionKeyDescription = "JsonOutput.Injection.FORCE_JSON_ARRAYS")
+      injectionKeyDescription = "JsonEOutput.Injection.FORCE_JSON_ARRAYS")
   private boolean useArrayWithSingleInstance;
 
   /** Flag to indicate to force unmarshall to JSON Arrays even with a single occurrence in a list */
   @HopMetadataProperty(
       key = "use_single_item_per_group",
       injectionKey = "FORCE_SINGLE_ITEM",
-      injectionKeyDescription = "JsonOutput.Injection.FORCE_SINGLE_ITEM")
+      injectionKeyDescription = "JsonEOutput.Injection.FORCE_SINGLE_ITEM")
   private boolean useSingleItemPerGroup;
 
   @HopMetadataProperty(
       key = "json_size_field",
       injectionKey = "JSON_SIZE_FIELD",
-      injectionKeyDescription = "JsonOutput.Injection.JSON_SIZE_FIELD")
+      injectionKeyDescription = "JsonEOutput.Injection.JSON_SIZE_FIELD")
   private String jsonSizeFieldName;
 
-  @HopMetadataProperty(
-      key = "file",
-      childKeysToIgnore = {"compression", ""})
+  @HopMetadataProperty(key = "file")
   private FileSettings fileSettings;
 
   /** The output fields */
@@ -162,12 +160,17 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
       key = "field",
       groupKey = "fields",
       injectionKey = "FIELD",
-      injectionKeyDescription = "JsonOutput.Injection.FIELD",
+      injectionKeyDescription = "JsonEOutput.Injection.FIELD",
       injectionGroupKey = "FIELDS",
-      injectionGroupDescription = "JsonOutput.Injection.FIELDS")
+      injectionGroupDescription = "JsonEOutput.Injection.FIELDS")
   private List<JsonEOutputField> outputFields;
 
   /** The key fields */
+  @HopMetadataProperty(
+      key = "key_field",
+      groupKey = "key_fields",
+      injectionGroupKey = "KEY_FIELDS",
+      injectionGroupDescription = "JsonEOutput.Injection.KEY_FIELDS")
   private List<JsonEOutputKeyField> keyFields;
 
   public JsonEOutputMeta() {
@@ -251,7 +254,7 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
       cr =
           new CheckResult(
               ICheckResult.TYPE_RESULT_ERROR,
-              BaseMessages.getString(PKG, "JsonOutput.Error.MissingOutputFieldName"),
+              BaseMessages.getString(PKG, "JsonEOutput.Error.MissingOutputFieldName"),
               transformMeta);
       remarks.add(cr);
     }
@@ -259,7 +262,7 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
       cr =
           new CheckResult(
               ICheckResult.TYPE_RESULT_ERROR,
-              BaseMessages.getString(PKG, "JsonOutput.Error.MissingTargetFilename"),
+              BaseMessages.getString(PKG, "JsonEOutput.Error.MissingTargetFilename"),
               transformMeta);
       remarks.add(cr);
     }
@@ -269,7 +272,7 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
           new CheckResult(
               ICheckResult.TYPE_RESULT_OK,
               BaseMessages.getString(
-                  PKG, "JsonOutputMeta.CheckResult.FieldsReceived", "" + prev.size()),
+                  PKG, "JsonEOutputMeta.CheckResult.FieldsReceived", "" + prev.size()),
               transformMeta);
       remarks.add(cr);
 
@@ -286,14 +289,14 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
       }
       if (errorFound) {
         errorMessage =
-            BaseMessages.getString(PKG, "JsonOutputMeta.CheckResult.FieldsNotFound", errorMessage);
+            BaseMessages.getString(PKG, "JsonEOutputMeta.CheckResult.FieldsNotFound", errorMessage);
         cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transformMeta);
         remarks.add(cr);
       } else {
         cr =
             new CheckResult(
                 ICheckResult.TYPE_RESULT_OK,
-                BaseMessages.getString(PKG, "JsonOutputMeta.CheckResult.AllFieldsFound"),
+                BaseMessages.getString(PKG, "JsonEOutputMeta.CheckResult.AllFieldsFound"),
                 transformMeta);
         remarks.add(cr);
       }
@@ -304,14 +307,14 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
       cr =
           new CheckResult(
               ICheckResult.TYPE_RESULT_OK,
-              BaseMessages.getString(PKG, "JsonOutputMeta.CheckResult.ExpectedInputOk"),
+              BaseMessages.getString(PKG, "JsonEOutputMeta.CheckResult.ExpectedInputOk"),
               transformMeta);
       remarks.add(cr);
     } else {
       cr =
           new CheckResult(
               ICheckResult.TYPE_RESULT_ERROR,
-              BaseMessages.getString(PKG, "JsonOutputMeta.CheckResult.ExpectedInputError"),
+              BaseMessages.getString(PKG, "JsonEOutputMeta.CheckResult.ExpectedInputError"),
               transformMeta);
       remarks.add(cr);
     }
@@ -319,7 +322,7 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
     cr =
         new CheckResult(
             ICheckResult.TYPE_RESULT_COMMENT,
-            BaseMessages.getString(PKG, "JsonOutputMeta.CheckResult.FilesNotChecked"),
+            BaseMessages.getString(PKG, "JsonEOutputMeta.CheckResult.FilesNotChecked"),
             transformMeta);
     remarks.add(cr);
   }

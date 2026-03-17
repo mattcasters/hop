@@ -28,31 +28,31 @@ public class JsonEOutputField implements Cloneable {
   @HopMetadataProperty(
       key = "name",
       injectionKey = "JSON_FIELDNAME",
-      injectionKeyDescription = "JsonOutputMeta.Injection.JSON_FIELDNAME")
+      injectionKeyDescription = "JsonEOutput.Injection.JSON_FIELDNAME")
   private String fieldName;
 
   @HopMetadataProperty(
       key = "element",
       injectionKey = "JSON_ELEMENTNAME",
-      injectionKeyDescription = "JsonOutputMeta.Injection.JSON_ELEMENTNAME")
+      injectionKeyDescription = "JsonEOutput.Injection.JSON_ELEMENTNAME")
   private String elementName;
 
   @HopMetadataProperty(
       key = "json_fragment",
       injectionKey = "JSON_ISJSONFRAGMENT",
-      injectionKeyDescription = "JsonOutputMeta.Injection.JSON_ISJSONFRAGMENT")
+      injectionKeyDescription = "JsonEOutput.Injection.JSON_ISJSONFRAGMENT")
   private boolean jsonFragment;
 
   @HopMetadataProperty(
       key = "is_without_enclosing",
       injectionKey = "JSON_NOENCLOSURE",
-      injectionKeyDescription = "JsonOutputMeta.Injection.JSON_NOENCLOSURE")
+      injectionKeyDescription = "JsonEOutput.Injection.JSON_NOENCLOSURE")
   private boolean withoutEnclosing;
 
   @HopMetadataProperty(
       key = "remove_if_blank",
       injectionKey = "JSON_REMOVEIFBLANK",
-      injectionKeyDescription = "JsonOutputMeta.Injection.JSON_REMOVEIFBLANK")
+      injectionKeyDescription = "JsonEOutput.Injection.JSON_REMOVEIFBLANK")
   private boolean removeIfBlank;
 
   public JsonEOutputField() {}

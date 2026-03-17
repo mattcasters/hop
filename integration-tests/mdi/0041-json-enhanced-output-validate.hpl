@@ -19,7 +19,7 @@ limitations under the License.
 -->
 <pipeline>
   <info>
-    <name>0039-json-output</name>
+    <name>0041-json-enhanced-output-validate</name>
     <name_sync_with_filename>Y</name_sync_with_filename>
     <description/>
     <extended_description/>
@@ -31,188 +31,31 @@ limitations under the License.
     <transform_performance_capturing_delay>1000</transform_performance_capturing_delay>
     <transform_performance_capturing_size_limit>100</transform_performance_capturing_size_limit>
     <created_user>-</created_user>
-    <created_date>2026/03/17 19:28:59.656</created_date>
+    <created_date>2026/03/17 22:22:32.634</created_date>
     <modified_user>-</modified_user>
-    <modified_date>2026/03/17 19:28:59.656</modified_date>
+    <modified_date>2026/03/17 22:22:32.634</modified_date>
   </info>
   <notepads>
   </notepads>
   <order>
     <hop>
-      <from>files/json-output.xml</from>
-      <to>0039-json-output-template.hpl</to>
+      <from>/tmp/json-enhanced-output.hpl</from>
+      <to>validate</to>
       <enabled>Y</enabled>
     </hop>
     <hop>
-      <from>files/json-output.xml fields</from>
-      <to>0039-json-output-template.hpl</to>
+      <from>/tmp/json-enhanced-output.hpl fields</from>
+      <to>validate fields</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>/tmp/json-enhanced-output.hpl keys</from>
+      <to>validate keys</to>
       <enabled>Y</enabled>
     </hop>
   </order>
   <transform>
-    <name>0039-json-output-template.hpl</name>
-    <type>MetaInject</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <filename>${PROJECT_HOME}/0039-json-output-template.hpl</filename>
-    <run_configuration>local</run_configuration>
-    <source_transform/>
-    <source_output_fields>    </source_output_fields>
-    <target_file>${java.io.tmpdir}/json-output.hpl</target_file>
-    <create_parent_folder>Y</create_parent_folder>
-    <no_execution>Y</no_execution>
-    <allow_empty_stream_on_execution>N</allow_empty_stream_on_execution>
-    <stream_source_transform/>
-    <stream_target_transform/>
-    <mappings>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>operation_type</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>operation_type</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>addToResult</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>addToResult</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>outputValue</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>outputValue</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>specifyingFormat</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>specifyingFormat</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>jsonBloc</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>jsonBloc</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>transformNrInFilename</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>transformNrInFilename</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>extension</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>extension</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>fileName</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>fileName</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>encoding</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>encoding</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>fileAppended</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>fileAppended</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>partNrInFilename</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>partNrInFilename</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>nrRowsInBloc</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>nrRowsInBloc</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>createParentFolder</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>createParentFolder</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>fileAsCommand</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>fileAsCommand</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>dateInFilename</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>dateInFilename</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>doNotOpenNewFileInit</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>doNotOpenNewFileInit</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>element</target_attribute_key>
-        <target_detail>Y</target_detail>
-        <source_transform>files/json-output.xml fields</source_transform>
-        <source_field>element</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>name</target_attribute_key>
-        <target_detail>Y</target_detail>
-        <source_transform>files/json-output.xml fields</source_transform>
-        <source_field>name</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>JSON output</target_transform_name>
-        <target_attribute_key>timeInFilename</target_attribute_key>
-        <target_detail>N</target_detail>
-        <source_transform>files/json-output.xml</source_transform>
-        <source_field>timeInFilename</source_field>
-      </mapping>
-    </mappings>
-    <attributes/>
-    <GUI>
-      <xloc>368</xloc>
-      <yloc>96</yloc>
-    </GUI>
-  </transform>
-  <transform>
-    <name>files/json-output.xml</name>
+    <name>/tmp/json-enhanced-output.hpl</name>
     <type>getXMLData</type>
     <description/>
     <distribute>Y</distribute>
@@ -251,51 +94,6 @@ limitations under the License.
         <format/>
         <group/>
         <length>-1</length>
-        <name>createParentFolder</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>createParentFolder</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>dateInFilename</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>dateInFilename</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>doNotOpenNewFileInit</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>doNotOpenNewFileInit</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
         <name>encoding</name>
         <precision>-1</precision>
         <repeat>N</repeat>
@@ -311,13 +109,88 @@ limitations under the License.
         <format/>
         <group/>
         <length>-1</length>
+        <name>add_date</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>file/add_date</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>add_time</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>file/add_time</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>append</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>file/append</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>create_parent_folder</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>file/create_parent_folder</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>doNotOpenNewFileInit</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>file/doNotOpenNewFileInit</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
         <name>extension</name>
         <precision>-1</precision>
         <repeat>N</repeat>
         <result_type>valueof</result_type>
         <trim_type>none</trim_type>
         <type>String</type>
-        <xPath>extension</xPath>
+        <xPath>file/extension</xPath>
       </field>
       <field>
         <currency/>
@@ -326,13 +199,13 @@ limitations under the License.
         <format/>
         <group/>
         <length>-1</length>
-        <name>fileAppended</name>
+        <name>name</name>
         <precision>-1</precision>
         <repeat>N</repeat>
         <result_type>valueof</result_type>
         <trim_type>none</trim_type>
         <type>String</type>
-        <xPath>fileAppended</xPath>
+        <xPath>file/name</xPath>
       </field>
       <field>
         <currency/>
@@ -341,28 +214,13 @@ limitations under the License.
         <format/>
         <group/>
         <length>-1</length>
-        <name>fileAsCommand</name>
+        <name>split_output_after</name>
         <precision>-1</precision>
         <repeat>N</repeat>
         <result_type>valueof</result_type>
         <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>fileAsCommand</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>fileName</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>fileName</xPath>
+        <type>Integer</type>
+        <xPath>file/split_output_after</xPath>
       </field>
       <field>
         <currency/>
@@ -386,13 +244,28 @@ limitations under the License.
         <format/>
         <group/>
         <length>-1</length>
-        <name>nrRowsInBloc</name>
+        <name>json_prittified</name>
         <precision>-1</precision>
         <repeat>N</repeat>
         <result_type>valueof</result_type>
         <trim_type>none</trim_type>
-        <type>Integer</type>
-        <xPath>nrRowsInBloc</xPath>
+        <type>String</type>
+        <xPath>json_prittified</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>json_size_field</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>json_size_field</xPath>
       </field>
       <field>
         <currency/>
@@ -431,13 +304,13 @@ limitations under the License.
         <format/>
         <group/>
         <length>-1</length>
-        <name>partNrInFilename</name>
+        <name>use_arrays_with_single_instance</name>
         <precision>-1</precision>
         <repeat>N</repeat>
         <result_type>valueof</result_type>
         <trim_type>none</trim_type>
         <type>String</type>
-        <xPath>partNrInFilename</xPath>
+        <xPath>use_arrays_with_single_instance</xPath>
       </field>
       <field>
         <currency/>
@@ -446,54 +319,24 @@ limitations under the License.
         <format/>
         <group/>
         <length>-1</length>
-        <name>specifyingFormat</name>
+        <name>use_single_item_per_group</name>
         <precision>-1</precision>
         <repeat>N</repeat>
         <result_type>valueof</result_type>
         <trim_type>none</trim_type>
         <type>String</type>
-        <xPath>specifyingFormat</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>timeInFilename</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>timeInFilename</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>transformNrInFilename</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>NrInFilename</xPath>
+        <xPath>use_single_item_per_group</xPath>
       </field>
     </fields>
     <file>
       <file_required>N</file_required>
       <include_subfolders>N</include_subfolders>
-      <name>${PROJECT_HOME}/files/json-output.xml</name>
+      <name>${java.io.tmpdir}/json-enhanced-output.hpl</name>
     </file>
     <ignorecomments>N</ignorecomments>
     <include>N</include>
     <limit>0</limit>
-    <loopxpath>/transform</loopxpath>
+    <loopxpath>/pipeline/transform</loopxpath>
     <namespaceaware>N</namespaceaware>
     <readurl>N</readurl>
     <rownum>N</rownum>
@@ -502,11 +345,11 @@ limitations under the License.
     <attributes/>
     <GUI>
       <xloc>112</xloc>
-      <yloc>96</yloc>
+      <yloc>48</yloc>
     </GUI>
   </transform>
   <transform>
-    <name>files/json-output.xml fields</name>
+    <name>/tmp/json-enhanced-output.hpl fields</name>
     <type>getXMLData</type>
     <description/>
     <distribute>Y</distribute>
@@ -519,9 +362,11 @@ limitations under the License.
     <IsAFile>N</IsAFile>
     <IsIgnoreEmptyFile>N</IsIgnoreEmptyFile>
     <IsInFields>N</IsInFields>
+    <XmlField/>
     <addresultfile>N</addresultfile>
     <doNotFailIfNoFile>Y</doNotFailIfNoFile>
     <encoding>UTF-8</encoding>
+    <extensionFieldName/>
     <fields>
       <field>
         <currency/>
@@ -545,6 +390,36 @@ limitations under the License.
         <format/>
         <group/>
         <length>-1</length>
+        <name>is_without_enclosing</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>is_without_enclosing</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>json_fragment</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>json_fragment</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
         <name>name</name>
         <precision>-1</precision>
         <repeat>N</repeat>
@@ -553,25 +428,186 @@ limitations under the License.
         <type>String</type>
         <xPath>name</xPath>
       </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>remove_if_blank</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>remove_if_blank</xPath>
+      </field>
     </fields>
     <file>
+      <exclude_filemask/>
       <file_required>N</file_required>
+      <filemask/>
       <include_subfolders>N</include_subfolders>
-      <name>${PROJECT_HOME}/files/json-output.xml</name>
+      <name>${java.io.tmpdir}/json-enhanced-output.hpl</name>
     </file>
+    <hiddenFieldName/>
     <ignorecomments>N</ignorecomments>
     <include>N</include>
+    <include_field/>
+    <lastModificationTimeFieldName/>
     <limit>0</limit>
-    <loopxpath>/transform/fields/field</loopxpath>
+    <loopxpath>/pipeline/transform/fields/field</loopxpath>
     <namespaceaware>N</namespaceaware>
+    <pathFieldName/>
+    <prunePath/>
     <readurl>N</readurl>
+    <rootUriNameFieldName/>
     <rownum>N</rownum>
+    <rownum_field/>
+    <shortFileFieldName/>
+    <sizeFieldName/>
+    <uriNameFieldName/>
     <usetoken>N</usetoken>
     <validating>N</validating>
     <attributes/>
     <GUI>
       <xloc>112</xloc>
-      <yloc>192</yloc>
+      <yloc>128</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>/tmp/json-enhanced-output.hpl keys</name>
+    <type>getXMLData</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <IsAFile>N</IsAFile>
+    <IsIgnoreEmptyFile>N</IsIgnoreEmptyFile>
+    <IsInFields>N</IsInFields>
+    <XmlField/>
+    <addresultfile>N</addresultfile>
+    <doNotFailIfNoFile>Y</doNotFailIfNoFile>
+    <encoding>UTF-8</encoding>
+    <extensionFieldName/>
+    <fields>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>key_field_element</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>key_field_element</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>key_field_name</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>key_field_name</xPath>
+      </field>
+    </fields>
+    <file>
+      <exclude_filemask/>
+      <file_required>N</file_required>
+      <filemask/>
+      <include_subfolders>N</include_subfolders>
+      <name>${java.io.tmpdir}/json-enhanced-output.hpl</name>
+    </file>
+    <hiddenFieldName/>
+    <ignorecomments>N</ignorecomments>
+    <include>N</include>
+    <include_field/>
+    <lastModificationTimeFieldName/>
+    <limit>0</limit>
+    <loopxpath>/pipeline/transform/key_fields/key_field</loopxpath>
+    <namespaceaware>N</namespaceaware>
+    <pathFieldName/>
+    <prunePath/>
+    <readurl>N</readurl>
+    <rootUriNameFieldName/>
+    <rownum>N</rownum>
+    <rownum_field/>
+    <shortFileFieldName/>
+    <sizeFieldName/>
+    <uriNameFieldName/>
+    <usetoken>N</usetoken>
+    <validating>N</validating>
+    <attributes/>
+    <GUI>
+      <xloc>112</xloc>
+      <yloc>208</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>validate</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <attributes/>
+    <GUI>
+      <xloc>368</xloc>
+      <yloc>48</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>validate fields</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <attributes/>
+    <GUI>
+      <xloc>368</xloc>
+      <yloc>128</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>validate keys</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <attributes/>
+    <GUI>
+      <xloc>368</xloc>
+      <yloc>208</yloc>
     </GUI>
   </transform>
   <transform_error_handling>

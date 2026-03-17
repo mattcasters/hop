@@ -73,16 +73,12 @@ class JsonEOutputMetaTest {
     assertEquals("UTF-8", meta.getEncoding());
     assertEquals("json", meta.getFileSettings().getExtension());
     assertFalse(meta.getFileSettings().isFileAppended());
-    assertFalse(meta.getFileSettings().isFileAsCommand());
     assertEquals("filename", meta.getFileSettings().getFileName());
     assertEquals("blockName", meta.getJsonBloc());
     assertEquals(100, meta.getFileSettings().splitOutputAfter);
     assertEquals(JsonEOutputMeta.OperationType.WRITE_TO_FILE, meta.getOperationType());
     assertEquals("outputValue", meta.getOutputValue());
-    assertFalse(meta.getFileSettings().isPartNrInFilename());
-    assertFalse(meta.getFileSettings().isSpecifyingFormat());
     assertFalse(meta.getFileSettings().isTimeInFileName());
-    assertFalse(meta.getFileSettings().isTransformNrInFilename());
 
     assertNotNull(meta.getOutputFields());
     assertEquals(3, meta.getOutputFields().size());
