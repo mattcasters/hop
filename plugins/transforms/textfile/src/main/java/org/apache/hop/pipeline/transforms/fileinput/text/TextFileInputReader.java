@@ -473,7 +473,10 @@ public class TextFileInputReader implements IBaseFileInputReader {
       String errorMsg =
           "Couldn't close file : " + data.file.getName().getFriendlyURI() + " --> " + e.toString();
       log.logError(errorMsg);
-      if (transform.failAfterBadFile(errorMsg)) {
+      if (transform.failAfterBadFile(
+          errorMsg,
+          meta.getErrorHandling().isErrorIgnored(),
+          meta.getErrorHandling().isSkipBadFiles())) {
         transform.stopAll();
       }
       transform.setErrors(transform.getErrors() + 1);

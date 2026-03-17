@@ -479,8 +479,8 @@ class TextFileInputTest {
 
     TextFileInputMeta meta = createMetaObject(field("col1"), col2);
 
-    meta.getInput().setPassingThruFields(true);
-    meta.getInput().setAcceptingFilenames(true);
+    meta.getFileInput().setPassingThruFields(true);
+    meta.getFileInput().setAcceptingFilenames(true);
     TextFileInputData data = createDataObject(virtualFile, ",", "col1", "col2");
 
     TextFileInput input =

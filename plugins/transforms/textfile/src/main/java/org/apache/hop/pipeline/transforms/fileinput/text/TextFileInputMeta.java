@@ -54,8 +54,9 @@ import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transforms.common.ICsvInputAwareMeta;
+import org.apache.hop.pipeline.transforms.file.BaseFileErrorHandling;
 import org.apache.hop.pipeline.transforms.file.BaseFileInput;
-import org.apache.hop.pipeline.transforms.file.BaseFileInputAdditionalField;
+import org.apache.hop.pipeline.transforms.file.BaseFileInputAdditionalFields;
 import org.apache.hop.pipeline.transforms.file.BaseFileInputMeta;
 import org.apache.hop.resource.IResourceNaming;
 import org.apache.hop.resource.ResourceDefinition;
@@ -75,7 +76,7 @@ import org.w3c.dom.Node;
 @Getter
 @Setter
 public class TextFileInputMeta
-    extends BaseFileInputMeta<TextFileInput, TextFileInputData, BaseFileInput, TextFileInputField>
+    extends BaseFileInputMeta<TextFileInput, TextFileInputData, BaseFileInput>
     implements ICsvInputAwareMeta<TextFileInputField> {
   private static final Class<?> PKG = TextFileInputMeta.class;
 
@@ -384,7 +385,17 @@ public class TextFileInputMeta
   private boolean ignoreFields;
 
   @HopMetadataProperty(inline = true)
-  protected BaseFileInputAdditionalField additionalOutputFields;
+  protected BaseFileInputAdditionalFields additionalOutputFields;
+
+  @HopMetadataProperty(
+      key = "file",
+      inline = true,
+      injectionKey = "FILE",
+      injectionKeyDescription = "TextFileInput.Injection.FILE")
+  protected BaseFileInput fileInput;
+
+  @HopMetadataProperty(inline = true)
+  protected BaseFileErrorHandling errorHandling;
 
   /** The fields to import... */
   @HopMetadataProperty(
@@ -400,7 +411,8 @@ public class TextFileInputMeta
     super();
     filters = new ArrayList<>();
     inputFields = new ArrayList<>();
-    additionalOutputFields = new BaseFileInputAdditionalField();
+    errorHandling = new BaseFileErrorHandling();
+    additionalOutputFields = new BaseFileInputAdditionalFields();
     additionalOutputFields.setShortFilenameField(null);
     additionalOutputFields.setPathField(null);
     additionalOutputFields.setHiddenField(null);
@@ -409,8 +421,8 @@ public class TextFileInputMeta
     additionalOutputFields.setRootUriField(null);
     additionalOutputFields.setExtensionField(null);
     additionalOutputFields.setSizeField(null);
-
-    input.setAddingResult(true);
+    fileInput = new BaseFileInput();
+    fileInput.setAddingResult(true);
 
     content.separator = ";";
     content.enclosure = "\"";
@@ -462,7 +474,8 @@ public class TextFileInputMeta
     this.errorTextField = m.errorTextField;
     this.ignoreFields = m.ignoreFields;
     this.schemaDefinition = m.schemaDefinition;
-    this.additionalOutputFields = new BaseFileInputAdditionalField(m.additionalOutputFields);
+    this.additionalOutputFields = new BaseFileInputAdditionalFields(m.additionalOutputFields);
+    this.fileInput = new BaseFileInput(m.fileInput);
     m.filters.forEach(filter -> this.filters.add(new TextFileFilter(filter)));
     m.inputFields.forEach(f -> this.inputFields.add(new TextFileInputField(f.clone())));
   }
@@ -481,7 +494,7 @@ public class TextFileInputMeta
       IVariables variables,
       IHopMetadataProvider metadataProvider)
       throws HopTransformException {
-    if (!input.isPassingThruFields()) {
+    if (!fileInput.isPassingThruFields()) {
       // all incoming fields are not transmitted !
       row.clear();
     } else {
@@ -520,7 +533,7 @@ public class TextFileInputMeta
         }
 
         FileInputList fileInputList =
-            FileInputList.createFileList(variables, input.getInputFiles());
+            FileInputList.createFileList(variables, fileInput.getInputFiles());
         String fileNameToPrepend = null;
         if (fileInputList.nrOfFiles() > 0) {
           fileNameToPrepend = fileInputList.getFile(0).getName().getURI();
@@ -530,8 +543,8 @@ public class TextFileInputMeta
         // When file list is empty (e.g. not required and missing), use fictional path for prepend
         if (content.prependFileName
             && fileNameToPrepend == null
-            && !input.getInputFiles().isEmpty()) {
-          String firstPath = variables.resolve(input.getInputFiles().getFirst().getFileName());
+            && !fileInput.getInputFiles().isEmpty()) {
+          String firstPath = variables.resolve(fileInput.getInputFiles().getFirst().getFileName());
           if (!Utils.isEmpty(firstPath)) {
             fileNameToPrepend = firstPath;
           }
@@ -658,8 +671,9 @@ public class TextFileInputMeta
   }
 
   public String[] getInfoTransforms() {
-    if (input.isAcceptingFilenames() && StringUtils.isNotEmpty(input.getAcceptingTransformName())) {
-      return new String[] {input.getAcceptingTransformName()};
+    if (fileInput.isAcceptingFilenames()
+        && StringUtils.isNotEmpty(fileInput.getAcceptingTransformName())) {
+      return new String[] {fileInput.getAcceptingTransformName()};
     }
     return new String[0];
   }
@@ -679,7 +693,7 @@ public class TextFileInputMeta
 
     // See if we get input...
     if (input.length > 0) {
-      if (!this.getInput().isAcceptingFilenames()) {
+      if (!this.getFileInput().isAcceptingFilenames()) {
         cr =
             new CheckResult(
                 ICheckResult.TYPE_RESULT_ERROR,
@@ -705,7 +719,7 @@ public class TextFileInputMeta
 
     FileInputList textFileList = getFileInputList(variables);
     if (textFileList.nrOfFiles() == 0) {
-      if (!this.getInput().isAcceptingFilenames()) {
+      if (!this.getFileInput().isAcceptingFilenames()) {
         cr =
             new CheckResult(
                 ICheckResult.TYPE_RESULT_ERROR,
@@ -771,11 +785,11 @@ public class TextFileInputMeta
       // So let's change the filename from relative to absolute by grabbing the file object...
       // In case the name of the file comes from previous transforms, forget about this!
       //
-      if (!input.isAcceptingFilenames()) {
+      if (!fileInput.isAcceptingFilenames()) {
 
         // Replace the filename ONLY (folder or filename)
         //
-        for (InputFile inputFile : input.getInputFiles()) {
+        for (InputFile inputFile : fileInput.getInputFiles()) {
           if (Utils.isEmpty(inputFile.getFileName())) {
             continue;
           }
@@ -821,27 +835,27 @@ public class TextFileInputMeta
   /** Required for the Data Lineage. */
   @Override
   public boolean isAcceptingFilenames() {
-    return input.isAcceptingFilenames();
+    return fileInput.isAcceptingFilenames();
   }
 
   /** Required for the Data Lineage. */
   @Override
   public String getAcceptingTransformName() {
-    return input.getAcceptingTransformName();
+    return fileInput.getAcceptingTransformName();
   }
 
   /** Required for the Data Lineage. */
   @Override
   public String getAcceptingField() {
-    return input.getAcceptingField();
+    return fileInput.getAcceptingField();
   }
 
   public String[] getFilePaths(IVariables variables) {
-    return FileInputList.createFilePathList(variables, input.getInputFiles());
+    return FileInputList.createFilePathList(variables, fileInput.getInputFiles());
   }
 
   public FileInputList getTextFileList(IVariables variables) {
-    return FileInputList.createFileList(variables, input.getInputFiles());
+    return FileInputList.createFileList(variables, fileInput.getInputFiles());
   }
 
   /** For testing */
@@ -892,13 +906,13 @@ public class TextFileInputMeta
 
   @Override
   public List<InputFile> getInputFiles() {
-    return input.getInputFiles();
+    return fileInput.getInputFiles();
   }
 
   /** Convert inline file block contents from old XML */
   @Override
   public void convertLegacyXml(Node node) {
-    convertLegacyXml(getInput().getInputFiles(), node);
+    convertLegacyXml(getFileInput().getInputFiles(), node);
 
     // Also move compression and type up one level
     //

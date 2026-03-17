@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.hop.core.CheckResult;
 import org.apache.hop.core.ICheckResult;
@@ -31,11 +30,8 @@ import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopTransformException;
 import org.apache.hop.core.fileinput.FileInputList;
 import org.apache.hop.core.fileinput.InputFile;
-import org.apache.hop.core.gui.ITextFileInputField;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
-import org.apache.hop.core.row.value.ValueMetaBoolean;
-import org.apache.hop.core.row.value.ValueMetaDate;
 import org.apache.hop.core.row.value.ValueMetaInteger;
 import org.apache.hop.core.row.value.ValueMetaString;
 import org.apache.hop.core.util.Utils;
@@ -46,7 +42,7 @@ import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.apache.hop.pipeline.transforms.file.BaseFileInput;
-import org.apache.hop.pipeline.transforms.file.BaseFileInputAdditionalField;
+import org.apache.hop.pipeline.transforms.file.BaseFileInputAdditionalFields;
 import org.apache.hop.pipeline.transforms.file.BaseFileInputMeta;
 import org.apache.hop.resource.IResourceNaming;
 import org.apache.hop.resource.ResourceDefinition;
@@ -61,34 +57,9 @@ import org.w3c.dom.Node;
     description = "i18n::JsonInput.description",
     keywords = "i18n::JsonInputMeta.keyword",
     categoryDescription = "i18n::JsonInput.category")
-/*@InjectionSupported(
-localizationPrefix = "JsonInput.Injection.",
-groups = {"FILENAME_LINES", "FIELDS"},
-hide = {
-  "ACCEPT_FILE_NAMES",
-  "ACCEPT_FILE_TRANSFORM",
-  "PASS_THROUGH_FIELDS",
-  "ACCEPT_FILE_FIELD",
-  "ADD_FILES_TO_RESULT",
-  "IGNORE_ERRORS",
-  "FILE_ERROR_FIELD",
-  "FILE_ERROR_MESSAGE_FIELD",
-  "SKIP_BAD_FILES",
-  "WARNING_FILES_TARGET_DIR",
-  "WARNING_FILES_EXTENTION",
-  "ERROR_FILES_TARGET_DIR",
-  "ERROR_FILES_EXTENTION",
-  "LINE_NR_FILES_TARGET_DIR",
-  "LINE_NR_FILES_EXTENTION",
-  "FIELD_NULL_STRING",
-  "FIELD_POSITION",
-  "FIELD_IGNORE",
-  "FIELD_IF_NULL"
-})*/
 @Getter
 @Setter
-public class JsonInputMeta
-    extends BaseFileInputMeta<JsonInput, JsonInputData, BaseFileInput, JsonInputField> {
+public class JsonInputMeta extends BaseFileInputMeta<JsonInput, JsonInputData, BaseFileInput> {
   private static final Class<?> PKG = JsonInputMeta.class;
 
   protected static final String[] RequiredFilesDesc =
@@ -96,66 +67,6 @@ public class JsonInputMeta
         BaseMessages.getString(PKG, "System.Combo.No"),
         BaseMessages.getString(PKG, "System.Combo.Yes")
       };
-
-  public static class AdditionalFileOutputFields extends BaseFileInputAdditionalField {
-    public AdditionalFileOutputFields() {
-      super();
-    }
-
-    public AdditionalFileOutputFields(AdditionalFileOutputFields f) {
-      super(f);
-    }
-
-    public void getFields(IRowMeta r, String name, IVariables variables) {
-      // TextFileInput is the same, this can be refactored further
-      if (StringUtils.isNotEmpty(shortFilenameField)) {
-        IValueMeta v = new ValueMetaString(variables.resolve(shortFilenameField));
-        v.setLength(100, -1);
-        v.setOrigin(name);
-        r.addValueMeta(v);
-      }
-      if (StringUtils.isNotEmpty(extensionField)) {
-        IValueMeta v = new ValueMetaString(variables.resolve(extensionField));
-        v.setLength(100, -1);
-        v.setOrigin(name);
-        r.addValueMeta(v);
-      }
-      if (StringUtils.isNotEmpty(pathField)) {
-        IValueMeta v = new ValueMetaString(variables.resolve(pathField));
-        v.setLength(100, -1);
-        v.setOrigin(name);
-        r.addValueMeta(v);
-      }
-      if (StringUtils.isNotEmpty(sizeField)) {
-        IValueMeta v = new ValueMetaInteger(variables.resolve(sizeField));
-        v.setOrigin(name);
-        v.setLength(9);
-        r.addValueMeta(v);
-      }
-      if (StringUtils.isNotEmpty(hiddenField)) {
-        IValueMeta v = new ValueMetaBoolean(variables.resolve(hiddenField));
-        v.setOrigin(name);
-        r.addValueMeta(v);
-      }
-      if (StringUtils.isNotEmpty(lastModificationField)) {
-        IValueMeta v = new ValueMetaDate(variables.resolve(lastModificationField));
-        v.setOrigin(name);
-        r.addValueMeta(v);
-      }
-      if (StringUtils.isNotEmpty(uriField)) {
-        IValueMeta v = new ValueMetaString(variables.resolve(uriField));
-        v.setLength(100, -1);
-        v.setOrigin(name);
-        r.addValueMeta(v);
-      }
-      if (StringUtils.isNotEmpty(rootUriField)) {
-        IValueMeta v = new ValueMetaString(variables.resolve(rootUriField));
-        v.setLength(100, -1);
-        v.setOrigin(name);
-        r.addValueMeta(v);
-      }
-    }
-  }
 
   // TextFileInputMeta.Content.includeFilename
   /** Flag indicating that we should include the filename in the output */
@@ -265,7 +176,21 @@ public class JsonInputMeta
   private boolean defaultPathLeafToNull;
 
   @HopMetadataProperty(inline = true)
-  protected AdditionalFileOutputFields additionalOutputFields;
+  protected BaseFileInputAdditionalFields additionalOutputFields;
+
+  @HopMetadataProperty(
+      key = "file",
+      inline = true,
+      injectionKey = "FILE",
+      injectionKeyDescription = "TextFileInput.Injection.FILE",
+      childKeysToIgnore = {
+        "accept_filenames",
+        "accept_transform_name",
+        "passing_through_fields",
+        "accept_field",
+        "add_to_result_filenames",
+      })
+  protected BaseFileInput fileInput;
 
   @HopMetadataProperty(
       key = "field",
@@ -279,7 +204,8 @@ public class JsonInputMeta
   public JsonInputMeta() {
     super();
     inputFields = new ArrayList<>();
-    additionalOutputFields = new AdditionalFileOutputFields();
+    additionalOutputFields = new BaseFileInputAdditionalFields();
+    fileInput = new BaseFileInput();
     ignoringEmptyFile = false;
     ignoringMissingPath = true;
     defaultPathLeafToNull = true;
@@ -314,7 +240,8 @@ public class JsonInputMeta
     this.rowLimit = m.rowLimit;
     this.rowNumberField = m.rowNumberField;
     this.valueField = m.valueField;
-    this.additionalOutputFields = new AdditionalFileOutputFields(m.additionalOutputFields);
+    this.additionalOutputFields = new BaseFileInputAdditionalFields(m.additionalOutputFields);
+    this.fileInput = new BaseFileInput(m.fileInput);
     m.inputFields.forEach(f -> inputFields.add(new JsonInputField(f)));
   }
 
@@ -449,12 +376,12 @@ public class JsonInputMeta
 
   public void setFieldValue(String value) {
     this.valueField = value;
-    input.setAcceptingField(value);
+    fileInput.setAcceptingField(value);
   }
 
   public void setInFields(boolean inFields) {
     this.inFields = inFields;
-    input.setAcceptingFilenames(inFields);
+    fileInput.setAcceptingFilenames(inFields);
   }
 
   public boolean includeFilename() {
@@ -479,7 +406,7 @@ public class JsonInputMeta
   /** Convert inline file block contents from old XML */
   @Override
   public void convertLegacyXml(Node node) {
-    convertLegacyXml(getInput().getInputFiles(), node);
+    convertLegacyXml(getFileInput().getInputFiles(), node);
   }
 
   public String getRequiredFilesDesc(String tt) {
@@ -510,7 +437,7 @@ public class JsonInputMeta
       }
     }
 
-    for (ITextFileInputField field : getInputFields()) {
+    for (JsonInputField field : getInputFields()) {
       try {
         rowMeta.addValueMeta(field.toValueMeta(name, variables));
       } catch (Exception e) {
@@ -538,7 +465,7 @@ public class JsonInputMeta
   }
 
   public FileInputList getFiles(IVariables variables) {
-    return FileInputList.createFileList(variables, getInput().getInputFiles());
+    return FileInputList.createFileList(variables, getFileInput().getInputFiles());
   }
 
   @Override
@@ -668,12 +595,12 @@ public class JsonInputMeta
 
           // Still here: set a new list of absolute filenames!
           //
-          getInput().getInputFiles().clear();
+          getFileInput().getInputFiles().clear();
           for (String newFilename : newFilenames) {
             InputFile inputFile = new InputFile();
             inputFile.setFileName(newFilename);
             inputFile.setFileRequired(true);
-            getInput().getInputFiles().add(inputFile);
+            getFileInput().getInputFiles().add(inputFile);
           }
         }
       }

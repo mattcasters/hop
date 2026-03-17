@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Arrays;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
 import org.apache.hop.metadata.serializer.xml.classes.Field;
 import org.apache.hop.metadata.serializer.xml.classes.Info;
 import org.apache.hop.metadata.serializer.xml.classes.MetaData;
@@ -130,7 +131,8 @@ class XmlMetadataUtilTest {
     // Now load that object back in from XML...
     //
     Node node = XmlHandler.loadXmlString("<meta>" + xml + "</meta>", "meta");
-    MetaData metaData = XmlMetadataUtil.deSerializeFromXml(null, node, MetaData.class, null);
+    MetaData metaData =
+        XmlMetadataUtil.deSerializeFromXml(node, MetaData.class, new MemoryMetadataProvider());
 
     assertEquals(metaTest.getFilename(), metaData.getFilename());
     assertEquals(metaTest.getGroup(), metaData.getGroup());

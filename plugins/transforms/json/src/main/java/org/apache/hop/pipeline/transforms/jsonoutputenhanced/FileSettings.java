@@ -22,7 +22,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.hop.core.injection.Injection;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.metadata.api.HopMetadataProperty;
@@ -52,7 +51,6 @@ public class FileSettings {
   protected boolean dateInFileName;
 
   /** Flag: add the time in the filename */
-  @Injection(name = "")
   @HopMetadataProperty(
       key = "add_time",
       injectionKey = "INC_TIME_IN_FILENAME",
@@ -74,27 +72,24 @@ public class FileSettings {
   protected String fileName;
 
   /** Whether to treat this as a command to be executed and piped into */
-  @Injection(name = "RUN_AS_COMMAND")
   @HopMetadataProperty(
-      key = "",
-      injectionKey = "",
-      injectionKeyDescription = "JsonOutput.Injection.")
+      key = "fileAsCommand",
+      injectionKey = "RUN_AS_COMMAND",
+      injectionKeyDescription = "JsonOutput.Injection.RUN_AS_COMMAND")
   private boolean fileAsCommand;
 
   /** Flag : Do not open new file when transformation start */
-  @Injection(name = "SPECIFY_DATE_FORMAT")
   @HopMetadataProperty(
-      key = "",
-      injectionKey = "",
-      injectionKeyDescription = "JsonOutput.Injection.")
+      key = "SpecifyFormat",
+      injectionKey = "SPECIFY_DATE_FORMAT",
+      injectionKeyDescription = "JsonOutput.Injection.SPECIFY_DATE_FORMAT")
   private boolean specifyingFormat;
 
   /** The date format appended to the file name */
-  @Injection(name = "DATE_FORMAT")
   @HopMetadataProperty(
-      key = "",
-      injectionKey = "",
-      injectionKeyDescription = "JsonOutput.Injection.")
+      key = "date_time_format",
+      injectionKey = "DATE_FORMAT",
+      injectionKeyDescription = "JsonOutput.Injection.DATE_FORMAT")
   private String dateTimeFormat;
 
   /** Choose if you want the output prittyfied */
@@ -105,11 +100,10 @@ public class FileSettings {
   protected int splitOutputAfter;
 
   /** The file compression: None, Zip or Gzip */
-  @Injection(name = "COMPRESSION")
   @HopMetadataProperty(
-      key = "",
-      injectionKey = "",
-      injectionKeyDescription = "JsonOutput.Injection.")
+      key = "compression",
+      injectionKey = "COMPRESSION",
+      injectionKeyDescription = "JsonOutput.Injection.COMPRESSION")
   private String fileCompression;
 
   /** Flag: create parent folder if needed */

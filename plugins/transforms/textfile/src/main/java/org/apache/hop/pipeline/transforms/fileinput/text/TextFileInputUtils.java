@@ -34,7 +34,7 @@ import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.pipeline.transform.errorhandling.AbstractFileErrorHandler;
 import org.apache.hop.pipeline.transform.errorhandling.IFileErrorHandler;
 import org.apache.hop.pipeline.transforms.common.ICsvInputAwareMeta;
-import org.apache.hop.pipeline.transforms.file.BaseFileInputAdditionalField;
+import org.apache.hop.pipeline.transforms.file.BaseFileInputAdditionalFields;
 
 /** Some common methods for text file parsing. */
 public class TextFileInputUtils {
@@ -304,7 +304,7 @@ public class TextFileInputUtils {
       String enclosure,
       String escapeCharacter,
       IFileErrorHandler errorHandler,
-      BaseFileInputAdditionalField additionalOutputFields,
+      BaseFileInputAdditionalFields additionalOutputFields,
       String shortFilename,
       String path,
       boolean hidden,
@@ -360,7 +360,7 @@ public class TextFileInputUtils {
       String enclosure,
       String escapeCharacter,
       IFileErrorHandler errorHandler,
-      BaseFileInputAdditionalField additionalOutputFields,
+      BaseFileInputAdditionalFields additionalOutputFields,
       String shortFilename,
       String path,
       boolean hidden,

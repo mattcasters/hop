@@ -52,7 +52,7 @@ public abstract class BaseTextParsingTest
     InputFile inputFile = new InputFile();
     inputFile.setFileName(url);
     inputFile.setFileRequired(true);
-    meta.getInput().getInputFiles().add(inputFile);
+    meta.getFileInput().getInputFiles().add(inputFile);
 
     transform = new TextFileInput(transformMeta, meta, data, 1, pipelineMeta, pipeline);
     transform.init();

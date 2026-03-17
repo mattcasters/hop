@@ -1194,8 +1194,8 @@ public class JsonInputDialog extends BaseTransformDialog {
    */
   public void getData(JsonInputMeta in) {
     wFilenameList.removeAll();
-    for (int i = 0; i < in.getInput().getInputFiles().size(); i++) {
-      InputFile inputFile = in.getInput().getInputFiles().get(i);
+    for (int i = 0; i < in.getFileInput().getInputFiles().size(); i++) {
+      InputFile inputFile = in.getFileInput().getInputFiles().get(i);
       wFilenameList.add(
           inputFile.getFileName(),
           inputFile.getFileMask(),
@@ -1306,7 +1306,7 @@ public class JsonInputDialog extends BaseTransformDialog {
     in.setIsAFile(wSourceIsAFile.getSelection());
     in.setFieldValue(wFieldValue.getText());
 
-    in.getInput().getInputFiles().clear();
+    in.getFileInput().getInputFiles().clear();
     for (TableItem item : wFilenameList.getNonEmptyItems()) {
       InputFile inputFile = new InputFile();
       inputFile.setFileName(item.getText(1));
@@ -1314,7 +1314,7 @@ public class JsonInputDialog extends BaseTransformDialog {
       inputFile.setExcludeFileMask(item.getText(3));
       inputFile.setFileRequired(CONST_SYSTEM_COMBO_YES.equalsIgnoreCase(item.getText(4)));
       inputFile.setIncludeSubFolders(CONST_SYSTEM_COMBO_YES.equalsIgnoreCase(item.getText(5)));
-      in.getInput().getInputFiles().add(inputFile);
+      in.getFileInput().getInputFiles().add(inputFile);
     }
 
     in.getInputFields().clear();

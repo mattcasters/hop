@@ -333,7 +333,8 @@ public class BeanInjector<Meta extends Object> {
               } else {
                 // See if there are @HopMetadataProperty data type converters in play
                 //
-                HopMetadataProperty annotation = s.field.getAnnotation(HopMetadataProperty.class);
+                HopMetadataProperty annotation =
+                    s.field == null ? null : s.field.getAnnotation(HopMetadataProperty.class);
                 if (annotation != null
                     && !IIntCodeConverter.None.class.equals(annotation.intCodeConverter())) {
                   // We have a way of converting the given String to an integer

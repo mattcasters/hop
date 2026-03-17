@@ -85,9 +85,9 @@ class TextFileInputMetaTest {
   }
 
   private static void validate(TextFileInputMeta meta) {
-    assertTrue(meta.getInput().isAcceptingFilenames());
-    assertEquals("acceptField", meta.getInput().getAcceptingField());
-    assertEquals("acceptTransformName", meta.getInput().getAcceptingTransformName());
+    assertTrue(meta.getFileInput().isAcceptingFilenames());
+    assertEquals("acceptField", meta.getFileInput().getAcceptingField());
+    assertEquals("acceptTransformName", meta.getFileInput().getAcceptingTransformName());
     assertEquals(";", meta.getDelimiter());
     assertEquals("\"", meta.getEnclosure());
     assertTrue(meta.isBreakInEnclosureAllowed());
@@ -110,12 +110,12 @@ class TextFileInputMetaTest {
     assertEquals("mixed", meta.getContent().getFileFormat());
     assertEquals("UTF-8", meta.getContent().getEncoding());
     assertEquals("Characters", meta.getContent().getLength());
-    assertTrue(meta.getInput().isAddingResult());
+    assertTrue(meta.getFileInput().isAddingResult());
     assertEquals("CSV", meta.getContent().getFileType());
     assertEquals("None", meta.getContent().getFileCompression());
 
-    assertNotNull(meta.getInput().getInputFiles());
-    assertEquals(2, meta.getInput().getInputFiles().size());
+    assertNotNull(meta.getFileInput().getInputFiles());
+    assertEquals(2, meta.getFileInput().getInputFiles().size());
 
     assertNotNull(meta.getInputFields());
     TextFileInputField f1 = meta.getInputFields().get(0);

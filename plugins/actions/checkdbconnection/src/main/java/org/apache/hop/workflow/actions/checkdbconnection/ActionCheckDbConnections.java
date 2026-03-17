@@ -75,7 +75,7 @@ public class ActionCheckDbConnections extends ActionBase implements Cloneable, I
 
   public ActionCheckDbConnections(ActionCheckDbConnections other) {
     super(other.getName(), other.getDescription(), other.getPluginId());
-    this.connections = other.getConnections();
+    other.getConnections().forEach(c -> connections.add(new CDConnection(c)));
   }
 
   @Override

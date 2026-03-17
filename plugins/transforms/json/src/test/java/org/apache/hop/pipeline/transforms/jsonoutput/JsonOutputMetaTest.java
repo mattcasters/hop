@@ -23,49 +23,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Objects;
-import org.apache.hop.core.xml.XmlHandler;
-import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
-import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
-import org.apache.hop.pipeline.transform.TransformMeta;
+import org.apache.hop.pipeline.transform.TransformSerializationTestUtil;
 import org.junit.jupiter.api.Test;
 
 public class JsonOutputMetaTest {
 
   @Test
   void testLoadSave() throws Exception {
-    Path path =
-        Paths.get(Objects.requireNonNull(getClass().getResource("/json-output.xml")).toURI());
-    String xml = Files.readString(path);
-    JsonOutputMeta meta = new JsonOutputMeta();
-    XmlMetadataUtil.deSerializeFromXml(
-        XmlHandler.loadXmlString(xml, TransformMeta.XML_TAG),
-        JsonOutputMeta.class,
-        meta,
-        new MemoryMetadataProvider());
-
+    JsonOutputMeta meta =
+        TransformSerializationTestUtil.testSerialization("/json-output.xml", JsonOutputMeta.class);
     validate(meta);
-
-    // Do a round trip:
-    //
-    String xmlCopy =
-        XmlHandler.openTag(TransformMeta.XML_TAG)
-            + XmlMetadataUtil.serializeObjectToXml(meta)
-            + XmlHandler.closeTag(TransformMeta.XML_TAG);
-    JsonOutputMeta metaCopy = new JsonOutputMeta();
-    XmlMetadataUtil.deSerializeFromXml(
-        XmlHandler.loadXmlString(xmlCopy, TransformMeta.XML_TAG),
-        JsonOutputMeta.class,
-        metaCopy,
-        new MemoryMetadataProvider());
-    validate(metaCopy);
   }
 
   private static void validate(JsonOutputMeta meta) {
-
     assertTrue(meta.isAddToResult());
     assertTrue(meta.isCreateParentFolder());
     assertFalse(meta.isDateInFilename());

@@ -17,9 +17,14 @@
 
 package org.apache.hop.pipeline.transforms.jsonoutput;
 
+import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
-/** Describes a single field in an Json output file */
+/** Describes a single field in a JSON output file */
+@Getter
+@Setter
 public class JsonOutputField implements Cloneable {
   @HopMetadataProperty(
       key = "name",
@@ -33,24 +38,13 @@ public class JsonOutputField implements Cloneable {
       injectionKeyDescription = "JsonOutput.Injection.JSON_ELEMENTNAME")
   private String elementName;
 
-  public JsonOutputField(
-      String fieldName,
-      String elementName,
-      int type,
-      String format,
-      int length,
-      int precision,
-      String currencySymbol,
-      String decimalSymbol,
-      String groupSymbol,
-      String nullString,
-      boolean attribute,
-      String attributeParentName) {
-    this.fieldName = fieldName;
-    this.elementName = elementName;
-  }
-
   public JsonOutputField() {}
+
+  public JsonOutputField(JsonOutputField f) {
+    this();
+    this.elementName = f.elementName;
+    this.fieldName = f.fieldName;
+  }
 
   public int compare(Object obj) {
     JsonOutputField field = (JsonOutputField) obj;
@@ -58,41 +52,21 @@ public class JsonOutputField implements Cloneable {
     return fieldName.compareTo(field.getFieldName());
   }
 
-  public boolean equal(Object obj) {
-    JsonOutputField field = (JsonOutputField) obj;
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof JsonOutputField that)) {
+      return false;
+    }
+    return Objects.equals(fieldName, that.fieldName);
+  }
 
-    return fieldName.equals(field.getFieldName());
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(fieldName);
   }
 
   @Override
   public Object clone() {
-    try {
-      Object retval = super.clone();
-      return retval;
-    } catch (CloneNotSupportedException e) {
-      return null;
-    }
-  }
-
-  public String getFieldName() {
-    return fieldName;
-  }
-
-  public void setFieldName(String fieldname) {
-    this.fieldName = fieldname;
-  }
-
-  /**
-   * @return Returns the elementName.
-   */
-  public String getElementName() {
-    return elementName;
-  }
-
-  /**
-   * @param elementName The elementName to set.
-   */
-  public void setElementName(String elementName) {
-    this.elementName = elementName;
+    return new JsonOutputField(this);
   }
 }

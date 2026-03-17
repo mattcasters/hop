@@ -62,10 +62,10 @@ class PDI_2875_Test {
     TextFileInputMeta meta = new TextFileInputMeta();
     InputFile f1 = new InputFile();
     f1.setFileMask("file1.txt");
-    meta.getInput().getInputFiles().add(f1);
+    meta.getFileInput().getInputFiles().add(f1);
     InputFile f2 = new InputFile();
     f2.setFileMask("file2.txt");
-    meta.getInput().getInputFiles().add(f2);
+    meta.getFileInput().getInputFiles().add(f2);
 
     meta.getContent().setFileFormat("unix");
     meta.getContent().setFileType("CSV");

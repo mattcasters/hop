@@ -24,11 +24,9 @@ import lombok.Setter;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.fileinput.FileInputList;
 import org.apache.hop.core.fileinput.InputFile;
-import org.apache.hop.core.gui.ITextFileInputField;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.ITransform;
@@ -41,10 +39,7 @@ import org.w3c.dom.Node;
 @Getter
 @Setter
 public abstract class BaseFileInputMeta<
-        Main extends ITransform,
-        Data extends ITransformData,
-        I extends BaseFileInput,
-        F extends ITextFileInputField>
+        Main extends ITransform, Data extends ITransformData, I extends BaseFileInput>
     extends BaseTransformMeta<Main, Data> {
   private static final Class<?> PKG = BaseFileInputMeta.class;
 
@@ -60,68 +55,48 @@ public abstract class BaseFileInputMeta<
         BaseMessages.getString(PKG, "System.Combo.Yes")
       };
 
-  @HopMetadataProperty(
-      key = "file",
-      inline = true,
-      injectionKey = "FILE",
-      injectionKeyDescription = "TextFileInput.Injection.FILE")
-  protected I input;
+  protected abstract I getFileInput();
 
-  @HopMetadataProperty(inline = true)
-  protected BaseFileErrorHandling errorHandling;
+  protected abstract void setFileInput(I input);
 
-  public BaseFileInputMeta() {
-    this.input = (I) new BaseFileInput();
-    this.errorHandling = new BaseFileErrorHandling();
-  }
+  public BaseFileInputMeta() {}
 
-  public BaseFileInputMeta(BaseFileInputMeta<Main, Data, I, F> meta) {
+  public BaseFileInputMeta(BaseFileInputMeta<Main, Data, I> meta) {
     this();
-    this.input = (I) meta.clone();
-    this.errorHandling = (BaseFileErrorHandling) meta.clone();
   }
 
   @Override
   public Object clone() {
-    BaseFileInputMeta<
-            BaseFileInputTransform, BaseFileInputTransformData, BaseFileInput, BaseFileField>
-        retval =
-            (BaseFileInputMeta<
-                    BaseFileInputTransform,
-                    BaseFileInputTransformData,
-                    BaseFileInput,
-                    BaseFileField>)
-                super.clone();
-
-    retval.input = (BaseFileInput) input.clone();
-    retval.errorHandling = (BaseFileErrorHandling) errorHandling.clone();
-
+    BaseFileInputMeta<BaseFileInputTransform, BaseFileInputTransformData, BaseFileInput> retval =
+        (BaseFileInputMeta<BaseFileInputTransform, BaseFileInputTransformData, BaseFileInput>)
+            super.clone();
+    retval.setFileInput((BaseFileInput) getFileInput().clone());
     return retval;
   }
 
   public FileInputList getFileInputList(IVariables variables) {
-    return FileInputList.createFileList(variables, input.getInputFiles());
+    return FileInputList.createFileList(variables, getFileInput().getInputFiles());
   }
 
   @Override
   public List<ResourceReference> getResourceDependencies(
       IVariables variables, TransformMeta transformMeta) {
-    return input.getResourceDependencies(variables, transformMeta);
+    return getFileInput().getResourceDependencies(variables, transformMeta);
   }
 
   public abstract String getEncoding();
 
   public boolean isAcceptingFilenames() {
-    Preconditions.checkNotNull(input);
-    return input.isAcceptingFilenames();
+    Preconditions.checkNotNull(getFileInput());
+    return getFileInput().isAcceptingFilenames();
   }
 
   public String getAcceptingTransformName() {
-    return input == null ? null : input.getAcceptingTransformName();
+    return getFileInput() == null ? null : getFileInput().getAcceptingTransformName();
   }
 
   public String getAcceptingField() {
-    return input == null ? null : input.getAcceptingField();
+    return getFileInput() == null ? null : getFileInput().getAcceptingField();
   }
 
   public String[] getFilePaths(IVariables variables, final boolean showSamples) {
@@ -163,6 +138,4 @@ public abstract class BaseFileInputMeta<
       inputFiles.add(inputFile);
     }
   }
-
-  public abstract List<F> getInputFields();
 }

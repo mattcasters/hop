@@ -57,7 +57,7 @@ public class InputsReader implements Iterable<InputStream> {
   public Iterator<InputStream> iterator() {
     if (!meta.isInFields() || meta.getIsAFile()) {
       Iterator<FileObject> files;
-      if (meta.getInput().isAcceptingFilenames()) {
+      if (meta.getFileInput().isAcceptingFilenames()) {
         // paths from input
         files = new FileNamesIterator(transform, errorHandler, getFieldIterator());
       } else {

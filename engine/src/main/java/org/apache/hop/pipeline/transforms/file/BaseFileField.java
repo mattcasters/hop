@@ -23,6 +23,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.hop.core.Const;
@@ -31,7 +32,6 @@ import org.apache.hop.core.gui.ITextFileInputField;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.value.ValueMetaBase;
 import org.apache.hop.core.row.value.ValueMetaFactory;
-import org.apache.hop.core.row.value.ValueMetaString;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
@@ -43,91 +43,91 @@ public class BaseFileField implements ITextFileInputField {
       key = "name",
       injectionKey = "FIELD_NAME",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_NAME")
-  private String name;
+  protected String name;
 
   @HopMetadataProperty(
       key = "position",
       injectionKey = "FIELD_POSITION",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_POSITION")
-  private int position = -1;
+  protected int position = -1;
 
   @HopMetadataProperty(
       key = "length",
       injectionKey = "FIELD_LENGTH",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_LENGTH")
-  private int length = -1;
+  protected int length = -1;
 
   @HopMetadataProperty(
       key = "type",
       intCodeConverter = ValueMetaBase.ValueTypeCodeConverter.class,
       injectionKey = "FIELD_TYPE",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_TYPE")
-  private int type;
+  protected int type;
 
   @HopMetadataProperty(
       key = "ignore",
       injectionKey = "FIELD_IGNORE",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_IGNORE")
-  private boolean ignored;
+  protected boolean ignored;
 
   @HopMetadataProperty(
       key = "format",
       injectionKey = "FIELD_FORMAT",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_FORMAT")
-  private String format;
+  protected String format;
 
   @HopMetadataProperty(
       key = "trim_type",
       intCodeConverter = ValueMetaBase.TrimTypeCodeConverter.class,
       injectionKey = "FIELD_TRIM_TYPE",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_TRIM_TYPE")
-  private int trimType;
+  protected int trimType;
 
   @HopMetadataProperty(
       key = "precision",
       injectionKey = "FIELD_PRECISION",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_PRECISION")
-  private int precision;
+  protected int precision;
 
   @HopMetadataProperty(
       key = "currency",
       injectionKey = "FIELD_CURRENCY",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_CURRENCY")
-  private String currencySymbol;
+  protected String currencySymbol;
 
   @HopMetadataProperty(
       key = "decimal",
       injectionKey = "FIELD_DECIMAL",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_DECIMAL")
-  private String decimalSymbol;
+  protected String decimalSymbol;
 
   @HopMetadataProperty(
       key = "group",
       injectionKey = "FIELD_GROUP",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_GROUP")
-  private String groupSymbol;
+  protected String groupSymbol;
 
   @HopMetadataProperty(
       key = "repeat",
       injectionKey = "FIELD_REPEAT",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_REPEAT")
-  private boolean repeated;
+  protected boolean repeated;
 
   @HopMetadataProperty(
       key = "nullif",
       injectionKey = "FIELD_NULL_STRING",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_NULL_STRING")
-  private String nullString;
+  protected String nullString;
 
   @HopMetadataProperty(
       key = "ifnull",
       injectionKey = "FIELD_IF_NULL",
       injectionKeyDescription = "TextFileInput.Injection.FIELD_IF_NULL")
-  private String ifNullValue;
+  protected String ifNullValue;
 
-  private String[] samples;
+  protected String[] samples;
 
-  private static final String[] dateFormats =
+  protected static final String[] dateFormats =
       new String[] {
         "yyyy/MM/dd HH:mm:ss.SSS",
         "yyyy/MM/dd HH:mm:ss",
@@ -143,7 +143,7 @@ public class BaseFileField implements ITextFileInputField {
         "d/M/yy",
       };
 
-  private static final String[] numberFormats =
+  protected static final String[] numberFormats =
       new String[] {
         "",
         "#",
@@ -169,9 +169,9 @@ public class BaseFileField implements ITextFileInputField {
     this.ifNullValue = "";
   }
 
-  public BaseFileField(String fieldname, int position, int length) {
+  public BaseFileField(String name, int position, int length) {
     this();
-    this.name = fieldname;
+    this.name = name;
     this.position = position;
     this.length = length;
   }
@@ -205,9 +205,15 @@ public class BaseFileField implements ITextFileInputField {
     return position - field.getPosition();
   }
 
-  public boolean equals(Object obj) {
-    BaseFileField field = (BaseFileField) obj;
-    return (position == field.getPosition());
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof BaseFileField that)) return false;
+    return position == that.position;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(position);
   }
 
   @Override
@@ -224,7 +230,7 @@ public class BaseFileField implements ITextFileInputField {
   }
 
   public String getTrimTypeCode() {
-    return ValueMetaString.getTrimTypeCode(trimType);
+    return ValueMetaBase.getTrimTypeCode(trimType);
   }
 
   public String getTrimTypeDesc() {

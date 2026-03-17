@@ -20,12 +20,19 @@ package org.apache.hop.pipeline.transforms.file;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hop.core.row.IRowMeta;
+import org.apache.hop.core.row.IValueMeta;
+import org.apache.hop.core.row.value.ValueMetaBoolean;
+import org.apache.hop.core.row.value.ValueMetaDate;
+import org.apache.hop.core.row.value.ValueMetaInteger;
+import org.apache.hop.core.row.value.ValueMetaString;
+import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 
 /** Additional fields settings. */
 @Getter
 @Setter
-public class BaseFileInputAdditionalField implements Cloneable {
+public class BaseFileInputAdditionalFields implements Cloneable {
   /** Additional fields */
   @HopMetadataProperty(
       key = "shortFileFieldName",
@@ -75,9 +82,9 @@ public class BaseFileInputAdditionalField implements Cloneable {
       injectionKeyDescription = "TextFileInput.Injection.FILE_ROOT_URI_FIELDNAME")
   protected String rootUriField;
 
-  public BaseFileInputAdditionalField() {}
+  public BaseFileInputAdditionalFields() {}
 
-  public BaseFileInputAdditionalField(BaseFileInputAdditionalField f) {
+  public BaseFileInputAdditionalFields(BaseFileInputAdditionalFields f) {
     this();
     this.extensionField = f.extensionField;
     this.hiddenField = f.hiddenField;
@@ -91,7 +98,7 @@ public class BaseFileInputAdditionalField implements Cloneable {
 
   @Override
   public Object clone() {
-    return new BaseFileInputAdditionalField(this);
+    return new BaseFileInputAdditionalFields(this);
   }
 
   /**
@@ -122,6 +129,56 @@ public class BaseFileInputAdditionalField implements Cloneable {
     }
     if (StringUtils.isBlank(rootUriField)) {
       rootUriField = null;
+    }
+  }
+
+  public void getFields(IRowMeta r, String name, IVariables variables) {
+    // TextFileInput is the same, this can be refactored further
+    if (StringUtils.isNotEmpty(shortFilenameField)) {
+      IValueMeta v = new ValueMetaString(variables.resolve(shortFilenameField));
+      v.setLength(100, -1);
+      v.setOrigin(name);
+      r.addValueMeta(v);
+    }
+    if (StringUtils.isNotEmpty(extensionField)) {
+      IValueMeta v = new ValueMetaString(variables.resolve(extensionField));
+      v.setLength(100, -1);
+      v.setOrigin(name);
+      r.addValueMeta(v);
+    }
+    if (StringUtils.isNotEmpty(pathField)) {
+      IValueMeta v = new ValueMetaString(variables.resolve(pathField));
+      v.setLength(100, -1);
+      v.setOrigin(name);
+      r.addValueMeta(v);
+    }
+    if (StringUtils.isNotEmpty(sizeField)) {
+      IValueMeta v = new ValueMetaInteger(variables.resolve(sizeField));
+      v.setOrigin(name);
+      v.setLength(9);
+      r.addValueMeta(v);
+    }
+    if (StringUtils.isNotEmpty(hiddenField)) {
+      IValueMeta v = new ValueMetaBoolean(variables.resolve(hiddenField));
+      v.setOrigin(name);
+      r.addValueMeta(v);
+    }
+    if (StringUtils.isNotEmpty(lastModificationField)) {
+      IValueMeta v = new ValueMetaDate(variables.resolve(lastModificationField));
+      v.setOrigin(name);
+      r.addValueMeta(v);
+    }
+    if (StringUtils.isNotEmpty(uriField)) {
+      IValueMeta v = new ValueMetaString(variables.resolve(uriField));
+      v.setLength(100, -1);
+      v.setOrigin(name);
+      r.addValueMeta(v);
+    }
+    if (StringUtils.isNotEmpty(rootUriField)) {
+      IValueMeta v = new ValueMetaString(variables.resolve(rootUriField));
+      v.setLength(100, -1);
+      v.setOrigin(name);
+      r.addValueMeta(v);
     }
   }
 }

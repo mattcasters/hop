@@ -67,7 +67,7 @@ class MappingInputMetaTest {
     Node transformNode = XmlHandler.getSubNode(document, TransformMeta.XML_TAG);
     MappingInputMeta meta = new MappingInputMeta();
     XmlMetadataUtil.deSerializeFromXml(
-        null, transformNode, SimpleMappingMeta.class, meta, new MemoryMetadataProvider());
+        meta, transformNode, SimpleMappingMeta.class, new MemoryMetadataProvider());
     String xml =
         XmlHandler.openTag(TransformMeta.XML_TAG)
             + meta.getXml()
@@ -77,7 +77,7 @@ class MappingInputMetaTest {
     Node copyNode = XmlHandler.getSubNode(copyDocument, TransformMeta.XML_TAG);
     MappingInputMeta copy = new MappingInputMeta();
     XmlMetadataUtil.deSerializeFromXml(
-        null, copyNode, SimpleMappingMeta.class, copy, new MemoryMetadataProvider());
+        copy, copyNode, SimpleMappingMeta.class, new MemoryMetadataProvider());
     assertEquals(meta.getXml(), copy.getXml());
   }
 }

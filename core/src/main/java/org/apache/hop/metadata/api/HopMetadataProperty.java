@@ -167,4 +167,11 @@ public @interface HopMetadataProperty {
    * @return The string encoder to use for this property.
    */
   Class<? extends IStringEncoder> stringEncoder() default EmptyStringEncoder.class;
+
+  /**
+   * You can use this if you're inheriting a bunch of fields you don't need.
+   *
+   * @return the keys to hide from serialization and metadata injection.
+   */
+  String[] childKeysToIgnore() default {};
 }

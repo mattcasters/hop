@@ -53,8 +53,7 @@ import org.apache.hop.pipeline.transforms.jsoninput.reader.RowOutputConverter;
  * Read Json files, parse them and convert them to rows and writes these to one or more output
  * streams.
  */
-public class JsonInput
-    extends BaseFileInputTransform<JsonInputMeta, JsonInputData, JsonInputField> {
+public class JsonInput extends BaseFileInputTransform<JsonInputMeta, JsonInputData> {
   private static final Class<?> PKG = JsonInputMeta.class;
 
   private RowOutputConverter rowOutputConverter;
@@ -79,6 +78,9 @@ public class JsonInput
 
   @Override
   public boolean init() {
+    if (!super.init()) {
+      return false;
+    }
     data.rownr = 1L;
     data.nrInputFields = meta.getInputFields().size();
     data.repeatedFields = new BitSet(data.nrInputFields);
@@ -104,7 +106,7 @@ public class JsonInput
   public boolean processRow() throws HopException {
     if (first) {
       first = false;
-      prepareToRowProcessing();
+      prepareToRowProcessing(false);
     } else if (data.indexSourceField == -1 && data.inputRowMeta != null) {
       data.readrow = getRow();
       if (data.readrow != null) {
@@ -162,7 +164,7 @@ public class JsonInput
   }
 
   @Override
-  protected void prepareToRowProcessing()
+  protected void prepareToRowProcessing(boolean errorIgnored)
       throws HopException, HopTransformException, HopValueException {
     data.readrow = getRow();
     data.inputRowMeta = getInputRowMeta();
@@ -333,8 +335,13 @@ public class JsonInput
     }
   }
 
-  private class InputErrorHandler implements InputsReader.ErrorHandler {
+  @Override
+  public boolean failAfterBadFile(String errorMsg, boolean errorIgnored, boolean skipBadFiles) {
+    // Always simply fail on error
+    return true;
+  }
 
+  private class InputErrorHandler implements InputsReader.ErrorHandler {
     @Override
     public void error(Exception e) {
       logError(BaseMessages.getString(PKG, "JsonInput.Log.UnexpectedError", e.toString()));

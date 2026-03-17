@@ -511,7 +511,8 @@ public class TextFileInputDialog extends BaseTransformDialog
   private void showFiles() {
     TextFileInputMeta tfii = new TextFileInputMeta();
     getInfo(tfii, true);
-    String[] files = FileInputList.createFilePathList(variables, tfii.getInput().getInputFiles());
+    String[] files =
+        FileInputList.createFilePathList(variables, tfii.getFileInput().getInputFiles());
     if (files.length > 0) {
       EnterSelectionDialog esd =
           new EnterSelectionDialog(shell, files, "Files read", "Files read:");
@@ -2273,9 +2274,9 @@ public class TextFileInputDialog extends BaseTransformDialog
       final List<String> newFieldNames) {
     if (copyTransformName) {}
 
-    wAccFilenames.setSelection(meta.getInput().isAcceptingFilenames());
-    wPassThruFields.setSelection(meta.getInput().isPassingThruFields());
-    wAccField.setText(Const.NVL(meta.getInput().getAcceptingField(), ""));
+    wAccFilenames.setSelection(meta.getFileInput().isAcceptingFilenames());
+    wPassThruFields.setSelection(meta.getFileInput().isPassingThruFields());
+    wAccField.setText(Const.NVL(meta.getFileInput().getAcceptingField(), ""));
     wAccTransform.setText(Const.NVL(meta.getAcceptingTransformName(), ""));
     wSchemaDefinition.setText(Const.NVL(meta.getSchemaDefinition(), ""));
     wIgnoreFields.setSelection(meta.isIgnoreFields());
@@ -2287,7 +2288,7 @@ public class TextFileInputDialog extends BaseTransformDialog
     setFlags();
 
     wFilenameList.removeAll();
-    for (InputFile inputFile : meta.getInput().getInputFiles()) {
+    for (InputFile inputFile : meta.getFileInput().getInputFiles()) {
       wFilenameList.add(
           inputFile.getFileName(),
           inputFile.getFileMask(),
@@ -2318,7 +2319,7 @@ public class TextFileInputDialog extends BaseTransformDialog
     wInclRownum.setSelection(meta.getContent().isIncludeRowNumber());
     wRownumByFile.setSelection(meta.getContent().isRowNumberByFile());
     wDateLenient.setSelection(meta.getContent().isDateFormatLenient());
-    wAddResult.setSelection(meta.getInput().isAddingResult());
+    wAddResult.setSelection(meta.getFileInput().isAddingResult());
 
     wInclFilenameField.setText(Const.NVL(meta.getContent().getFilenameField(), ""));
     wInclRownumField.setText(Const.NVL(meta.getContent().getRowNumberField(), ""));
@@ -2503,10 +2504,10 @@ public class TextFileInputDialog extends BaseTransformDialog
     transformName = wTransformName.getText(); // return value
 
     // copy info to TextFileInputMeta class (input)
-    meta.getInput().setAcceptingFilenames(wAccFilenames.getSelection());
-    meta.getInput().setPassingThruFields(wPassThruFields.getSelection());
-    meta.getInput().setAcceptingField(wAccField.getText());
-    meta.getInput().setAcceptingTransformName(wAccTransform.getText());
+    meta.getFileInput().setAcceptingFilenames(wAccFilenames.getSelection());
+    meta.getFileInput().setPassingThruFields(wPassThruFields.getSelection());
+    meta.getFileInput().setAcceptingField(wAccField.getText());
+    meta.getFileInput().setAcceptingTransformName(wAccTransform.getText());
 
     meta.getContent().setFileType(wFiletype.getText());
     if (preview) {
@@ -2522,7 +2523,7 @@ public class TextFileInputDialog extends BaseTransformDialog
     meta.getContent().setRowLimit(Const.toLong(wLimit.getText(), 0L));
     meta.getContent().setFilenameField(wInclFilenameField.getText());
     meta.getContent().setRowNumberField(wInclRownumField.getText());
-    meta.getInput().setAddingResult(wAddResult.getSelection());
+    meta.getFileInput().setAddingResult(wAddResult.getSelection());
 
     meta.getContent().setIncludeFilename(wInclFilename.getSelection());
     meta.getContent().setIncludeRowNumber(wInclRownum.getSelection());
@@ -2546,7 +2547,7 @@ public class TextFileInputDialog extends BaseTransformDialog
     meta.setSchemaDefinition(wSchemaDefinition.getText());
     meta.setIgnoreFields(wIgnoreFields.getSelection());
 
-    meta.getInput().getInputFiles().clear();
+    meta.getFileInput().getInputFiles().clear();
     for (TableItem item : wFilenameList.getNonEmptyItems()) {
       InputFile inputFile = new InputFile();
       inputFile.setFileName(item.getText(0));
@@ -2554,7 +2555,7 @@ public class TextFileInputDialog extends BaseTransformDialog
       inputFile.setExcludeFileMask(item.getText(2));
       inputFile.setFileRequired(YES_NO_COMBO[1].equalsIgnoreCase(item.getText(3)));
       inputFile.setIncludeSubFolders(YES_NO_COMBO[1].equalsIgnoreCase(item.getText(4)));
-      meta.getInput().getInputFiles().add(inputFile);
+      meta.getFileInput().getInputFiles().add(inputFile);
     }
 
     meta.getInputFields().clear();
@@ -2679,7 +2680,7 @@ public class TextFileInputDialog extends BaseTransformDialog
     TextFileInputMeta oneMeta = new TextFileInputMeta();
     getInfo(oneMeta, true);
 
-    if (oneMeta.getInput().isAcceptingFilenames()) {
+    if (oneMeta.getFileInput().isAcceptingFilenames()) {
       MessageBox mb = new MessageBox(shell, SWT.OK | SWT.ICON_INFORMATION);
       mb.setMessage(
           BaseMessages.getString(PKG, "TextFileInputDialog.Dialog.SpecifyASampleFile.Message"));

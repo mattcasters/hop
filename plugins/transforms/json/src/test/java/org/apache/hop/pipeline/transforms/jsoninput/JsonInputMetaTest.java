@@ -85,6 +85,6 @@ class JsonInputMetaTest {
 
   private static void validate(JsonInputMeta meta) {
     assertNotNull(meta.getInputFields());
-    assertNotNull(meta.getInput().getInputFiles());
+    assertNotNull(meta.getFileInput().getInputFiles());
   }
 }
