@@ -152,7 +152,9 @@ public class JsonEOutputMeta extends BaseTransformMeta<JsonEOutput, JsonEOutputD
       injectionKeyDescription = "JsonOutput.Injection.JSON_SIZE_FIELD")
   private String jsonSizeFieldName;
 
-  @HopMetadataProperty(key = "file")
+  @HopMetadataProperty(
+      key = "file",
+      childKeysToIgnore = {"compression", ""})
   private FileSettings fileSettings;
 
   /** The output fields */
