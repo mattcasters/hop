@@ -274,7 +274,28 @@ public class XmlMetadataUtil {
    * @param metadataProvider to load name references from
    * @throws HopXmlException In case there was an error inflating the XML
    */
-  private static <T> T deSerializeFromXml(
+  public static <T> T deSerializeFromXml(
+      Object parentObject,
+      Node node,
+      Class<? extends T> clazz,
+      IHopMetadataProvider metadataProvider)
+      throws HopXmlException {
+    return deSerializeFromXml(parentObject, null, node, clazz, null, metadataProvider);
+  }
+
+  /**
+   * Load the metadata in the provided XML node and return it as a new object. It does this by
+   * looking at the HopMetadataProperty annotations of the fields in the object's class.
+   *
+   * @param parentObject An optional parent object to allow a factory to load extra information
+   *     from.
+   * @param parentProperty The hop metadata property of the parent object (or null)
+   * @param node The metadata to read
+   * @param clazz the class to de-serialize
+   * @param metadataProvider to load name references from
+   * @throws HopXmlException In case there was an error inflating the XML
+   */
+  public static <T> T deSerializeFromXml(
       Object parentObject,
       HopMetadataProperty parentProperty,
       Node node,
@@ -288,9 +309,9 @@ public class XmlMetadataUtil {
    * Load the metadata in the provided XML node into the given parent object. It does this by
    * looking at the HopMetadataProperty annotations of the fields in the parent object's class.
    *
+   * @param parentObject The parent object to load into. If null: create a new parent object.
    * @param node The metadata to read
    * @param clazz the class to de-serialize
-   * @param parentObject The parent object to load into. If null: create a new parent object.
    * @param metadataProvider to load name references from
    * @throws HopXmlException In case there was an error inflating the XML
    */
