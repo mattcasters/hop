@@ -24,7 +24,6 @@ import org.apache.hop.metadata.api.HopMetadataProperty;
 @Getter
 @Setter
 public class ScriptValuesScript {
-
   public static final int NORMAL_SCRIPT = -1;
   public static final int TRANSFORM_SCRIPT = 0;
   public static final int START_SCRIPT = 1;

@@ -881,6 +881,7 @@ public class ScriptValuesDialog extends BaseTransformDialog {
       field.setLength(Const.toInt(sLength, -1));
       field.setPrecision(Const.toInt(sPrecision, -1));
       field.setReplace(YES_NO_COMBO[1].equalsIgnoreCase(item.getText(6)));
+      meta.getScriptFields().add(field);
     }
 
     CTabItem[] cTabs = folder.getItems();
