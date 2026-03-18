@@ -42,13 +42,13 @@ class MetadataRefactorUtilTest {
   static void setup() throws Exception {
     PluginRegistry registry = PluginRegistry.getInstance();
     registry.registerPluginClass(
-            DatabaseMeta.class.getName(), MetadataPluginType.class, HopMetadata.class);
+        DatabaseMeta.class.getName(), MetadataPluginType.class, HopMetadata.class);
     registry.registerPluginClass(
-            PipelineRunConfiguration.class.getName(), MetadataPluginType.class, HopMetadata.class);
+        PipelineRunConfiguration.class.getName(), MetadataPluginType.class, HopMetadata.class);
     registry.registerPluginClass(
-            WorkflowRunConfiguration.class.getName(), MetadataPluginType.class, HopMetadata.class);
+        WorkflowRunConfiguration.class.getName(), MetadataPluginType.class, HopMetadata.class);
     registry.registerPluginClass(
-            HopServerMeta.class.getName(), MetadataPluginType.class, HopMetadata.class);
+        HopServerMeta.class.getName(), MetadataPluginType.class, HopMetadata.class);
 
     provider = new MemoryMetadataProvider();
   }
