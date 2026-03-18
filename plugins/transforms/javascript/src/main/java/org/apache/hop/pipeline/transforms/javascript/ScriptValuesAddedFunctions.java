@@ -92,7 +92,7 @@ public class ScriptValuesAddedFunctions extends ScriptableObject {
   public static final String CONST_THE_FIRST_ARGUMENT_MUST_BE_A_NUMBER =
       "The first Argument must be a Number.";
 
-  public static String[] jsFunctionList = {
+  protected static final String[] jsFunctionList = {
     "appendToFile",
     "getPipelineName",
     "writeToLog",
