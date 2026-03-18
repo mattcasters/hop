@@ -188,8 +188,7 @@ public class ScriptValuesAddedFunctions extends ScriptableObject {
   }
 
   // This is only used for reading, so no concurrency problems.
-  // todo: move in the real variables of the transform.
-
+  //
   // Functions to Add
   // date2num, num2date,
   // fisc_date, isNull
