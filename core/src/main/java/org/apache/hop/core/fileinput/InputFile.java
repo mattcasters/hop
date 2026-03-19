@@ -44,14 +44,14 @@ public class InputFile {
   @HopMetadataProperty(
       key = "exclude_filemask",
       injectionKey = "EXCLUDE_FILEMASK",
-      injectionKeyDescription = "TextFileInput.Injection.FILENAME_LINES")
+      injectionKeyDescription = "TextFileInput.Injection.EXCLUDE_FILEMASK")
   private String excludeFileMask;
 
   /** Array of boolean values as string, indicating if a file is required. */
   @HopMetadataProperty(
       key = "file_required",
       injectionKey = "FILE_REQUIRED",
-      injectionKeyDescription = "TextFileInput.Injection.FILENAME_LINES")
+      injectionKeyDescription = "TextFileInput.Injection.FILE_REQUIRED")
   private boolean fileRequired;
 
   /** Array of boolean values as string, indicating if we need to fetch sub folders. */

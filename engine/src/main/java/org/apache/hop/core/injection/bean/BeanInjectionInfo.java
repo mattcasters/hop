@@ -217,16 +217,10 @@ public class BeanInjectionInfo<Meta extends Object> {
           properties.put(injectionKey, p);
         } else {
           Set<String> ignoreKeys = new HashSet<>(Set.of(property.childKeysToIgnore()));
-          if (!ignoreKeys.isEmpty()) {
-            System.out.println("keys to ignore found on class " + clazz.getName());
-          }
           for (Field childField : ReflectionUtil.findAllFields(fieldType)) {
             Class<?> childFieldType = childField.getType();
             HopMetadataProperty childProperty = childField.getAnnotation(HopMetadataProperty.class);
             if (childProperty != null && !ignoreKeys.contains(childProperty.key())) {
-              if (childProperty.childKeysToIgnore().length > 0) {
-                System.out.println("keys to ignore found on field " + childField.getName());
-              }
               String childInjectionKey = calculateInjectionKey(childField, childProperty);
               String childInjectionKeyDescription = calculateInjectionKeyDescription(childProperty);
 
