@@ -43,6 +43,16 @@ limitations under the License.
       <to>validate</to>
       <enabled>Y</enabled>
     </hop>
+    <hop>
+      <from>/tmp/load-file-content.hpl files</from>
+      <to>validate files</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>/tmp/load-file-content.hpl fields</from>
+      <to>validate fields</to>
+      <enabled>Y</enabled>
+    </hop>
   </order>
   <transform>
     <name>/tmp/load-file-content.hpl</name>
@@ -58,11 +68,9 @@ limitations under the License.
     <IsAFile>N</IsAFile>
     <IsIgnoreEmptyFile>N</IsIgnoreEmptyFile>
     <IsInFields>N</IsInFields>
-    <XmlField/>
     <addresultfile>N</addresultfile>
     <doNotFailIfNoFile>Y</doNotFailIfNoFile>
     <encoding>UTF-8</encoding>
-    <extensionFieldName/>
     <fields>
       <field>
         <currency/>
@@ -336,29 +344,17 @@ limitations under the License.
       </field>
     </fields>
     <file>
-      <exclude_filemask/>
       <file_required>N</file_required>
-      <filemask/>
       <include_subfolders>N</include_subfolders>
       <name>${java.io.tmpdir}/load-file-content.hpl</name>
     </file>
-    <hiddenFieldName/>
     <ignorecomments>N</ignorecomments>
     <include>N</include>
-    <include_field/>
-    <lastModificationTimeFieldName/>
     <limit>0</limit>
     <loopxpath>/pipeline/transform</loopxpath>
     <namespaceaware>N</namespaceaware>
-    <pathFieldName/>
-    <prunePath/>
     <readurl>N</readurl>
-    <rootUriNameFieldName/>
     <rownum>N</rownum>
-    <rownum_field/>
-    <shortFileFieldName/>
-    <sizeFieldName/>
-    <uriNameFieldName/>
     <usetoken>N</usetoken>
     <validating>N</validating>
     <attributes/>
@@ -382,6 +378,311 @@ limitations under the License.
     <GUI>
       <xloc>352</xloc>
       <yloc>80</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>/tmp/load-file-content.hpl files</name>
+    <type>getXMLData</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <IsAFile>N</IsAFile>
+    <IsIgnoreEmptyFile>N</IsIgnoreEmptyFile>
+    <IsInFields>N</IsInFields>
+    <XmlField/>
+    <addresultfile>N</addresultfile>
+    <doNotFailIfNoFile>Y</doNotFailIfNoFile>
+    <encoding>UTF-8</encoding>
+    <extensionFieldName/>
+    <fields>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>exclude_filemask</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>exclude_filemask</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>file_required</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>file_required</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>filemask</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>filemask</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>include_subfolders</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>include_subfolders</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>name</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>name</xPath>
+      </field>
+    </fields>
+    <file>
+      <exclude_filemask/>
+      <file_required>N</file_required>
+      <filemask/>
+      <include_subfolders>N</include_subfolders>
+      <name>${java.io.tmpdir}/load-file-content.hpl</name>
+    </file>
+    <hiddenFieldName/>
+    <ignorecomments>N</ignorecomments>
+    <include>N</include>
+    <include_field/>
+    <lastModificationTimeFieldName/>
+    <limit>0</limit>
+    <loopxpath>/pipeline/transform/files/file</loopxpath>
+    <namespaceaware>N</namespaceaware>
+    <pathFieldName/>
+    <prunePath/>
+    <readurl>N</readurl>
+    <rootUriNameFieldName/>
+    <rownum>N</rownum>
+    <rownum_field/>
+    <shortFileFieldName/>
+    <sizeFieldName/>
+    <uriNameFieldName/>
+    <usetoken>N</usetoken>
+    <validating>N</validating>
+    <attributes/>
+    <GUI>
+      <xloc>128</xloc>
+      <yloc>160</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>/tmp/load-file-content.hpl fields</name>
+    <type>getXMLData</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <IsAFile>N</IsAFile>
+    <IsIgnoreEmptyFile>N</IsIgnoreEmptyFile>
+    <IsInFields>N</IsInFields>
+    <XmlField/>
+    <addresultfile>N</addresultfile>
+    <doNotFailIfNoFile>Y</doNotFailIfNoFile>
+    <encoding>UTF-8</encoding>
+    <extensionFieldName/>
+    <fields>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>name</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>name</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>element_type</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>element_type</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>length</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>length</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>precision</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>precision</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>type</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>type</xPath>
+      </field>
+      <field>
+        <currency/>
+        <decimal/>
+        <element_type>Node</element_type>
+        <format/>
+        <group/>
+        <length>-1</length>
+        <name>trim_type</name>
+        <precision>-1</precision>
+        <repeat>N</repeat>
+        <result_type>valueof</result_type>
+        <trim_type>none</trim_type>
+        <type>String</type>
+        <xPath>trim_type</xPath>
+      </field>
+    </fields>
+    <file>
+      <exclude_filemask/>
+      <file_required>N</file_required>
+      <filemask/>
+      <include_subfolders>N</include_subfolders>
+      <name>${java.io.tmpdir}/load-file-content.hpl</name>
+    </file>
+    <hiddenFieldName/>
+    <ignorecomments>N</ignorecomments>
+    <include>N</include>
+    <include_field/>
+    <lastModificationTimeFieldName/>
+    <limit>0</limit>
+    <loopxpath>/pipeline/transform/fields/field</loopxpath>
+    <namespaceaware>N</namespaceaware>
+    <pathFieldName/>
+    <prunePath/>
+    <readurl>N</readurl>
+    <rootUriNameFieldName/>
+    <rownum>N</rownum>
+    <rownum_field/>
+    <shortFileFieldName/>
+    <sizeFieldName/>
+    <uriNameFieldName/>
+    <usetoken>N</usetoken>
+    <validating>N</validating>
+    <attributes/>
+    <GUI>
+      <xloc>128</xloc>
+      <yloc>240</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>validate files</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <attributes/>
+    <GUI>
+      <xloc>352</xloc>
+      <yloc>160</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>validate fields</name>
+    <type>Dummy</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <attributes/>
+    <GUI>
+      <xloc>352</xloc>
+      <yloc>240</yloc>
     </GUI>
   </transform>
   <transform_error_handling>

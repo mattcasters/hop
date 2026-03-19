@@ -39,17 +39,17 @@ limitations under the License.
   </notepads>
   <order>
     <hop>
-      <from>files/load-file-content.xml</from>
+      <from>golden-load-file-content</from>
       <to>0087-load-file-content-template.hpl</to>
       <enabled>Y</enabled>
     </hop>
     <hop>
-      <from>files/load-file-content.xml file</from>
+      <from>golden-load-file-content-files</from>
       <to>0087-load-file-content-template.hpl</to>
       <enabled>Y</enabled>
     </hop>
     <hop>
-      <from>files/load-file-content.xml fields</from>
+      <from>golden-load-file-content-fields</from>
       <to>0087-load-file-content-template.hpl</to>
       <enabled>Y</enabled>
     </hop>
@@ -80,238 +80,203 @@ limitations under the License.
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>EXCLUDE_FILEMASK</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml file</source_transform>
+        <source_transform>golden-load-file-content-files</source_transform>
         <source_field>exclude_filemask</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILEMASK</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml file</source_transform>
+        <source_transform>golden-load-file-content-files</source_transform>
         <source_field>filemask</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FIELD_TYPE</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
+        <source_transform>golden-load-file-content-fields</source_transform>
         <source_field>type</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILE_SHORT_FILE_FIELDNAME</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>shortFileFieldName</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>DYNAMIC_FILENAME_FIELD</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>DynamicFilenameField</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILE_PATH_FIELDNAME</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>pathFieldName</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>Load file content in memory</target_transform_name>
-        <target_attribute_key>FIELD_CURRENCY</target_attribute_key>
-        <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
-        <source_field>currency</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>INCLUDE_FIELD</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>include_field</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>IGNORE_EMPTY_FILE</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>IsIgnoreEmptyFile</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>ENCODING</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>encoding</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FIELD_LENGTH</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
+        <source_transform>golden-load-file-content-fields</source_transform>
         <source_field>length</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILE_URI_FIELDNAME</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>uriNameFieldName</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILE_ROOT_URI_FIELDNAME</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>rootUriNameFieldName</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>Load file content in memory</target_transform_name>
-        <target_attribute_key>FIELD_DECIMAL</target_attribute_key>
-        <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
-        <source_field>decimal</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>ROWNUM_FIELD</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>rownum_field</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILE_LAST_MODIFICATION_FIELDNAME</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>lastModificationTimeFieldName</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>Load file content in memory</target_transform_name>
-        <target_attribute_key>FIELD_GROUP</target_attribute_key>
-        <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
-        <source_field>group</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILE_HIDDEN_FIELDNAME</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>hiddenFieldName</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>Load file content in memory</target_transform_name>
-        <target_attribute_key>FIELD_FORMAT</target_attribute_key>
-        <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
-        <source_field>format</source_field>
-      </mapping>
-      <mapping>
-        <target_transform_name>Load file content in memory</target_transform_name>
-        <target_attribute_key>FIELD_REPEAT</target_attribute_key>
-        <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
-        <source_field>repeat</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FIELD_PRECISION</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
+        <source_transform>golden-load-file-content-fields</source_transform>
         <source_field>precision</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILE_EXTENSION_FIELDNAME</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>extensionFieldName</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>INCLUDE_SUBFOLDERS</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml file</source_transform>
+        <source_transform>golden-load-file-content-files</source_transform>
         <source_field>include_subfolders</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FIELD_NAME</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
+        <source_transform>golden-load-file-content-fields</source_transform>
         <source_field>name</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILENAME</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml file</source_transform>
+        <source_transform>golden-load-file-content-files</source_transform>
         <source_field>name</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>INCLUDE</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>include</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FIELD_TRIM_TYPE</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
+        <source_transform>golden-load-file-content-fields</source_transform>
         <source_field>trim_type</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>IS_IN_FIELDS</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>IsInFields</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FIELD_ELEMENT_TYPE</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml fields</source_transform>
+        <source_transform>golden-load-file-content-fields</source_transform>
         <source_field>element_type</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>LIMIT</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>limit</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>FILE_REQUIRED</target_attribute_key>
         <target_detail>Y</target_detail>
-        <source_transform>files/load-file-content.xml file</source_transform>
+        <source_transform>golden-load-file-content-files</source_transform>
         <source_field>file_required</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>ROWNUM</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>rownum</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>IGNORE_MISSING_PATH</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>IsIgnoreMissingPath</source_field>
       </mapping>
       <mapping>
         <target_transform_name>Load file content in memory</target_transform_name>
         <target_attribute_key>ADD_RESULT_FILE</target_attribute_key>
         <target_detail>N</target_detail>
-        <source_transform>files/load-file-content.xml</source_transform>
+        <source_transform>golden-load-file-content</source_transform>
         <source_field>addresultfile</source_field>
       </mapping>
     </mappings>
@@ -322,8 +287,8 @@ limitations under the License.
     </GUI>
   </transform>
   <transform>
-    <name>files/load-file-content.xml</name>
-    <type>getXMLData</type>
+    <name>golden-load-file-content</name>
+    <type>DataSetInput</type>
     <description/>
     <distribute>Y</distribute>
     <custom_distribution/>
@@ -332,298 +297,7 @@ limitations under the License.
       <method>none</method>
       <schema_name/>
     </partitioning>
-    <IsAFile>N</IsAFile>
-    <IsIgnoreEmptyFile>N</IsIgnoreEmptyFile>
-    <IsInFields>N</IsInFields>
-    <addresultfile>N</addresultfile>
-    <doNotFailIfNoFile>Y</doNotFailIfNoFile>
-    <encoding>UTF-8</encoding>
-    <fields>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>include</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>include</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>include_field</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>include_field</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>rownum</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>rownum</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>addresultfile</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>addresultfile</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>IsIgnoreEmptyFile</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>IsIgnoreEmptyFile</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>IsIgnoreMissingPath</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>IsIgnoreMissingPath</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>rownum_field</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>rownum_field</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>encoding</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>encoding</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>limit</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>Integer</type>
-        <xPath>limit</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>IsInFields</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>IsInFields</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>DynamicFilenameField</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>DynamicFilenameField</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>shortFileFieldName</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>shortFileFieldName</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>pathFieldName</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>pathFieldName</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>hiddenFieldName</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>hiddenFieldName</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>lastModificationTimeFieldName</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>lastModificationTimeFieldName</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>uriNameFieldName</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>uriNameFieldName</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>rootUriNameFieldName</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>rootUriNameFieldName</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>extensionFieldName</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>extensionFieldName</xPath>
-      </field>
-    </fields>
-    <file>
-      <file_required>N</file_required>
-      <include_subfolders>N</include_subfolders>
-      <name>${PROJECT_HOME}/files/load-file-content.xml</name>
-    </file>
-    <ignorecomments>N</ignorecomments>
-    <include>N</include>
-    <limit>0</limit>
-    <loopxpath>/transform</loopxpath>
-    <namespaceaware>N</namespaceaware>
-    <readurl>N</readurl>
-    <rownum>N</rownum>
-    <usetoken>N</usetoken>
-    <validating>N</validating>
+    <dataSetName>golden-load-file-content</dataSetName>
     <attributes/>
     <GUI>
       <xloc>112</xloc>
@@ -631,8 +305,8 @@ limitations under the License.
     </GUI>
   </transform>
   <transform>
-    <name>files/load-file-content.xml file</name>
-    <type>getXMLData</type>
+    <name>golden-load-file-content-files</name>
+    <type>DataSetInput</type>
     <description/>
     <distribute>Y</distribute>
     <custom_distribution/>
@@ -641,117 +315,7 @@ limitations under the License.
       <method>none</method>
       <schema_name/>
     </partitioning>
-    <IsAFile>N</IsAFile>
-    <IsIgnoreEmptyFile>N</IsIgnoreEmptyFile>
-    <IsInFields>N</IsInFields>
-    <XmlField/>
-    <addresultfile>N</addresultfile>
-    <doNotFailIfNoFile>Y</doNotFailIfNoFile>
-    <encoding>UTF-8</encoding>
-    <extensionFieldName/>
-    <fields>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>name</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>name</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>filemask</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>filemask</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>exclude_filemask</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>exclude_filemask</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>file_required</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>file_required</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>include_subfolders</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>include_subfolders</xPath>
-      </field>
-    </fields>
-    <file>
-      <exclude_filemask/>
-      <file_required>N</file_required>
-      <filemask/>
-      <include_subfolders>N</include_subfolders>
-      <name>${PROJECT_HOME}/files/load-file-content.xml</name>
-    </file>
-    <hiddenFieldName/>
-    <ignorecomments>N</ignorecomments>
-    <include>N</include>
-    <include_field/>
-    <lastModificationTimeFieldName/>
-    <limit>0</limit>
-    <loopxpath>/transform/file</loopxpath>
-    <namespaceaware>N</namespaceaware>
-    <pathFieldName/>
-    <prunePath/>
-    <readurl>N</readurl>
-    <rootUriNameFieldName/>
-    <rownum>N</rownum>
-    <rownum_field/>
-    <shortFileFieldName/>
-    <sizeFieldName/>
-    <uriNameFieldName/>
-    <usetoken>N</usetoken>
-    <validating>N</validating>
+    <dataSetName>golden-load-file-content-files</dataSetName>
     <attributes/>
     <GUI>
       <xloc>112</xloc>
@@ -759,8 +323,8 @@ limitations under the License.
     </GUI>
   </transform>
   <transform>
-    <name>files/load-file-content.xml fields</name>
-    <type>getXMLData</type>
+    <name>golden-load-file-content-fields</name>
+    <type>DataSetInput</type>
     <description/>
     <distribute>Y</distribute>
     <custom_distribution/>
@@ -769,207 +333,7 @@ limitations under the License.
       <method>none</method>
       <schema_name/>
     </partitioning>
-    <IsAFile>N</IsAFile>
-    <IsIgnoreEmptyFile>N</IsIgnoreEmptyFile>
-    <IsInFields>N</IsInFields>
-    <XmlField/>
-    <addresultfile>N</addresultfile>
-    <doNotFailIfNoFile>Y</doNotFailIfNoFile>
-    <encoding>UTF-8</encoding>
-    <extensionFieldName/>
-    <fields>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>name</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>name</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>element_type</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>element_type</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>type</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>type</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>format</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>format</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>currency</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>currency</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>decimal</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>decimal</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>group</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>group</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>length</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>Integer</type>
-        <xPath>length</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>precision</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>Integer</type>
-        <xPath>precision</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>trim_type</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>trim_type</xPath>
-      </field>
-      <field>
-        <currency/>
-        <decimal/>
-        <element_type>Node</element_type>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>repeat</name>
-        <precision>-1</precision>
-        <repeat>N</repeat>
-        <result_type>valueof</result_type>
-        <trim_type>none</trim_type>
-        <type>String</type>
-        <xPath>repeat</xPath>
-      </field>
-    </fields>
-    <file>
-      <exclude_filemask/>
-      <file_required>N</file_required>
-      <filemask/>
-      <include_subfolders>N</include_subfolders>
-      <name>${PROJECT_HOME}/files/load-file-content.xml</name>
-    </file>
-    <hiddenFieldName/>
-    <ignorecomments>N</ignorecomments>
-    <include>N</include>
-    <include_field/>
-    <lastModificationTimeFieldName/>
-    <limit>0</limit>
-    <loopxpath>/transform/fields/field</loopxpath>
-    <namespaceaware>N</namespaceaware>
-    <pathFieldName/>
-    <prunePath/>
-    <readurl>N</readurl>
-    <rootUriNameFieldName/>
-    <rownum>N</rownum>
-    <rownum_field/>
-    <shortFileFieldName/>
-    <sizeFieldName/>
-    <uriNameFieldName/>
-    <usetoken>N</usetoken>
-    <validating>N</validating>
+    <dataSetName>golden-load-file-content-fields</dataSetName>
     <attributes/>
     <GUI>
       <xloc>112</xloc>

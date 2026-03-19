@@ -60,7 +60,7 @@ limitations under the License.
       <clear_rows>N</clear_rows>
       <create_parent_folder>N</create_parent_folder>
       <exec_per_row>N</exec_per_row>
-      <filename>/home/matt/git/mattcasters/hop/integration-tests/transforms/0087-load-file-content.hpl</filename>
+      <filename>${PROJECT_HOME}/0087-load-file-content.hpl</filename>
       <logext/>
       <logfile/>
       <loglevel>Basic</loglevel>
@@ -77,6 +77,21 @@ limitations under the License.
       <yloc>64</yloc>
       <attributes_hac/>
     </action>
+    <action>
+      <name>0087-load-file-content-validate UNIT</name>
+      <description/>
+      <type>RunPipelineTests</type>
+      <attributes/>
+      <test_names>
+        <test_name>
+          <name>0087-load-file-content-validate UNIT</name>
+        </test_name>
+      </test_names>
+      <parallel>N</parallel>
+      <xloc>480</xloc>
+      <yloc>64</yloc>
+      <attributes_hac/>
+    </action>
   </actions>
   <hops>
     <hop>
@@ -85,6 +100,13 @@ limitations under the License.
       <enabled>Y</enabled>
       <evaluation>Y</evaluation>
       <unconditional>Y</unconditional>
+    </hop>
+    <hop>
+      <from>0087-load-file-content.hpl</from>
+      <to>0087-load-file-content-validate UNIT</to>
+      <enabled>Y</enabled>
+      <evaluation>Y</evaluation>
+      <unconditional>N</unconditional>
     </hop>
   </hops>
   <notepads>
