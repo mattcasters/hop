@@ -86,15 +86,176 @@ public class MetaInject extends BaseTransform<MetaInjectMeta, MetaInjectData> {
     // Skip the transform from which we stream data. Keep that available for runtime action.
     //
     data.rowMap = new HashMap<>();
-    boolean receivedRows = false;
-    boolean hasEmptyList = false;
+    data.receivedRows = false;
+    data.hasEmptyList = false;
 
     // If there are no previous transforms we will set receivedRows to true. This allows execution
     // using constants only
     if (getPipelineMeta().getPrevTransformNames(getTransformMeta()).length == 0) {
-      receivedRows = true;
+      data.receivedRows = true;
     }
 
+    readDataFromSourceTransforms();
+
+    injectMetadataIntoTemplateTransforms();
+
+    // Check if all previous transforms are returning data, unless isAllowEmptyStreamOnExecution is
+    // true then execute if at least one branch has data
+    if (!data.receivedRows || (data.hasEmptyList && !meta.isAllowEmptyStreamOnExecution())) {
+      setOutputDone();
+      return false;
+    }
+
+    postInjectionHandling();
+
+    if (!meta.isNoExecution()) {
+      executeTemplatePipeline();
+    }
+
+    // We let the pipeline complete its execution to allow for any customizations to MDI to
+    // happen in the init methods of transforms.
+    //
+    String targetFile = resolve(meta.getTargetFile());
+    if (!Utils.isEmpty(targetFile)) {
+      writeInjectedHpl(targetFile);
+    }
+
+    // All done!
+    setOutputDone();
+
+    return false;
+  }
+
+  private void executeTemplatePipeline() throws HopException {
+    // Now we can execute this modified transformation metadata.
+    //
+    final Pipeline injectPipeline = createInjectPipeline();
+    injectPipeline.setParentPipeline(getPipeline());
+    injectPipeline.setMetadataProvider(getMetadataProvider());
+    if (getPipeline().getParentWorkflow() != null) {
+      injectPipeline.setParentWorkflow(getPipeline().getParentWorkflow());
+    }
+
+    // Copy all variables over...
+    //
+    injectPipeline.copyFrom(this);
+
+    // Copy parameter definitions with empty values.
+    // Then set those parameters to the values if have any.
+
+    injectPipeline.copyParametersFromDefinitions(data.pipelineMeta);
+    for (String variableName : injectPipeline.getVariableNames()) {
+      String variableValue = getVariable(variableName);
+      if (StringUtils.isNotEmpty(variableValue)) {
+        injectPipeline.setParameterValue(variableName, variableValue);
+      }
+    }
+
+    getPipeline().addExecutionStoppedListener(e -> injectPipeline.stopAll());
+
+    injectPipeline.setLogLevel(getLogLevel());
+
+    // Parameters get activated below so we need to make sure they have values
+    //
+    injectPipeline.prepareExecution();
+
+    // See if we need to stream some data over...
+    //
+    RowProducer rowProducer =
+        data.streaming ? injectPipeline.addRowProducer(data.streamingTargetTransformName, 0) : null;
+
+    // Finally, add the mapping transformation to the active sub-transformations
+    // map in the parent transformation
+    //
+    getPipeline().addActiveSubPipeline(getTransformName(), injectPipeline);
+
+    if (!Utils.isEmpty(meta.getSourceTransformName())) {
+      handleReadingFromSourceTransform(injectPipeline);
+    }
+
+    injectPipeline.startThreads();
+
+    Future<HopTransformException> steamingFuture = handleStreamingToTargetTransform(rowProducer);
+
+    // Wait until the child transformation finished processing...
+    //
+    while (!injectPipeline.isFinished() && !injectPipeline.isStopped() && !isStopped()) {
+      copyResult(injectPipeline);
+
+      // Wait a little bit.
+      try {
+        Thread.sleep(50);
+      } catch (Exception e) {
+        // Ignore errors
+      }
+    }
+    copyResult(injectPipeline);
+    waitUntilFinished(injectPipeline);
+    try {
+      if (steamingFuture != null && steamingFuture.get() != null) {
+        throw steamingFuture.get();
+      }
+    } catch (ExecutionException ignore) {
+      // Ignore
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  private Future<HopTransformException> handleStreamingToTargetTransform(RowProducer rowProducer)
+      throws HopException {
+    Future<HopTransformException> steamingFuture = null;
+    if (data.streaming) {
+      // Deplete all the rows from the parent transformation into the modified transformation
+      //
+      IRowSet rowSet = findInputRowSet(data.streamingSourceTransformName);
+      if (rowSet == null) {
+        throw new HopException(
+            "Unable to find transform '"
+                + data.streamingSourceTransformName
+                + "' to stream data from");
+      }
+      steamingFuture = ExecutorUtil.getExecutor().submit(() -> putRows(rowSet, rowProducer));
+    }
+    return steamingFuture;
+  }
+
+  private void handleReadingFromSourceTransform(Pipeline injectPipeline) throws HopException {
+    ITransform transformInterface = injectPipeline.getTransform(meta.getSourceTransformName(), 0);
+    if (transformInterface == null) {
+      throw new HopException(
+          "Unable to find transform '" + meta.getSourceTransformName() + "' to read from.");
+    }
+    transformInterface.addRowListener(
+        new RowAdapter() {
+          @Override
+          public void rowWrittenEvent(IRowMeta rowMeta, Object[] row) throws HopTransformException {
+            // Just pass along the data as output of this transform...
+            //
+            MetaInject.this.putRow(rowMeta, row);
+          }
+        });
+  }
+
+  private void postInjectionHandling() {
+    List<TransformMeta> targetTransforms = data.pipelineMeta.getTransforms();
+    for (Entry<String, ITransformMeta> en : data.transformInjectionMetasMap.entrySet()) {
+      en.getValue().resetTransformIoMeta();
+      en.getValue().searchInfoAndTargetTransforms(targetTransforms);
+    }
+
+    for (String targetTransformName : data.transformInjectionMetasMap.keySet()) {
+      if (!data.transformInjectionMetasMap.containsKey(targetTransformName)) {
+        TransformMeta targetTransform =
+            TransformMeta.findTransform(targetTransforms, targetTransformName);
+        if (targetTransform != null) {
+          targetTransform.getTransform().searchInfoAndTargetTransforms(targetTransforms);
+        }
+      }
+    }
+  }
+
+  private void readDataFromSourceTransforms() throws HopTransformException {
     for (String prevTransformName : getPipelineMeta().getPrevTransformNames(getTransformMeta())) {
       // Don't read from the streaming source transform
       //
@@ -112,171 +273,13 @@ public class MetaInject extends BaseTransform<MetaInjectMeta, MetaInjectData> {
           row = getRowFrom(rowSet);
         }
         if (!list.isEmpty()) {
-          receivedRows = true;
+          data.receivedRows = true;
           data.rowMap.put(prevTransformName, list);
         } else {
-          hasEmptyList = true;
+          data.hasEmptyList = true;
         }
       }
     }
-
-    injectMetadataIntoTemplateTransforms();
-
-    // Check if all previous transforms are returning data, unless isAllowEmptyStreamOnExecution is
-    // true then execute if at least one branch has data
-    if (!receivedRows || (hasEmptyList && !meta.isAllowEmptyStreamOnExecution())) {
-      setOutputDone();
-      return false;
-    }
-
-    //    for (Entry<String, ITransformMeta> en : data.transformInjectionMetasMap.entrySet()) {
-    //      newInjection(en.getKey(), en.getValue());
-    //    }
-    /*
-        * constants injection should be executed after transforms, because if constant should be
-    inserted into target with array
-        * in path, constants should be inserted into all arrays items
-        */
-    //    for (Entry<String, ITransformMeta> en : data.transformInjectionMetasMap.entrySet()) {
-    //      newInjectionConstants(this, en.getKey(), en.getValue());
-    //    }
-
-    List<TransformMeta> targetTransforms = data.pipelineMeta.getTransforms();
-    for (Entry<String, ITransformMeta> en : data.transformInjectionMetasMap.entrySet()) {
-      en.getValue().resetTransformIoMeta();
-      en.getValue().searchInfoAndTargetTransforms(targetTransforms);
-    }
-
-    for (String targetTransformName : data.transformInjectionMetasMap.keySet()) {
-      if (!data.transformInjectionMetasMap.containsKey(targetTransformName)) {
-        TransformMeta targetTransform =
-            TransformMeta.findTransform(targetTransforms, targetTransformName);
-        if (targetTransform != null) {
-          targetTransform.getTransform().searchInfoAndTargetTransforms(targetTransforms);
-        }
-      }
-    }
-
-    if (!meta.isNoExecution()) {
-      // Now we can execute this modified transformation metadata.
-      //
-      final Pipeline injectPipeline = createInjectPipeline();
-      injectPipeline.setParentPipeline(getPipeline());
-      injectPipeline.setMetadataProvider(getMetadataProvider());
-      if (getPipeline().getParentWorkflow() != null) {
-        injectPipeline.setParentWorkflow(getPipeline().getParentWorkflow());
-      }
-
-      // Copy all variables over...
-      //
-      injectPipeline.copyFrom(this);
-
-      // Copy parameter definitions with empty values.
-      // Then set those parameters to the values if have any.
-
-      injectPipeline.copyParametersFromDefinitions(data.pipelineMeta);
-      for (String variableName : injectPipeline.getVariableNames()) {
-        String variableValue = getVariable(variableName);
-        if (StringUtils.isNotEmpty(variableValue)) {
-          injectPipeline.setParameterValue(variableName, variableValue);
-        }
-      }
-
-      getPipeline().addExecutionStoppedListener(e -> injectPipeline.stopAll());
-
-      injectPipeline.setLogLevel(getLogLevel());
-
-      // Parameters get activated below so we need to make sure they have values
-      //
-      injectPipeline.prepareExecution();
-
-      // See if we need to stream some data over...
-      //
-      RowProducer rowProducer =
-          data.streaming
-              ? injectPipeline.addRowProducer(data.streamingTargetTransformName, 0)
-              : null;
-
-      // Finally, add the mapping transformation to the active sub-transformations
-      // map in the parent transformation
-      //
-      getPipeline().addActiveSubPipeline(getTransformName(), injectPipeline);
-
-      if (!Utils.isEmpty(meta.getSourceTransformName())) {
-        ITransform transformInterface =
-            injectPipeline.getTransform(meta.getSourceTransformName(), 0);
-        if (transformInterface == null) {
-          throw new HopException(
-              "Unable to find transform '" + meta.getSourceTransformName() + "' to read from.");
-        }
-        transformInterface.addRowListener(
-            new RowAdapter() {
-              @Override
-              public void rowWrittenEvent(IRowMeta rowMeta, Object[] row)
-                  throws HopTransformException {
-                // Just pass along the data as output of this transform...
-                //
-                MetaInject.this.putRow(rowMeta, row);
-              }
-            });
-      }
-
-      injectPipeline.startThreads();
-
-      Future<HopTransformException> steamingFuture = null;
-      if (data.streaming) {
-        // Deplete all the rows from the parent transformation into the modified transformation
-        //
-        IRowSet rowSet = findInputRowSet(data.streamingSourceTransformName);
-        if (rowSet == null) {
-          throw new HopException(
-              "Unable to find transform '"
-                  + data.streamingSourceTransformName
-                  + "' to stream data from");
-        }
-        steamingFuture = ExecutorUtil.getExecutor().submit(() -> putRows(rowSet, rowProducer));
-      }
-
-      // Wait until the child transformation finished processing...
-      //
-      while (!injectPipeline.isFinished() && !injectPipeline.isStopped() && !isStopped()) {
-        copyResult(injectPipeline);
-
-        // Wait a little bit.
-        try {
-          Thread.sleep(50);
-        } catch (Exception e) {
-          // Ignore errors
-        }
-      }
-      copyResult(injectPipeline);
-      waitUntilFinished(injectPipeline);
-      try {
-        if (steamingFuture != null && steamingFuture.get() != null) {
-          throw steamingFuture.get();
-        }
-      } catch (ExecutionException ignore) {
-        // Ignore
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-
-    // let the transformation complete it's execution to allow for any customizations to MDI to
-    // happen in the init methods of transforms
-    if (isDetailed()) {
-      logDetailed("XML of transformation after injection: " + data.pipelineMeta.getXml(this));
-    }
-    String targetFile = resolve(meta.getTargetFile());
-    if (!Utils.isEmpty(targetFile)) {
-      writeInjectedHpl(targetFile);
-    }
-
-    // All done!
-
-    setOutputDone();
-
-    return false;
   }
 
   private void injectMetadataIntoTemplateTransforms() throws HopException {
@@ -342,69 +345,14 @@ public class MetaInject extends BaseTransform<MetaInjectMeta, MetaInjectData> {
     // We already have the rows.  We just need to rename the fields to the injection key
     //
     for (MetaInjectMapping mapping : meta.getMappings()) {
-      if (!targetTransformName.equalsIgnoreCase(mapping.getTargetTransformName())) {
-        // Covered elsewhere.
-        continue;
-      }
-      List<RowMetaAndData> sourceRows = data.rowMap.get(mapping.getSourceTransformName());
-
-      // To which group does this belong?
-      //
-      String groupKey = lookupGroupKey(injectionKeyGroupMap, mapping.getTargetAttributeKey());
-      if (mapping.isTargetDetail() || groupKey != null) {
-        // If it's a detail and not part of a group, we have a configuration error.
-        //
-        if (groupKey == null) {
-          throw new HopTransformException(
-              "The injection group key for target key '"
-                  + mapping.getTargetAttributeKey()
-                  + "' was not found.");
-        }
-
-        if (sourceRows != null && !sourceRows.isEmpty()) {
-          IRowMeta rowMeta;
-          rowMeta = groupRowMetaMap.get(groupKey);
-          if (rowMeta == null) {
-            rowMeta = sourceRows.getFirst().getRowMeta().clone();
-            groupRowMetaMap.put(groupKey, rowMeta);
-          }
-          int index = rowMeta.indexOfValue(mapping.getSourceField());
-          if (index < 0) {
-            // Is the field already renamed to the target?
-            //
-            index = rowMeta.indexOfValue(mapping.getTargetAttributeKey());
-          }
-          if (index < 0) {
-            throw new HopTransformException(
-                "The field '"
-                    + mapping.getSourceField()
-                    + "' from transform '"
-                    + mapping.getSourceTransformName()
-                    + "' to inject could not be found");
-          }
-          // We give the value the name of the target injection key
-          //
-          IValueMeta valueMeta = rowMeta.getValueMeta(index);
-          valueMeta.setName(mapping.getTargetAttributeKey());
-
-          // Let's keep track of where the rows are coming from for the current group
-          //
-          groupSourceMap.put(groupKey, mapping.getSourceTransformName());
-        } else {
-          // See if this is a constant without a source
-          //
-          if (StringUtils.isEmpty(mapping.getSourceTransformName())) {
-            addConstantToGroupData(mapping, injectionGroupData, groupKey);
-          }
-        }
-      } else {
-        // A simple property from the first row.
-        // This also captures the "Constant" mappings where we don't have source rows to feed the
-        // injection.
-        //
-        collectInjectionKeyValue(
-            mapping, sourceRows, injectionKeyData, injectionKeyGroupMap, injectionGroupData);
-      }
+      collectDataForOneMapping(
+          targetTransformName,
+          mapping,
+          injectionKeyGroupMap,
+          groupRowMetaMap,
+          groupSourceMap,
+          injectionGroupData,
+          injectionKeyData);
     }
 
     // Now all source rows are mapped and we can construct the group data map
@@ -430,6 +378,89 @@ public class MetaInject extends BaseTransform<MetaInjectMeta, MetaInjectData> {
       HopMetadataInjector.inject(
           metadataProvider, targetTransformMeta, injectionKeyData, injectionGroupData);
     }
+  }
+
+  private void collectDataForOneMapping(
+      String targetTransformName,
+      MetaInjectMapping mapping,
+      Map<String, Set<String>> injectionKeyGroupMap,
+      Map<String, IRowMeta> groupRowMetaMap,
+      Map<String, String> groupSourceMap,
+      Map<String, RowBuffer> injectionGroupData,
+      Map<String, Object> injectionKeyData)
+      throws HopTransformException, HopValueException {
+    if (!targetTransformName.equalsIgnoreCase(mapping.getTargetTransformName())) {
+      // Covered elsewhere.
+      return;
+    }
+    List<RowMetaAndData> sourceRows = data.rowMap.get(mapping.getSourceTransformName());
+
+    // To which group does this belong?
+    //
+    String groupKey = lookupGroupKey(injectionKeyGroupMap, mapping.getTargetAttributeKey());
+    if (mapping.isTargetDetail() || groupKey != null) {
+      // If it's a detail and not part of a group, we have a configuration error.
+      //
+      if (groupKey == null) {
+        throw new HopTransformException(
+            "The injection group key for target key '"
+                + mapping.getTargetAttributeKey()
+                + "' was not found.");
+      }
+
+      if (sourceRows != null && !sourceRows.isEmpty()) {
+        // We need to collect the data for the mapping
+        //
+        collectDataForOneMappingGroup(
+            mapping, groupRowMetaMap, groupSourceMap, groupKey, sourceRows);
+      } else {
+        // See if this is a constant without a source
+        //
+        if (StringUtils.isEmpty(mapping.getSourceTransformName())) {
+          addConstantToGroupData(mapping, injectionGroupData, groupKey);
+        }
+      }
+    } else {
+      // A simple property from the first row.
+      // This also captures the "Constant" mappings where we don't have source rows to feed the
+      // injection.
+      //
+      collectInjectionKeyValue(mapping, sourceRows, injectionKeyData);
+    }
+  }
+
+  private static void collectDataForOneMappingGroup(
+      MetaInjectMapping mapping,
+      Map<String, IRowMeta> groupRowMetaMap,
+      Map<String, String> groupSourceMap,
+      String groupKey,
+      List<RowMetaAndData> sourceRows)
+      throws HopTransformException {
+    IRowMeta rowMeta;
+    rowMeta =
+        groupRowMetaMap.computeIfAbsent(groupKey, f -> sourceRows.getFirst().getRowMeta().clone());
+    int index = rowMeta.indexOfValue(mapping.getSourceField());
+    if (index < 0) {
+      // Is the field already renamed to the target?
+      //
+      index = rowMeta.indexOfValue(mapping.getTargetAttributeKey());
+    }
+    if (index < 0) {
+      throw new HopTransformException(
+          "The field '"
+              + mapping.getSourceField()
+              + "' from transform '"
+              + mapping.getSourceTransformName()
+              + "' to inject could not be found");
+    }
+    // We give the value the name of the target injection key
+    //
+    IValueMeta valueMeta = rowMeta.getValueMeta(index);
+    valueMeta.setName(mapping.getTargetAttributeKey());
+
+    // Let's keep track of where the rows are coming from for the current group
+    //
+    groupSourceMap.put(groupKey, mapping.getSourceTransformName());
   }
 
   private static void addConstantToGroupData(
@@ -474,9 +505,7 @@ public class MetaInject extends BaseTransform<MetaInjectMeta, MetaInjectData> {
   private static void collectInjectionKeyValue(
       MetaInjectMapping mapping,
       List<RowMetaAndData> sourceRows,
-      Map<String, Object> injectionKeyData,
-      Map<String, Set<String>> injectionKeyGroupMap,
-      Map<String, RowBuffer> injectionGroupData)
+      Map<String, Object> injectionKeyData)
       throws HopTransformException, HopValueException {
     if (sourceRows == null || sourceRows.isEmpty()) {
       if (StringUtils.isEmpty(mapping.getSourceTransformName())) {
@@ -543,79 +572,59 @@ public class MetaInject extends BaseTransform<MetaInjectMeta, MetaInjectData> {
    * Writes the generated meta injection transformation to the file system.
    *
    * @param targetFilePath the filesystem path to which to save the generated injection hpl
-   * @throws HopException
+   * @throws HopException In case we couldn't write the pipeline XML to the given target path.
    */
   private void writeInjectedHplToFs(String targetFilePath) throws HopException {
-
-    OutputStream os = null;
-    try {
-      if (meta.isCreateParentFolder()) {
-        createParentFolder(targetFilePath);
-      }
-
-      os = HopVfs.getOutputStream(targetFilePath, false, variables);
+    if (meta.isCreateParentFolder()) {
+      createParentFolder(targetFilePath);
+    }
+    try (OutputStream os = HopVfs.getOutputStream(targetFilePath, false, variables)) {
       os.write(XmlHandler.getXmlHeader().getBytes(StandardCharsets.UTF_8));
       os.write(data.pipelineMeta.getXml(this).getBytes(StandardCharsets.UTF_8));
     } catch (Exception e) {
       throw new HopException(
           "Unable to write target file (hpl after injection) to file '" + targetFilePath + "'", e);
-    } finally {
-      if (os != null) {
-        try {
-          os.close();
-        } catch (Exception e) {
-          throw new HopException(e);
-        }
-      }
     }
   }
 
-  private void createParentFolder(String filename) throws Exception {
+  private void createParentFolder(String filename) throws HopException {
     // Check for parent folder
-    FileObject parentfolder = null;
-
-    try {
-      // Get parent folder
-      parentfolder = HopVfs.getFileObject(filename, variables).getParent();
-
-      if (parentfolder.exists()) {
+    //
+    try (FileObject parentFolder = HopVfs.getFileObject(filename, variables).getParent()) {
+      // Check the parent folder
+      if (parentFolder.exists()) {
         if (isDetailed()) {
           logDetailed(
               BaseMessages.getString(
-                  PKG, "MetaInject.Log.ParentFolderExist", HopVfs.getFriendlyURI(parentfolder)));
+                  PKG, "MetaInject.Log.ParentFolderExist", HopVfs.getFriendlyURI(parentFolder)));
         }
       } else {
         if (isDetailed()) {
           logDetailed(
               BaseMessages.getString(
-                  PKG, "MetaInject.Log.ParentFolderNotExist", HopVfs.getFriendlyURI(parentfolder)));
+                  PKG, "MetaInject.Log.ParentFolderNotExist", HopVfs.getFriendlyURI(parentFolder)));
         }
         if (meta.isCreateParentFolder()) {
-          parentfolder.createFolder();
+          parentFolder.createFolder();
           if (isDetailed()) {
             logDetailed(
                 BaseMessages.getString(
                     PKG,
                     "MetaInject.Log.ParentFolderCreated",
-                    HopVfs.getFriendlyURI(parentfolder)));
+                    HopVfs.getFriendlyURI(parentFolder)));
           }
         } else {
           throw new HopException(
               BaseMessages.getString(
                   PKG,
                   "MetaInject.Log.ParentFolderNotExistCreateIt",
-                  HopVfs.getFriendlyURI(parentfolder),
+                  HopVfs.getFriendlyURI(parentFolder),
                   HopVfs.getFriendlyURI(filename, variables)));
         }
       }
-    } finally {
-      if (parentfolder != null) {
-        try {
-          parentfolder.close();
-        } catch (Exception ex) {
-          // Ignore
-        }
-      }
+    } catch (Exception e) {
+      throw new HopException(
+          "Unable to create parent folder for injected pipeline file: " + filename, e);
     }
   }
 
