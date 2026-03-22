@@ -35,7 +35,6 @@ import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopFileException;
 import org.apache.hop.core.exception.HopValueException;
 import org.apache.hop.core.file.EncodingType;
-import org.apache.hop.core.file.TextFileInputField;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
@@ -492,8 +491,7 @@ public class CsvInput extends BaseTransform<CsvInputMeta, CsvInputData> {
               TextFileInputMeta.FILE_FORMAT_UNIX,
               new StringBuilder(1000));
       String[] fieldNames =
-          TextFileLineUtil.guessStringsFromLine(
-              getLogChannel(), line, delimiter, enclosure, csvInputMeta.getEscapeCharacter());
+          TextFileLineUtil.guessStringsFromLine(getLogChannel(), line, delimiter, enclosure, null);
       if (!Utils.isEmpty(csvInputMeta.getEnclosure())) {
         removeEnclosure(fieldNames, csvInputMeta.getEnclosure());
       }
@@ -506,7 +504,7 @@ public class CsvInput extends BaseTransform<CsvInputMeta, CsvInputData> {
   }
 
   static String[] fieldNames(CsvInputMeta csvInputMeta) {
-    List<TextFileInputField> fields = csvInputMeta.getInputFields();
+    List<CsvInputField> fields = csvInputMeta.getInputFields();
     String[] fieldNames = new String[fields.size()];
     for (int i = 0; i < fields.size(); i++) {
       fieldNames[i] = fields.get(i).getName();

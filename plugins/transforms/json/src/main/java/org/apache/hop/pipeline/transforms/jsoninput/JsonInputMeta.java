@@ -181,8 +181,6 @@ public class JsonInputMeta extends BaseFileInputMeta<JsonInput, JsonInputData, B
   @HopMetadataProperty(
       key = "file",
       inline = true,
-      injectionKey = "FILE",
-      injectionKeyDescription = "TextFileInput.Injection.FILE",
       childKeysToIgnore = {
         "accept_filenames",
         "accept_transform_name",
@@ -195,8 +193,6 @@ public class JsonInputMeta extends BaseFileInputMeta<JsonInput, JsonInputData, B
   @HopMetadataProperty(
       key = "field",
       groupKey = "fields",
-      injectionKey = "FIELD",
-      injectionKeyDescription = "JsonInput.Injection.FIELD",
       injectionGroupKey = "FIELDS",
       injectionGroupDescription = "JsonInput.Injection.FIELDS")
   private List<JsonInputField> inputFields;

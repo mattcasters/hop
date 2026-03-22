@@ -1889,6 +1889,27 @@ public class Const {
   }
 
   /**
+   * Implements Oracle style NVL function. The first value of the ones provided, that isn't null or
+   * empty is returned.
+   *
+   * @param values The values to test for null/empty.
+   * @return null if no arguments given or null. Otherwise, returns the first value of the ones
+   *     provided, that isn't null or empty is returned.
+   */
+  public static String coalesce(String... values) {
+    if (values == null || values.length == 0) {
+      return null;
+    }
+    for (int i = 0; i < values.length - 1; i++) {
+      String value = values[i];
+      if (value != null && !value.isEmpty()) {
+        return value;
+      }
+    }
+    return values[values.length - 1];
+  }
+
+  /**
    * Return empty string "" in case the given parameter is null, otherwise return the same value.
    *
    * @param source The source value to check for null.

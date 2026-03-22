@@ -187,12 +187,11 @@ public class BeanInjector<Meta extends Object> {
             setProperty(root, prop, i, data.get(i), dataName, dataValue);
           }
         } else {
-          for (int i = 0; ; i++) {
-            boolean found = setProperty(root, prop, i, null, null, dataValue);
-            if (!found) {
-              break;
-            }
-          }
+          boolean found;
+          int i = 0;
+          do {
+            found = setProperty(root, prop, i++, null, null, dataValue);
+          } while (found);
         }
       } catch (Exception ex) {
         throw new HopException(

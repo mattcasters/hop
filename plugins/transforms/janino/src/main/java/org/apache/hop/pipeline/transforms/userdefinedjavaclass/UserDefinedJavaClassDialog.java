@@ -531,7 +531,7 @@ public class UserDefinedJavaClassDialog extends BaseTransformDialog {
     fdClearResultFields.top = new FormAttachment(0, 0);
     wClearResultFields.setLayoutData(fdClearResultFields);
 
-    final int fieldsRows = input.getFieldInfo().size();
+    final int fieldsRows = input.getFields().size();
 
     ColumnInfo[] colinf =
         new ColumnInfo[] {
@@ -980,7 +980,7 @@ public class UserDefinedJavaClassDialog extends BaseTransformDialog {
   /** Copy information from the meta-data input to the dialog fields. */
   public void getData() {
     int i = 0;
-    for (FieldInfo fi : input.getFieldInfo()) {
+    for (FieldInfo fi : input.getFields()) {
       TableItem item = wFields.table.getItem(i);
       i++;
       item.setText(1, fi.getName());

@@ -22,17 +22,13 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.hop.core.CheckResult;
 import org.apache.hop.core.ICheckResult;
 import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopException;
-import org.apache.hop.core.exception.HopFileException;
 import org.apache.hop.core.exception.HopPluginException;
 import org.apache.hop.core.exception.HopTransformException;
-import org.apache.hop.core.file.TextFileInputField;
-import org.apache.hop.core.fileinput.InputFile;
 import org.apache.hop.core.injection.Injection;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
@@ -48,9 +44,6 @@ import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.apache.hop.pipeline.transforms.common.ICsvInputAwareMeta;
-import org.apache.hop.pipeline.transforms.file.BaseFileErrorHandling;
-import org.apache.hop.pipeline.transforms.fileinput.text.TextFileInputMeta;
 import org.apache.hop.resource.IResourceNaming;
 import org.apache.hop.resource.ResourceDefinition;
 import org.apache.hop.resource.ResourceEntry;
@@ -69,8 +62,7 @@ import org.apache.hop.staticschema.util.SchemaDefinitionUtil;
     documentationUrl = "/pipeline/transforms/csvinput.html")
 @Getter
 @Setter
-public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData>
-    implements ICsvInputAwareMeta<TextFileInputField> {
+public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData> {
 
   private static final Class<?> PKG = CsvInput.class;
 
@@ -174,24 +166,11 @@ public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData>
   public boolean ignoreFields;
 
   @HopMetadataProperty(
-      groupKey = "fields",
       key = "field",
-      injectionKey = "INPUT_FIELD",
-      injectionKeyDescription = "CsvInputMeta.Injection.INPUT_FIELD",
+      groupKey = "fields",
       injectionGroupKey = "INPUT_FIELDS",
-      injectionGroupDescription = "CsvInputMeta.Injection.INPUT_FIELDS",
-      serializeOnly = {
-        "name",
-        "type",
-        "format",
-        "currencySymbol",
-        "decimalSymbol",
-        "groupSymbol",
-        "length",
-        "precision",
-        "trimType"
-      })
-  private List<TextFileInputField> inputFields;
+      injectionGroupDescription = "CsvInputMeta.Injection.INPUT_FIELDS")
+  private List<CsvInputField> inputFields;
 
   public CsvInputMeta() {
     super();
@@ -221,7 +200,7 @@ public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData>
     this.rowNumField = m.rowNumField;
     this.runningInParallel = m.runningInParallel;
     this.schemaDefinition = m.schemaDefinition;
-    m.inputFields.forEach(field -> this.inputFields.add(new TextFileInputField(field)));
+    m.inputFields.forEach(field -> this.inputFields.add(new CsvInputField(field)));
   }
 
   @Override
@@ -282,7 +261,7 @@ public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData>
           // ignore any errors here.
         }
       } else {
-        for (TextFileInputField inputField : inputFields) {
+        for (CsvInputField inputField : inputFields) {
           IValueMeta valueMeta =
               ValueMetaFactory.createValueMeta(inputField.getName(), inputField.getType());
           valueMeta.setConversionMask(inputField.getFormat());
@@ -404,37 +383,9 @@ public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData>
     return references;
   }
 
-  public void setFields(TextFileInputField[] fields) {
+  public void setFields(CsvInputField[] fields) {
     this.inputFields.clear();
     this.inputFields.addAll(List.of(fields));
-  }
-
-  @Override
-  public int getFileFormatTypeNr() {
-    return TextFileInputMeta.FILE_FORMAT_MIXED;
-  }
-
-  @Override
-  public boolean hasHeader() {
-    return isHeaderPresent();
-  }
-
-  @Override
-  public String getEscapeCharacter() {
-    return null;
-  }
-
-  @Override
-  public boolean isBreakInEnclosureAllowed() {
-    return !runningInParallel && newlinePossibleInFields;
-  }
-
-  /**
-   * @return the encoding
-   */
-  @Override
-  public String getEncoding() {
-    return encoding;
   }
 
   /**
@@ -481,80 +432,5 @@ public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData>
   @Override
   public boolean supportsErrorHandling() {
     return true;
-  }
-
-  @Override
-  public FileObject getHeaderFileObject(final IVariables variables) {
-    final String filename = variables.resolve(getFilename());
-    try {
-      return HopVfs.getFileObject(filename, variables);
-    } catch (final HopFileException e) {
-      return null;
-    }
-  }
-
-  @Override
-  public List<InputFile> getInputFiles() {
-    if (StringUtils.isNotEmpty(filenameField)) {
-      return List.of();
-    }
-    InputFile inputFile = new InputFile();
-    inputFile.setFileName(filename);
-    return List.of(inputFile);
-  }
-
-  @Override
-  public int getNrHeaderLines() {
-    return headerPresent ? 1 : 0;
-  }
-
-  @Override
-  public String getErrorCountField() {
-    return "";
-  }
-
-  @Override
-  public String getFileType() {
-    return "CSV";
-  }
-
-  @Override
-  public BaseFileErrorHandling getErrorHandling() {
-    return null;
-  }
-
-  @Override
-  public String getErrorFieldsField() {
-    return "";
-  }
-
-  @Override
-  public String getErrorTextField() {
-    return "";
-  }
-
-  @Override
-  public boolean isErrorLineSkipped() {
-    return false;
-  }
-
-  @Override
-  public boolean isIncludeFilename() {
-    return includingFilename;
-  }
-
-  @Override
-  public boolean isIncludeRowNumber() {
-    return StringUtils.isNotEmpty(rowNumField);
-  }
-
-  /**
-   * This transform doesn't do fixed length file processing.
-   *
-   * @return null
-   */
-  @Override
-  public String getLength() {
-    return null;
   }
 }

@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import lombok.Getter;
@@ -148,7 +147,7 @@ public class UserDefinedJavaClassMeta
   @HopMetadataProperty(
       key = "definition",
       groupKey = "definitions",
-      injectionKeyDescription = "JAVA_CLASSES",
+      injectionGroupKey = "JAVA_CLASSES",
       injectionGroupDescription = "UserDefinedJavaClass.Injection.JAVA_CLASSES")
   private List<UserDefinedJavaClassDef> definitions = new ArrayList<>();
 
@@ -305,10 +304,6 @@ public class UserDefinedJavaClassMeta
     }
   }
 
-  public List<FieldInfo> getFieldInfo() {
-    return Collections.unmodifiableList(fields);
-  }
-
   public void setFieldInfo(List<FieldInfo> fields) {
     replaceFields(fields);
   }
@@ -316,10 +311,6 @@ public class UserDefinedJavaClassMeta
   public void replaceFields(List<FieldInfo> fields) {
     this.fields = fields;
     changed = true;
-  }
-
-  public List<UserDefinedJavaClassDef> getDefinitions() {
-    return Collections.unmodifiableList(definitions);
   }
 
   /**
@@ -368,7 +359,7 @@ public class UserDefinedJavaClassMeta
       try {
         cookClasses();
       } catch (HopException e) {
-        throw new RuntimeException(e);
+        throw new RuntimeException("Error cooking class", e);
       }
 
       if (cookedTransformClass == null) {
@@ -454,7 +445,7 @@ public class UserDefinedJavaClassMeta
           info,
           nextTransform,
           variables,
-          getFieldInfo());
+          getFields());
     } catch (Exception e) {
       throw new HopTransformException("Error executing UserDefinedJavaClass.getFields(): ", e);
     }

@@ -23,6 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Map;
+import java.util.Set;
+import org.apache.hop.metadata.inject.HopMetadataInjector;
 import org.apache.hop.pipeline.transform.TransformSerializationTestUtil;
 import org.junit.jupiter.api.Test;
 
@@ -67,5 +70,14 @@ public class JsonOutputMetaTest {
     JsonOutputField f3 = meta.getOutputFields().get(2);
     assertEquals("f3", f3.getFieldName());
     assertEquals("element3", f3.getElementName());
+  }
+
+  @Test
+  void testGroupMappings() throws Exception {
+    Map<String, Set<String>> map = HopMetadataInjector.findInjectionGroupKeys(JsonOutputMeta.class);
+    assertEquals(1, map.size());
+    Set<String> fields = map.get("FIELDS");
+    assertTrue(fields.contains("name"));
+    assertTrue(fields.contains("element"));
   }
 }

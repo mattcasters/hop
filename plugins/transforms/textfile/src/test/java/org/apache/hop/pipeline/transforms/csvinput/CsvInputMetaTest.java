@@ -24,9 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.apache.hop.core.HopClientEnvironment;
-import org.apache.hop.core.file.TextFileInputField;
 import org.apache.hop.core.plugins.PluginRegistry;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.value.ValueMetaDate;
@@ -36,6 +37,7 @@ import org.apache.hop.core.row.value.ValueMetaPlugin;
 import org.apache.hop.core.row.value.ValueMetaPluginType;
 import org.apache.hop.core.row.value.ValueMetaString;
 import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.inject.HopMetadataInjector;
 import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
 import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
 import org.apache.hop.pipeline.transform.TransformMeta;
@@ -104,18 +106,27 @@ class CsvInputMetaTest {
     assertNotNull(meta.getInputFields());
     assertEquals(2, meta.getInputFields().size());
 
-    TextFileInputField f1 = meta.getInputFields().get(0);
+    CsvInputField f1 = meta.getInputFields().get(0);
     assertEquals("id", f1.getName());
     assertEquals(IValueMeta.TYPE_INTEGER, f1.getType());
     assertEquals(9, f1.getLength());
     assertEquals(0, f1.getPrecision());
     assertEquals(IValueMeta.TRIM_TYPE_BOTH, f1.getTrimType());
 
-    TextFileInputField f2 = meta.getInputFields().get(1);
+    CsvInputField f2 = meta.getInputFields().get(1);
     assertEquals("name", f2.getName());
     assertEquals(IValueMeta.TYPE_STRING, f2.getType());
     assertEquals(100, f2.getLength());
     assertEquals(-1, f2.getPrecision());
     assertEquals(IValueMeta.TRIM_TYPE_RIGHT, f2.getTrimType());
+  }
+
+  @Test
+  void testMappings() throws Exception {
+    Map<String, Set<String>> map = HopMetadataInjector.findInjectionGroupKeys(CsvInputMeta.class);
+    assertNotNull(map);
+    assertEquals(1, map.size());
+    Set<String> fields = map.get("INPUT_FIELDS");
+    assertEquals(9, fields.size());
   }
 }
