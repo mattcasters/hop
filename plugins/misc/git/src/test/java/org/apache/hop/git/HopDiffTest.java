@@ -32,8 +32,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import org.apache.hop.core.HopClientEnvironment;
+import org.apache.hop.core.annotations.Action;
 import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopException;
+import org.apache.hop.core.plugins.ActionPluginType;
 import org.apache.hop.core.plugins.PluginRegistry;
 import org.apache.hop.core.plugins.TransformPluginType;
 import org.apache.hop.core.variables.Variables;
@@ -45,6 +47,9 @@ import org.apache.hop.pipeline.transforms.checksum.CheckSumMeta;
 import org.apache.hop.pipeline.transforms.csvinput.CsvInputMeta;
 import org.apache.hop.pipeline.transforms.selectvalues.SelectValuesMeta;
 import org.apache.hop.workflow.WorkflowMeta;
+import org.apache.hop.workflow.actions.pipeline.ActionPipeline;
+import org.apache.hop.workflow.actions.start.ActionStart;
+import org.apache.hop.workflow.actions.workflow.ActionWorkflow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -66,7 +71,14 @@ class HopDiffTest {
     PluginRegistry.getInstance()
         .registerPluginClass(
             CheckSumMeta.class.getName(), TransformPluginType.class, Transform.class);
-    // HopEnvironment.init();
+
+    PluginRegistry.getInstance()
+        .registerPluginClass(ActionStart.class.getName(), ActionPluginType.class, Action.class);
+    PluginRegistry.getInstance()
+        .registerPluginClass(ActionWorkflow.class.getName(), ActionPluginType.class, Action.class);
+    PluginRegistry.getInstance()
+        .registerPluginClass(ActionPipeline.class.getName(), ActionPluginType.class, Action.class);
+
     metadataProvider = new MemoryMetadataProvider();
   }
 
