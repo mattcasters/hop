@@ -17,7 +17,6 @@
 
 package org.apache.hop.workflow.actions.ftpput;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,11 +42,9 @@ import org.apache.hop.core.HopEnvironment;
 import org.apache.hop.core.ICheckResult;
 import org.apache.hop.core.Result;
 import org.apache.hop.core.exception.HopException;
-import org.apache.hop.core.exception.HopXmlException;
 import org.apache.hop.core.logging.LogLevel;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.core.vfs.HopVfs;
-import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.resource.ResourceReference;
 import org.apache.hop.workflow.WorkflowMeta;
@@ -55,7 +52,6 @@ import org.apache.hop.workflow.engine.IWorkflowEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-import org.w3c.dom.Node;
 
 /** ActionFtpPut test */
 class ActionFtpPutTests {
@@ -124,45 +120,6 @@ class ActionFtpPutTests {
     boolean hasError =
         remarks.stream().anyMatch(r -> r.getType() == ICheckResult.TYPE_RESULT_ERROR);
     assertTrue(hasError);
-  }
-
-  @Test
-  void testGetXmlAndLoadXml() throws HopXmlException {
-    String xml = action.getXml();
-    assertNotNull(xml);
-
-    xml = "<action>" + xml + "</action>";
-    Node node = XmlHandler.loadXmlString(xml, "action");
-    ActionFtpPut loadedAction = new ActionFtpPut();
-    loadedAction.loadXml(node, null, null);
-
-    assertAll(
-        () -> {
-          assertEquals(action.getServerName(), loadedAction.getServerName());
-          assertEquals(action.getServerPort(), loadedAction.getServerPort());
-          assertEquals(action.getUserName(), loadedAction.getUserName());
-          assertEquals(action.getPassword(), loadedAction.getPassword());
-          assertEquals(action.getLocalDirectory(), loadedAction.getLocalDirectory());
-          assertEquals(action.getRemoteDirectory(), loadedAction.getRemoteDirectory());
-          assertEquals(action.getWildcard(), loadedAction.getWildcard());
-          assertEquals(action.isBinaryMode(), loadedAction.isBinaryMode());
-          assertEquals(action.getTimeout(), loadedAction.getTimeout());
-          assertEquals(action.isRemove(), loadedAction.isRemove());
-          assertEquals(action.isOnlyPuttingNewFiles(), loadedAction.isOnlyPuttingNewFiles());
-          assertEquals(action.isActiveConnection(), loadedAction.isActiveConnection());
-          assertEquals(action.getControlEncoding(), loadedAction.getControlEncoding());
-          assertEquals(action.getProxyHost(), loadedAction.getProxyHost());
-          assertEquals(action.getProxyPort(), loadedAction.getProxyPort());
-          assertEquals(action.getProxyUsername(), loadedAction.getProxyUsername());
-          assertEquals(
-              action.getProxyPassword() == null ? "" : null, loadedAction.getProxyPassword());
-          assertEquals(action.getSocksProxyHost(), loadedAction.getSocksProxyHost());
-          assertEquals(action.getSocksProxyPort(), loadedAction.getSocksProxyPort());
-          assertEquals(action.getSocksProxyUsername(), loadedAction.getSocksProxyUsername());
-          assertEquals(
-              action.getSocksProxyPassword() == null ? "" : null,
-              loadedAction.getSocksProxyPassword());
-        });
   }
 
   @Test

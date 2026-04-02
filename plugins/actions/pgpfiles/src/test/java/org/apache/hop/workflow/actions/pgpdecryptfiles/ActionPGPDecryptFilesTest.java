@@ -16,7 +16,7 @@
  *
  */
 
-package org.apache.hop.workflow.actions.pgpencryptfiles;
+package org.apache.hop.workflow.actions.pgpdecryptfiles;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,7 +30,7 @@ import org.apache.hop.workflow.action.ActionSerializationTestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ActionPGPEncryptFilesTest {
+class ActionPGPDecryptFilesTest {
   @BeforeEach
   void beforeEach() throws Exception {
     PluginRegistry.getInstance()
@@ -43,50 +43,50 @@ class ActionPGPEncryptFilesTest {
 
   @Test
   void testSerializationRoundTrip() throws Exception {
-    ActionPGPEncryptFiles action =
+    ActionPGPDecryptFiles action =
         ActionSerializationTestUtil.testSerialization(
-            "/action-pgp-encrypt-files.xml", ActionPGPEncryptFiles.class);
+            "/action-pgp-decrypt-files.xml", ActionPGPDecryptFiles.class);
 
     assertEquals("pgp-location", action.getGpgLocation());
     assertTrue(action.isArgFromPrevious());
-    assertTrue(action.isAddResultFileNames());
+    assertTrue(action.isIncludeSubFolders());
+    assertTrue(action.isAddResultFilenames());
     assertTrue(action.isDestinationIsAFile());
+    assertTrue(action.isCreateDestinationFolder());
     assertTrue(action.isAddDate());
     assertTrue(action.isAddTime());
     assertTrue(action.isSpecifyFormat());
-    assertEquals("date-time-format", action.getDateTimeFormat());
+    assertEquals("dt-format", action.getDateTimeFormat());
     assertEquals("10", action.getNrErrorsLessThan());
-    assertEquals("success_when_at_least", action.getSuccessCondition());
+    assertEquals("success_if_no_errors", action.getSuccessCondition());
     assertTrue(action.isAddDateBeforeExtension());
     assertTrue(action.isDoNotKeepFolderStructure());
     assertEquals("move_file", action.getIfFileExists());
     assertEquals("dest-folder", action.getDestinationFolder());
-    assertEquals("overwrite_file", action.getIfMovedFileExists());
-    assertEquals("date-time-format", action.getMovedDateTimeFormat());
+    assertEquals("move_file", action.getIfFileExists());
+    assertEquals("move-to-format", action.getMovedDateTimeFormat());
     assertTrue(action.isCreateMoveToFolder());
     assertTrue(action.isAddMovedDate());
     assertTrue(action.isAddMovedTime());
     assertTrue(action.isSpecifyMoveFormat());
     assertTrue(action.isAddMovedDateBeforeExtension());
-    assertTrue(action.isAsciiMode());
-    assertEquals(3, action.getPgpFiles().size());
-    ActionPGPEncryptFiles.PgpFile f = action.getPgpFiles().getFirst();
-    assertEquals(ActionPGPEncryptFiles.ActionType.ENCRYPT, f.getActionType());
-    assertEquals("folder1", f.getSourceFileFolder());
-    assertEquals("user1", f.getUserId());
-    assertEquals("target1", f.getDestinationFileFolder());
+    assertEquals(3, action.getFilesToDecrypt().size());
+    ActionPGPDecryptFiles.FileToDecrypt f = action.getFilesToDecrypt().getFirst();
+    assertEquals("source1", f.getSourceFileFolder());
+    assertEquals("destination1", f.getDestinationFileFolder());
     assertEquals("wildcard1", f.getWildcard());
-    f = action.getPgpFiles().get(1);
-    assertEquals(ActionPGPEncryptFiles.ActionType.SIGN, f.getActionType());
-    assertEquals("folder2", f.getSourceFileFolder());
-    assertEquals("user2", f.getUserId());
-    assertEquals("target2", f.getDestinationFileFolder());
+    assertEquals("pass1", f.getPassphrase());
+
+    f = action.getFilesToDecrypt().get(1);
+    assertEquals("source2", f.getSourceFileFolder());
+    assertEquals("destination2", f.getDestinationFileFolder());
     assertEquals("wildcard2", f.getWildcard());
-    f = action.getPgpFiles().getLast();
-    assertEquals(ActionPGPEncryptFiles.ActionType.SIGN_AND_ENCRYPT, f.getActionType());
-    assertEquals("folder3", f.getSourceFileFolder());
-    assertEquals("user3", f.getUserId());
-    assertEquals("target3", f.getDestinationFileFolder());
+    assertEquals("pass2", f.getPassphrase());
+
+    f = action.getFilesToDecrypt().getLast();
+    assertEquals("source3", f.getSourceFileFolder());
+    assertEquals("destination3", f.getDestinationFileFolder());
     assertEquals("wildcard3", f.getWildcard());
+    assertEquals("pass3", f.getPassphrase());
   }
 }
