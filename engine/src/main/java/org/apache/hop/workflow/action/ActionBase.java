@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.IAttributes;
@@ -52,6 +54,7 @@ import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.core.variables.Variables;
 import org.apache.hop.core.xml.XmlHandler;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
 import org.apache.hop.resource.IResourceHolder;
@@ -68,6 +71,8 @@ import org.w3c.dom.Node;
  * does not implement IAction (although it implements most of the same methods), so individual
  * action classes must implement IAction and specifically the <code>execute()</code> method.
  */
+@Getter
+@Setter
 public abstract class ActionBase
     implements IAction,
         Cloneable,
@@ -78,12 +83,13 @@ public abstract class ActionBase
         IResourceHolder {
 
   /** The name of the action */
-  private String name;
+  @HopMetadataProperty private String name;
 
   /** The description of the action */
-  private String description;
+  @HopMetadataProperty private String description;
 
   /** ID as defined in the xml or annotation. */
+  @HopMetadataProperty(key = "type")
   private String pluginId;
 
   /** Whether the action has changed. */
@@ -109,6 +115,12 @@ public abstract class ActionBase
 
   private IHopMetadataProvider metadataProvider;
 
+  @HopMetadataProperty(
+      key = "group",
+      groupKey = "attributes",
+      mapKeyWrapper = "name",
+      mapValueWrapper = "attribute",
+      mapValueClass = HashMap.class)
   protected Map<String, Map<String, String>> attributesMap;
 
   protected Map<String, Object> extensionDataMap;

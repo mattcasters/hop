@@ -19,20 +19,31 @@ package org.apache.hop.pipeline;
 
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.hop.base.BaseHopMeta;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopXmlException;
 import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
 import org.apache.hop.pipeline.transform.TransformMeta;
 import org.w3c.dom.Node;
 
 /** Defines a link between 2 transforms in a pipeline */
+@Getter
+@Setter
 public class PipelineHopMeta extends BaseHopMeta<TransformMeta>
     implements Comparable<PipelineHopMeta>, Cloneable {
   private static final Class<?> PKG = Pipeline.class;
   public static final String CONST_SPACES = "      ";
+
+  @HopMetadataProperty(key = "from", storeWithName = true, lookupInList = "transforms")
+  protected TransformMeta from;
+
+  @HopMetadataProperty(key = "to", storeWithName = true, lookupInList = "transforms")
+  protected TransformMeta to;
 
   public PipelineHopMeta(TransformMeta from, TransformMeta to, boolean en) {
     this.from = from;

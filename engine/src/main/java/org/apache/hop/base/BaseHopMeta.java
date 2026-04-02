@@ -35,11 +35,13 @@ public abstract class BaseHopMeta<T> {
 
   protected boolean split = false;
 
-  @HopMetadataProperty(key = "from", storeWithName = true, lookupInList = "transforms")
-  protected T from;
+  protected abstract T getFrom();
 
-  @HopMetadataProperty(key = "to", storeWithName = true, lookupInList = "transforms")
-  protected T to;
+  protected abstract void setFrom(T from);
+
+  protected abstract T getTo();
+
+  protected abstract void setTo(T to);
 
   @HopMetadataProperty(key = "enabled")
   protected boolean enabled;
@@ -52,8 +54,8 @@ public abstract class BaseHopMeta<T> {
   protected BaseHopMeta(
       boolean split, T from, T to, boolean enabled, boolean changed, boolean errorHop) {
     this.split = split;
-    this.from = from;
-    this.to = to;
+    setFrom(from);
+    setTo(to);
     this.enabled = enabled;
     this.changed = changed;
     this.errorHop = errorHop;
