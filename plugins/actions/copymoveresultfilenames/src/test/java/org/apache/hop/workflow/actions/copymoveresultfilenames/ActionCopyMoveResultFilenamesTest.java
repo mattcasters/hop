@@ -18,7 +18,8 @@
 
 package org.apache.hop.workflow.actions.copymoveresultfilenames;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.hop.workflow.action.ActionSerializationTestUtil;
 import org.junit.jupiter.api.Test;
