@@ -204,7 +204,7 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdCreateDestinationFolder.top = new FormAttachment(wlCreateDestinationFolder, 0, SWT.CENTER);
     fdCreateDestinationFolder.right = new FormAttachment(100, 0);
     wCreateDestinationFolder.setLayoutData(fdCreateDestinationFolder);
-    wCreateDestinationFolder.addListener(SWT.Selection, e->action.setChanged());
+    wCreateDestinationFolder.addListener(SWT.Selection, e -> action.setChanged());
 
     // Overwrite files
     wlOverwriteFile = new Label(shell, SWT.RIGHT);
@@ -225,7 +225,7 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdOverwriteFile.top = new FormAttachment(wlOverwriteFile, 0, SWT.CENTER);
     fdOverwriteFile.right = new FormAttachment(100, 0);
     wOverwriteFile.setLayoutData(fdOverwriteFile);
-    wOverwriteFile.addListener(SWT.Selection, e->action.setChanged());
+    wOverwriteFile.addListener(SWT.Selection, e -> action.setChanged());
 
     // Remove source filename from result filenames
     wlRemovedSourceFilename = new Label(shell, SWT.RIGHT);
@@ -246,7 +246,7 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdRemovedSourceFilename.top = new FormAttachment(wlRemovedSourceFilename, 0, SWT.CENTER);
     fdRemovedSourceFilename.right = new FormAttachment(100, 0);
     wRemovedSourceFilename.setLayoutData(fdRemovedSourceFilename);
-    wRemovedSourceFilename.addListener(SWT.Selection, e->action.setChanged());
+    wRemovedSourceFilename.addListener(SWT.Selection, e -> action.setChanged());
 
     // Add destination filename to result filenames
     wlAddDestinationFilename = new Label(shell, SWT.RIGHT);
@@ -268,7 +268,7 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdAddDestinationFilename.top = new FormAttachment(wlAddDestinationFilename, 0, SWT.CENTER);
     fdAddDestinationFilename.right = new FormAttachment(100, 0);
     wAddDestinationFilename.setLayoutData(fdAddDestinationFilename);
-    wAddDestinationFilename.addListener(SWT.Selection, e->action.setChanged());
+    wAddDestinationFilename.addListener(SWT.Selection, e -> action.setChanged());
 
     // Add date?
     wlAddDate = new Label(shell, SWT.RIGHT);
@@ -288,10 +288,12 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdAddDate.top = new FormAttachment(wlAddDate, 0, SWT.CENTER);
     fdAddDate.right = new FormAttachment(100, 0);
     wAddDate.setLayoutData(fdAddDate);
-    wAddDate.addListener(SWT.Selection, e->{
-      action.setChanged();
-      setAddDateBeforeExtension();
-    });
+    wAddDate.addListener(
+        SWT.Selection,
+        e -> {
+          action.setChanged();
+          setAddDateBeforeExtension();
+        });
 
     // Add time?
     wlAddTime = new Label(shell, SWT.RIGHT);
@@ -311,10 +313,12 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdAddTime.top = new FormAttachment(wlAddTime, 0, SWT.CENTER);
     fdAddTime.right = new FormAttachment(100, 0);
     wAddTime.setLayoutData(fdAddTime);
-    wAddTime.addListener(SWT.Selection, e->{
-      action.setChanged();
-      setAddDateBeforeExtension();
-    });
+    wAddTime.addListener(
+        SWT.Selection,
+        e -> {
+          action.setChanged();
+          setAddDateBeforeExtension();
+        });
 
     // Specify date time format?
     wlSpecifyFormat = new Label(shell, SWT.RIGHT);
@@ -335,11 +339,13 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdSpecifyFormat.top = new FormAttachment(wlSpecifyFormat, 0, SWT.CENTER);
     fdSpecifyFormat.right = new FormAttachment(100, 0);
     wSpecifyFormat.setLayoutData(fdSpecifyFormat);
-    wSpecifyFormat.addListener(SWT.Selection, e->{
-      action.setChanged();
-      setDateTimeFormat();
-      setAddDateBeforeExtension();
-    });
+    wSpecifyFormat.addListener(
+        SWT.Selection,
+        e -> {
+          action.setChanged();
+          setDateTimeFormat();
+          setAddDateBeforeExtension();
+        });
 
     // Prepare a list of possible DateTimeFormats...
     String[] dats = Const.getDateFormats();
@@ -387,10 +393,12 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdAddDateBeforeExtension.top = new FormAttachment(wlAddDateBeforeExtension, 0, SWT.CENTER);
     fdAddDateBeforeExtension.right = new FormAttachment(100, 0);
     wAddDateBeforeExtension.setLayoutData(fdAddDateBeforeExtension);
-    wAddDateBeforeExtension.addListener(SWT.Selection, e->{
-      action.setChanged();
-      checkLimit();
-    });
+    wAddDateBeforeExtension.addListener(
+        SWT.Selection,
+        e -> {
+          action.setChanged();
+          checkLimit();
+        });
 
     // LimitTo grouping?
     // ////////////////////////
@@ -426,10 +434,12 @@ public class ActionCopyMoveResultFilenamesDialog extends ActionDialog {
     fdSpecifyWildcard.top = new FormAttachment(wlSpecifyWildcard, 0, SWT.CENTER);
     fdSpecifyWildcard.right = new FormAttachment(100, 0);
     wSpecifyWildcard.setLayoutData(fdSpecifyWildcard);
-    wSpecifyWildcard.addListener(SWT.Selection, e->{
-      action.setChanged();
-      checkLimit();
-    });
+    wSpecifyWildcard.addListener(
+        SWT.Selection,
+        e -> {
+          action.setChanged();
+          checkLimit();
+        });
 
     // Wildcard line
     wlWildcard = new Label(wLimitTo, SWT.RIGHT);

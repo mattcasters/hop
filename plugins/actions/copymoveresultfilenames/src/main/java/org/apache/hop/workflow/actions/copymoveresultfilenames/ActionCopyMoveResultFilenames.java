@@ -396,7 +396,7 @@ public class ActionCopyMoveResultFilenames extends ActionBase implements Cloneab
                   PKG, "ActionCopyMoveResultFilenames.Log.FileExists", destinationFilename));
         }
         if (!fileExists || isOverwriteFile()) {
-          if (getAction()==ActionType.COPY) {
+          if (getAction() == ActionType.COPY) {
             // Copy file
             FileObjectUtils.writeContent(sourceFile, destinationFile);
             nrSuccess++;
