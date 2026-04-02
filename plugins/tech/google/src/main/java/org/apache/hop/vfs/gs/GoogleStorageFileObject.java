@@ -231,11 +231,16 @@ public class GoogleStorageFileObject extends AbstractFileObject<GoogleStorageFil
 
   @Override
   protected void doDelete() throws Exception {
-    if (!hasObject()) {
-      throw new IOException("Object is not attached");
-    }
-    if (!blob.delete()) {
-      throw new IOException("Failed to delete object '" + this + "' (not found)");
+    if (hasObject()) {
+      blob.delete();
+    } else if (bucketName != null
+        && !bucketName.isEmpty()
+        && bucketPath != null
+        && !bucketPath.isEmpty()) {
+      Storage storage = getAbstractFileSystem().setupStorage();
+      storage.delete(BlobId.of(bucketName, stripLeadingSlash(bucketPath)));
+    } else {
+      throw new IOException("Cannot delete: missing bucket/object path for '" + this + "'");
     }
     getAbstractFileSystem().invalidateListCacheForParentOf(bucketName, bucketPath);
   }
@@ -247,6 +252,12 @@ public class GoogleStorageFileObject extends AbstractFileObject<GoogleStorageFil
     cachedType = null;
     cachedSize = null;
     cachedLastModified = null;
+  }
+
+  @Override
+  protected boolean doSetLastModifiedTime(long modTime) throws Exception {
+    // GCS objects are immutable. Returning true keeps modified time identical to created time.
+    return true;
   }
 
   @Override
