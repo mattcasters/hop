@@ -18,10 +18,10 @@
 
 package org.apache.hop.workflow.actions.folderscompare;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.hop.workflow.action.ActionSerializationTestUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class ActionFoldersCompareTest {
@@ -30,12 +30,12 @@ class ActionFoldersCompareTest {
     ActionFoldersCompare action =
         ActionSerializationTestUtil.testSerialization(
             "/action-folders-compare.xml", ActionFoldersCompare.class);
-    Assertions.assertEquals("all", action.getCompareOnly());
-    Assertions.assertEquals("wildcard", action.getWildcard());
-    Assertions.assertEquals("folder1", action.getFilename1());
-    Assertions.assertEquals("folder2", action.getFilename2());
-    Assertions.assertTrue(action.isIncludeSubFolders());
-    Assertions.assertTrue(action.isCompareFileContent());
-    Assertions.assertTrue(action.isCompareFileSize());
+    assertEquals("all", action.getCompareOnly());
+    assertEquals("wildcard", action.getWildcard());
+    assertEquals("folder1", action.getFilename1());
+    assertEquals("folder2", action.getFilename2());
+    assertTrue(action.isIncludeSubFolders());
+    assertTrue(action.isCompareFileContent());
+    assertTrue(action.isCompareFileSize());
   }
 }
