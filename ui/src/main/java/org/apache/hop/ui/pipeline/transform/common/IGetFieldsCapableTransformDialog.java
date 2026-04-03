@@ -107,7 +107,6 @@ public interface IGetFieldsCapableTransformDialog<TransformMetaType extends Base
   }
 
   default void getFields(final TransformMetaType meta) {
-
     final String[] incomingFieldNames = getFieldNames(meta);
     final List<String> newFieldNames = getNewFieldNames(incomingFieldNames);
 

@@ -22,13 +22,16 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.hop.core.CheckResult;
 import org.apache.hop.core.ICheckResult;
 import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopException;
+import org.apache.hop.core.exception.HopFileException;
 import org.apache.hop.core.exception.HopPluginException;
 import org.apache.hop.core.exception.HopTransformException;
+import org.apache.hop.core.fileinput.InputFile;
 import org.apache.hop.core.injection.Injection;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
@@ -45,6 +48,9 @@ import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
+import org.apache.hop.pipeline.transforms.common.ICsvInputAwareMeta;
+import org.apache.hop.pipeline.transforms.file.BaseFileErrorHandling;
+import org.apache.hop.pipeline.transforms.fileinput.text.TextFileInputMeta;
 import org.apache.hop.resource.IResourceNaming;
 import org.apache.hop.resource.ResourceDefinition;
 import org.apache.hop.resource.ResourceEntry;
@@ -63,7 +69,8 @@ import org.apache.hop.staticschema.util.SchemaDefinitionUtil;
     documentationUrl = "/pipeline/transforms/csvinput.html")
 @Getter
 @Setter
-public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData> {
+public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData>
+    implements ICsvInputAwareMeta<CsvInputField> {
 
   private static final Class<?> PKG = CsvInput.class;
 
@@ -321,6 +328,46 @@ public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData> {
   }
 
   @Override
+  public BaseFileErrorHandling getErrorHandling() {
+    return null;
+  }
+
+  @Override
+  public String getErrorCountField() {
+    return "";
+  }
+
+  @Override
+  public String getErrorFieldsField() {
+    return "";
+  }
+
+  @Override
+  public String getErrorTextField() {
+    return "";
+  }
+
+  @Override
+  public boolean isErrorLineSkipped() {
+    return false;
+  }
+
+  @Override
+  public boolean isIncludeFilename() {
+    return false;
+  }
+
+  @Override
+  public boolean isIncludeRowNumber() {
+    return false;
+  }
+
+  @Override
+  public String getLength() {
+    return "";
+  }
+
+  @Override
   public void check(
       List<ICheckResult> remarks,
       PipelineMeta pipelineMeta,
@@ -392,8 +439,8 @@ public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData> {
 
   /**
    * @param variables the variable variables to use
-   * @param definitions
-   * @param iResourceNaming
+   * @param definitions The definitions
+   * @param iResourceNaming The resource naming to use
    * @param metadataProvider the metadataProvider in which non-hop metadata could reside.
    * @return the filename of the exported resource
    */
@@ -434,5 +481,63 @@ public class CsvInputMeta extends BaseTransformMeta<CsvInput, CsvInputData> {
   @Override
   public boolean supportsErrorHandling() {
     return true;
+  }
+
+  @Override
+  public String getFileType() {
+    return "CSV";
+  }
+
+  @Override
+  public List<InputFile> getInputFiles() {
+    if (StringUtils.isNotEmpty(filenameField) || StringUtils.isEmpty(filename)) {
+      return List.of();
+    }
+    List<InputFile> inputFiles = new ArrayList<>();
+    InputFile inputFile = new InputFile();
+    inputFiles.add(inputFile);
+    inputFile.setFileName(filename);
+    return inputFiles;
+  }
+
+  @Override
+  public String getEscapeCharacter() {
+    return "";
+  }
+
+  @Override
+  public boolean isBreakInEnclosureAllowed() {
+    return false;
+  }
+
+  @Override
+  public int getFileFormatTypeNr() {
+    return TextFileInputMeta.FILE_FORMAT_MIXED;
+  }
+
+  @Override
+  public boolean hasHeader() {
+    return isHeaderPresent();
+  }
+
+  @Override
+  public int getNrHeaderLines() {
+    return isHeaderPresent() ? 1 : 0;
+  }
+
+  /**
+   * This is the file to get the header from for the "Get Fields" button.
+   *
+   * @param variables the {@link PipelineMeta}
+   * @return The header file object
+   */
+  @Override
+  public FileObject getHeaderFileObject(IVariables variables) throws HopFileException {
+    List<InputFile> inputFiles = getInputFiles();
+    if (inputFiles.isEmpty()) {
+      return null;
+    }
+    String headerFileName = variables.resolve(inputFiles.getFirst().getFileName());
+    return HopVfs.getFileObject(headerFileName, variables);
   }
 }

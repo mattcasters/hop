@@ -33,6 +33,7 @@ import org.apache.hop.core.gui.IGc.ELineStyle;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
+import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.transform.stream.StreamIcon;
 
 @Getter
@@ -85,6 +86,9 @@ public abstract class BasePainter<Hop extends BaseHopMeta<?>, Part extends IBase
    * UI based on "Enable infinite move" (only show when infinite move is enabled).
    */
   protected boolean showOriginBoundary;
+
+  /** In case we want to use metadata objects to help with drawing on the pipeline or workflow */
+  protected IHopMetadataProvider metadataProvider;
 
   public BasePainter(
       IGc gc,

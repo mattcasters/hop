@@ -28,16 +28,18 @@ import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.exception.HopPluginException;
+import org.apache.hop.core.gui.ITextFileInputField;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.value.ValueMetaBase;
 import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.metadata.api.HopMetadataProperty;
+import org.jspecify.annotations.NonNull;
 
 /** Describes a single field in a text file */
 @Getter
 @Setter
-public class CsvInputField {
+public class CsvInputField implements ITextFileInputField {
   @HopMetadataProperty(key = "name", injectionKey = "INPUT_NAME")
   private String name;
 
@@ -96,8 +98,8 @@ public class CsvInputField {
     this(null, -9, -9);
   }
 
-  public CsvInputField(String fieldname, int position, int length) {
-    this.name = fieldname;
+  public CsvInputField(String fieldName, int position, int length) {
+    this.name = fieldName;
     this.length = length;
     this.type = IValueMeta.TYPE_STRING;
     this.format = "";
@@ -426,8 +428,18 @@ public class CsvInputField {
     return -1;
   }
 
-  public CsvInputField createNewInstance(String newFieldname, int x, int newlength) {
-    return new CsvInputField(newFieldname, x, newlength);
+  @Override
+  public int getPosition() {
+    return -1;
+  }
+
+  public CsvInputField createNewInstance(String newFieldName, int position, int newLength) {
+    return new CsvInputField(newFieldName, position, newLength);
+  }
+
+  @Override
+  public void setNullString(String nullString) {
+    // Ignore this option
   }
 
   public IValueMeta toValueMeta(String fieldOriginTransformName, IVariables variables)
@@ -448,5 +460,36 @@ public class CsvInputField {
     v.setCurrencySymbol(getCurrencySymbol());
     v.setTrimType(getTrimType());
     return v;
+  }
+
+  @Override
+  public boolean isRepeated() {
+    return false;
+  }
+
+  @Override
+  public String getNullString() {
+    return "";
+  }
+
+  @Override
+  public String getIfNullValue() {
+    return "";
+  }
+
+  @Override
+  public boolean isIgnored() {
+    return false;
+  }
+
+  @Override
+  public int compareTo(@NonNull ITextFileInputField iTextFileInputField) {
+    if (!(iTextFileInputField instanceof CsvInputField field)) {
+      return -9;
+    }
+    if (name == null) {
+      return 9;
+    }
+    return name.compareTo(field.getName());
   }
 }
