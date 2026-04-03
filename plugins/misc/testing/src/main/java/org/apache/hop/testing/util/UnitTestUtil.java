@@ -120,7 +120,7 @@ public class UnitTestUtil {
 
       List<UnitTestResult> testResults = new ArrayList<>();
       DataSetConst.validateTransformResultAgainstUnitTest(
-          testPipeline, test, metadataProvider, testResults);
+          testPipeline, test, metadataProvider, variables, testResults);
       testResultsEvaluator.evaluateTestResults(testPipeline, testResults);
     } catch (HopException e) {
       exceptionEvaluator.evaluateTestException(test, testPipelineMeta, e);

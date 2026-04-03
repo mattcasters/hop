@@ -31,6 +31,7 @@ import org.apache.hop.core.logging.ILogChannel;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.RowMeta;
+import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
@@ -99,6 +100,7 @@ public class DataSetConst {
       IPipelineEngine<PipelineMeta> pipeline,
       PipelineUnitTest unitTest,
       IHopMetadataProvider metadataProvider,
+      IVariables variables,
       List<UnitTestResult> results)
       throws HopException {
     int nrErrors = 0;
@@ -166,7 +168,7 @@ public class DataSetConst {
               + "', fields: "
               + resultRowMeta.toString());
 
-      DataSet goldenDataSet = unitTest.getGoldenDataSet(log, metadataProvider, location);
+      DataSet goldenDataSet = unitTest.getGoldenDataSet(log, metadataProvider, variables, location);
       List<Object[]> goldenRows = goldenDataSet.getAllRows(pipeline, log, location);
       IRowMeta goldenRowMeta = goldenDataSet.getMappedDataSetFieldsRowMeta(location);
 

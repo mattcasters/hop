@@ -143,11 +143,14 @@ public class PipelineUnitTest extends HopMetadataBase implements Cloneable, IHop
    * @throws HopException
    */
   public DataSet getGoldenDataSet(
-      ILogChannel log, IHopMetadataProvider metadataProvider, PipelineUnitTestSetLocation location)
+      ILogChannel log,
+      IHopMetadataProvider metadataProvider,
+      IVariables variables,
+      PipelineUnitTestSetLocation location)
       throws HopException {
 
     String transformName = location.getTransformName();
-    String goldenDataSetName = location.getDataSetName();
+    String goldenDataSetName = variables.resolve(location.getDataSetName());
 
     try {
       // Look in the golden data sets list for the mentioned transform name
