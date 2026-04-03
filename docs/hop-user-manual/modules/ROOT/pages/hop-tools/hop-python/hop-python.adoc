@@ -1,0 +1,140 @@
+////
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+////
+:imagesdir: ../assets/images
+:description: Program Hop pipelines and workflows in Python
+
+= Hop Python
+
+== Introduction
+
+Using the https://www.py4j.org[Py4J] library we can bridge the world of Java and Python.  It's one of the key components behind the popular https://spark.apache.org/docs/latest/api/python/index.html[PySpark] project.
+
+== Goals
+
+The goal is to expose Python scripting to the art of building Hop metadata, allowing for very dynamic scenarios that go way beyond techniques like xref:pipeline/metadata-injection.adoc[metadata injection].
+
+== Running the gateway
+
+The Hop Python Gateway is a small server that communicates with your python scripts.  To use the Hop Python integration, run the following `hop` command:
+
+[source,bash]
+----
+$ sh hop python
+2026/04/03 21:03:48 - HopPython - The Hop Python Gateway server was started on port 25333
+----
+
+NOTE: This will run until you hit CTRL-C and stop this server.
+
+== Setting up Python3
+
+Install virtual environments support for Python3:
+
+[source,bash]
+----
+sudo apt install virtualenv python3-virtualenv -y
+----
+
+Create a new virtual environment as a new project called `project1`
+
+[source,bash]
+----
+$ virtualenv -p /usr/bin/python3 project1
+----
+
+Activate the `project1` environment:
+
+[source,bash]
+----
+$ source project1/bin/activate
+----
+
+Install Py4j in this `project1` environment:
+
+[source,bash]
+----
+$ (project1) $ pip3 install py4j
+----
+
+== Getting started with PyHop
+
+First we import the Py4J Java gateway package and get the `PyHop` object in the `hop` variable:
+
+[source,python]
+----
+from py4j.java_gateway import JavaGateway
+gateway = JavaGateway()
+hop = gateway.entry_point.getPyHop()
+----
+
+== Building a pipeline
+
+Create a new Hop pipeline:
+
+[source,python]
+----
+p = hop.newPipeline();
+p.setName("pipeline1");
+----
+
+Create 2 new transforms and a hop in between:
+
+[source,python]
+----
+t1=hop.newTransform("t1", "CSVInput")
+p.addTransform(t1)
+
+t2 = hop.newTransform("t2", "Dummy")
+p.addTransform(t2)
+
+h12 = hop.newHop(t1, t2)
+p.addPipelineHop(h12)
+----
+
+As you can see you need to select the plugin ID as the second parameter when asking for a new transform.  You can browse the IDs in the Plugin perspective under the `Transform` plugin type.
+
+Configure the CSV Input transform:
+
+[source,python]
+----
+csv = t1.getTransform()
+csv.setFilename('myfile.csv')
+csv.setHeaderPresent(True)
+csv.setEnclosure('"')
+csv.setDelimiter(',')
+csv.setEncoding('UTF-8')
+csv.setSchemaDefinition('myfile-schema')
+----
+
+Create a new field in case we don't have a schema:
+
+[source,python]
+----
+f1 = csv.newInputField()
+f1.setName("id")
+f1.setTypeWithString("Integer")
+f1.setFormat("00#")
+f1.setLength(7)
+
+csv.getInputFields().add(f1)
+----
+
+TODO:
+
+* Complete a simple example
+* Create and use methods to run the pipeline
+* Add methods for workflows and actions
+

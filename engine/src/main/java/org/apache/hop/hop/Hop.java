@@ -69,7 +69,9 @@ public class Hop {
   private IVariables variables;
   private MultiMetadataProvider metadataProvider;
 
-  public Hop() throws Exception {}
+  public Hop() {
+    // Nothing yet
+  }
 
   public static void main(String[] args) throws Exception {
     Hop hop = new Hop();
