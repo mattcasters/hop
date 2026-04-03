@@ -59,6 +59,7 @@ public class LocationMouseDoubleClickExtensionPoint
       throws HopException {
     HopGuiPipelineGraph pipelineGraph = pipelineGraphExtension.getPipelineGraph();
     PipelineMeta pipelineMeta = pipelineGraph.getPipelineMeta();
+    pipelineGraphExtension.setPreventingDefault(true);
 
     PipelineUnitTest unitTest = TestingGuiPlugin.getCurrentUnitTest(pipelineMeta);
     if (unitTest == null) {
