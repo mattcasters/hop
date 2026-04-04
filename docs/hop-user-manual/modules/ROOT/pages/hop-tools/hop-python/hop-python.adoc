@@ -17,6 +17,8 @@ under the License.
 :imagesdir: ../assets/images
 :description: Program Hop pipelines and workflows in Python
 
+:TOC:
+
 = Hop Python
 
 == Introduction
@@ -29,17 +31,56 @@ The goal is to expose Python scripting to the art of building Hop metadata, allo
 
 == Running the gateway
 
-The Hop Python Gateway is a small server that communicates with your python scripts.  To use the Hop Python integration, run the following `hop` command:
+The Hop Python Gateway is a small server that communicates with your python scripts.
+
+=== Running Hop Python
+
+To use the Hop Python integration, run the following `hop` command:
 
 [source,bash]
 ----
 $ sh hop python
-2026/04/03 21:03:48 - HopPython - The Hop Python Gateway server was started on port 25333
+2026/04/03 21:03:48 - HopPython - The Hop Python Gateway server was started on 127.0.0.1:25333
 ----
 
-NOTE: This will run until you hit CTRL-C and stop this server.
+=== Ports and addresses
+
+To run the gateway on different ports or make it available on different IP addresses, you can use these options:
+
+
+|===
+|Option |Description
+
+|`--gateway-port`
+|The port on which to run the Hop Python (py4j) gateway service.  The default port is 25333.
+
+|`--gateway-ip-address`
+|The IP address on which to run the Hop Python (py4j) gateway service.  The default is `127.0.0.1` (localhost).  Use `0.0.0.0` to make the service widely available.
+
+|===
+
+
+=== Projects and environments
+
+You can also enable a project or environment in your Python Gateway server:
+
+[source,bash]
+----
+$ sh hop python -j demo
+2026/04/04 16:39:48 - HopPython - Enabling project 'demo'
+2026/04/04 16:39:48 - HopPython - The Hop Python Gateway server was started on 127.0.0.1:25333
+----
+
+This sets variables like `PROJECT_HOME`, enables environment configurations, makes available metadata objects and data sets, right in your Python scripts.
+
+
+
+
+NOTE: This will run until you hit CTRL-C and stop the gateway server.
 
 == Setting up Python3
+
+=== Installation
 
 Install virtual environments support for Python3:
 
@@ -69,7 +110,7 @@ Install Py4j in this `project1` environment:
 $ (project1) $ pip3 install py4j
 ----
 
-== Getting started with PyHop
+=== Getting started with PyHop
 
 First we import the Py4J Java gateway package and get the `PyHop` object in the `hop` variable:
 
@@ -80,31 +121,43 @@ gateway = JavaGateway()
 hop = gateway.entry_point.getPyHop()
 ----
 
-== Building a pipeline
+=== Connecting to another host or port
+
+You can create gateway parameters if you deviate from the default port (25333) or hostname (127.0.0.1)
+
+[source,python]
+----
+gateway_params = GatewayParameters(address='192.168.1.50', port=25333)
+gateway = JavaGateway(gateway_parameters=gateway_params)
+----
+
+== The basics
+
+=== Building a pipeline
 
 Create a new Hop pipeline:
 
 [source,python]
 ----
-p = hop.newPipeline();
-p.setName("pipeline1");
+p = hop.newPipelineMeta()
+p.setName("pipeline1")
 ----
 
 Create 2 new transforms and a hop in between:
 
 [source,python]
 ----
-t1=hop.newTransform("t1", "CSVInput")
+t1=hop.newTransformMeta("t1", "CSVInput")
 p.addTransform(t1)
 
-t2 = hop.newTransform("t2", "Dummy")
+t2 = hop.newTransformMeta("t2", "Dummy")
 p.addTransform(t2)
 
-h12 = hop.newHop(t1, t2)
+h12 = hop.newPipelineHopMeta(t1, t2)
 p.addPipelineHop(h12)
 ----
 
-As you can see you need to select the plugin ID as the second parameter when asking for a new transform.  You can browse the IDs in the Plugin perspective under the `Transform` plugin type.
+As you can see you need to select the plugin ID as the second parameter when asking for a new transform.  You can browse the IDs in the Plugin perspective under the `Transform` plugin type or use `print(hop.describeAvailableTransformPlugins())`
 
 Configure the CSV Input transform:
 
@@ -132,9 +185,247 @@ f1.setLength(7)
 csv.getInputFields().add(f1)
 ----
 
-TODO:
+== Pipeline API
 
-* Complete a simple example
-* Create and use methods to run the pipeline
-* Add methods for workflows and actions
+Here are the methods for working with pipelines:
+
+
+|===
+|Method |Description |Returns
+
+|`loadPipelineMeta(String filename)`
+|Load the pipeline with given filename. Variables in the name are resolved.
+|`PipelineMeta`
+
+|`newPipelineMeta()`
+|Create a new pipeline metadata object
+|`PipelineMeta`
+
+|`describeAvailableTransformPlugins()`
+|Describe the available transform plugins
+|`String`
+
+|`newTransformMeta(String name, String pluginId)`
+|Create a new transform metadata object with the given name and plugin ID
+|`TransformMeta`
+
+|`newPipelineHopMeta(TransformMeta from, TransformMeta to)`
+|Create a new pipeline hop between two transforms
+|`PipelineHopMeta`
+
+|`newPipelineEngine(
+PipelineMeta pipelineMeta, String runConfiguration, String logLevelDescription)`
+|Create a new pipeline engine. You can execute your pipeline with it.
+|`IPipelineEngine`
+
+|===
+
+
+== Workflow API
+
+Building, loading, and executing workflows is similar to those for pipelines:
+
+|===
+|Method |Description |Returns
+
+|`loadWorkflowMeta(String filename)`
+|Load workflow metadata from a file. The filename can contain variable expressions.
+|`WorkflowMeta`
+
+|`newWorkflowMeta()`
+|Create a new workflow metadata object. It does not contain a START action.
+|`WorkflowMeta`
+
+|`describeAvailableActionPlugins()`
+|Describe the available action plugins
+|`String`
+
+|`newActionMeta(String name, String pluginId)`
+|Create a new action metadata object
+|`ActionMeta`
+
+|`newWorkflowHopMeta(ActionMeta from, ActionMeta to)`
+|Create a new workflow hop between two actions.
+|`WorkflowHopMeta`
+
+|`newWorkflowEngine(
+WorkflowMeta workflowMeta, String runConfiguration, String logLevelDescription)`
+|Create a new workflow engine. You can execute your workflow with it.
+|`IWorkflowEngine`
+
+|===
+
+The command to start the execution of your workflow is:
+
+[source, python]
+----
+result = workflowEngine.startExecution()
+----
+
+== Metadata
+
+You have access to the metadata in your project through a few simple methods:
+
+=== Describe available metadata plugins
+
+To get a list of all the available metadata plugins you can use the Plugins Perspective in the Hop GUI (select the `Metadata` plugin type).  Alternatively you can use:
+
+[source, python]
+----
+print(hop.describeAvailableMetadataPlugins())
+----
+
+=== Get a metadata serializer
+
+You can get a serializer with which you can perform CRUD operations with elements with the following command:
+
+[source, python]
+----
+dbSerializer = hop.getMetadataSerializer("rdbms")
+dwh = dbSerializer.load("DWH")
+----
+
+If you want to get fancy and work with all the metadata plugin keys, you can use method `listMetadataKeys()` which gives you an array of strings.  Likewise, you can get a list of database element names as an array with `listMetadataElements("rdbms")`
+
+=== Creating new metadata elements
+
+To create new metadata elements we have a method for you:
+
+[source, python]
+----
+newDb = hop.newMetadataElement("rdbms")
+----
+
+=== Load a metadata element
+
+[source, python]
+----
+dwh = hop.loadMetadataElement("rdbms", "dwh")
+----
+
+=== Save or update a  metadata element
+
+[source, python]
+----
+hop.saveMetadataElement(dwh)
+----
+
+== Advanced
+
+=== Creating objects in a plugin classpath
+
+Sometimes you want to create objects that are defined in and part of an installed plugin classpath. The Hop Python Gateway server doesn't automatically have access to all classes in the Hop project.
+
+This makes the following NOT WORK:
+
+[source,python]
+----
+field = gateway.jvm.org.apache.hop.pipeline.transforms.csvinput.CsvInputField()
+----
+
+This doesn't work because the plugin has its own separate class loader isolated from the rest of Hop and the other plugins.
+
+To create new objects in the classpath of a plugin, you can use the following method to create a new input field for the CSV Input transform using the `CsvInputMeta` class:
+
+[source,python]
+----
+# Recap from the example above:
+#
+from py4j.java_gateway import JavaGateway
+hop = JavaGateway().entry_point.getPyHop()
+t=hop.newTransform("t1", "CSVInput")
+csv = t.getTransform()
+
+# Create a new CSV Input Field:
+#
+field = hop.newTransformObject(csv, "org.apache.hop.pipeline.transforms.csvinput.CsvInputField")
+----
+
+== Examples
+
+=== Create a pipeline from scratch and run it
+
+The example below creates a new pipeline and adds 2 transforms to it:
+
+* A row generator that will generate 100M rows
+* A Dummy to consume the rows
+
+Then the example executes the pipeline, prints the log and evaluates the result.
+
+.The example
+[%collapsible]
+====
+[source,python]
+----
+import sys
+import xml.dom.minidom
+
+from py4j.java_gateway import JavaGateway
+
+gateway = JavaGateway()
+hop = gateway.entry_point.getPyHop()
+vars = hop.getVariables()
+
+# Build the pipeline metadata.
+# We simply want to generate 100M empty rows and send them to a dummy transform.
+#
+pipelineMeta = hop.newPipelineMeta()
+pipelineMeta.setName("generate-rows-test")
+
+generate = hop.newTransformMeta("generate", "RowGenerator")
+generateTransform = generate.getTransform()
+generateTransform.setRowLimit("100000000")
+
+dummy = hop.newTransformMeta("dummy", "Dummy")
+
+pipelineMeta.addTransform(generate)
+pipelineMeta.addTransform(dummy)
+pipelineMeta.addPipelineHop(hop.newPipelineHopMeta(generate, dummy))
+
+# Now we can execute this pipeline.
+# The "local" pipeline run configuration is picked up from the project metadata.
+# This project is specified with the "--project" option when you run "hop python".
+#
+pipeline = hop.newPipeline(pipelineMeta, "local", "Basic")
+
+# Execute this pipeline
+#
+pipeline.execute()
+print("Execution of the pipeline has started.")
+
+# Get the status of the engine
+#
+print("Status: "+pipeline.getStatusDescription())
+
+# Wait until it's finished
+#
+pipeline.waitUntilFinished()
+
+# Evaluate the result of the pip# Get the logging from this execution
+#
+pipelineLog = hop.getLogging(pipeline.getLogChannelId())
+print("The logging of the pipeline:")
+print("----------------------------")
+print(pipelineLog)
+
+# Get the logging of a specific transform copy.
+#
+generateLog = hop.getLogging( pipeline.getTransform("generate", 0).getLogChannelId() )
+print("The logging of transform 'generate':")
+print("-------------------------------------")
+print(generateLog)
+
+# Evaluate the result of the pipeline.
+# This object contains result rows, result files, metrics, and so on.
+#
+result = pipeline.getResult()
+
+# Were there errors?
+#
+if result.getNrErrors() != 0:
+  print("Pipeline had errors!")
+
+----
+====
+
 

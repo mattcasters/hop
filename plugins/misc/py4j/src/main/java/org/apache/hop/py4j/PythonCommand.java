@@ -20,10 +20,13 @@ package org.apache.hop.py4j;
 
 import static java.lang.Thread.sleep;
 
+import java.net.InetAddress;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hop.core.Const;
+import org.apache.hop.core.config.plugin.ConfigPlugin;
 import org.apache.hop.core.config.plugin.IConfigOptions;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.logging.ILogChannel;
@@ -58,6 +61,12 @@ public class PythonCommand implements Runnable, IHopCommand, IHasHopMetadataProv
           "The port on which to run the Hop Python (py4j) gateway service.  The default port is 25333.")
   private String gatewayPort;
 
+  @CommandLine.Option(
+      names = {"--gateway-ip-address"},
+      description =
+          "The server on which to run the Hop Python (py4j) gateway service.  The default is 127.0.0.1 (localhost).  Use 0.0.0.0 to make the service widely available.")
+  private String gatewayAddress;
+
   private PyHop pyHop;
 
   public PythonCommand() {}
@@ -74,7 +83,28 @@ public class PythonCommand implements Runnable, IHopCommand, IHasHopMetadataProv
     pyHop = new PyHop();
     pyHop.initialize(variables, metadataProvider, log);
 
-    Hop.addMixinPlugins(cmd, CATEGORY_PYTHON);
+    // Same plugins as for RUN,DOC, etc. It's mainly for loading projects etc.
+    Hop.addMixinPlugins(cmd, ConfigPlugin.CATEGORY_PYTHON);
+  }
+
+  /**
+   * Sets metadataProvider
+   *
+   * @param metadataProvider value of metadataProvider
+   */
+  public void setMetadataProvider(MultiMetadataProvider metadataProvider) {
+    this.metadataProvider = metadataProvider;
+    this.pyHop.setMetadataProvider(metadataProvider);
+  }
+
+  /**
+   * Sets variables
+   *
+   * @param variables value of variables
+   */
+  public void setVariables(IVariables variables) {
+    this.variables = variables;
+    this.pyHop.setVariables(variables);
   }
 
   protected void handleMixinActions() throws HopException {
@@ -97,13 +127,23 @@ public class PythonCommand implements Runnable, IHopCommand, IHasHopMetadataProv
       System.setProperty(Const.HOP_PLATFORM_RUNTIME, "PYTHON");
       handleMixinActions();
 
-      int port = Const.toInt(gatewayPort, 25333);
+      int port = Const.toInt(variables.resolve(gatewayPort), 25333);
+      String ipAddress = variables.resolve(gatewayAddress);
+      if (StringUtils.isEmpty(ipAddress)) {
+        ipAddress = "127.0.0.1";
+      }
 
       // Run the gateway
       //
-      GatewayServer gatewayServer = new GatewayServer(this, port);
+      GatewayServer.GatewayServerBuilder builder = new GatewayServer.GatewayServerBuilder();
+      GatewayServer gatewayServer =
+          builder
+              .entryPoint(this)
+              .javaPort(port)
+              .javaAddress(InetAddress.getByName(ipAddress))
+              .build();
       gatewayServer.start();
-      log.logBasic("The Hop Python Gateway server was started on port " + port);
+      log.logBasic("The Hop Python Gateway server was started on " + ipAddress + ":" + port);
 
       do sleep(100);
       while (true);
