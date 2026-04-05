@@ -16,16 +16,16 @@
  *
  */
 
-package org.apache.hop.stream.metadata;
+package org.apache.hop.datastream.metadata;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.hop.datastream.plugin.IDataStream;
 import org.apache.hop.metadata.api.HopMetadata;
 import org.apache.hop.metadata.api.HopMetadataBase;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.HopMetadataPropertyType;
 import org.apache.hop.metadata.api.IHopMetadata;
-import org.apache.hop.stream.plugin.IDataStream;
 
 @HopMetadata(
     key = "data-stream",

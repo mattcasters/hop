@@ -18,6 +18,7 @@
 
 package org.apache.hop.arrow.datastream.file;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,11 +34,13 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.FloatingPointVector;
+import org.apache.arrow.vector.TimeStampMilliTZVector;
 import org.apache.arrow.vector.TimeStampVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowFileReader;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.FloatingPointPrecision;
 import org.apache.arrow.vector.types.TimeUnit;
@@ -56,11 +59,11 @@ import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.variables.IVariables;
+import org.apache.hop.datastream.metadata.DataStreamMeta;
+import org.apache.hop.datastream.plugin.DataStreamPlugin;
+import org.apache.hop.datastream.plugin.IDataStream;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
-import org.apache.hop.stream.metadata.DataStreamMeta;
-import org.apache.hop.stream.plugin.DataStreamPlugin;
-import org.apache.hop.stream.plugin.IDataStream;
 
 @GuiPlugin
 @DataStreamPlugin(
@@ -102,13 +105,15 @@ public class ArrowFileDataStream implements IDataStream {
   private String realFilename;
   private int realBufferSize;
   private FileOutputStream fileOutputStream;
-  private ArrowStreamWriter arrowFileWriter;
+  private ArrowStreamWriter arrowStreamWriter;
 
   private FileInputStream fileInputStream;
-  private ArrowFileReader arrowFileReader;
+  private ArrowStreamReader arrowStreamReader;
+  private VectorSchemaRoot readRootSchema;
   private Schema readSchema;
-  private VectorSchemaRoot readBatch;
   private int readRowIndex;
+  private List<FieldVector> readFieldVectors;
+  private int batchReads;
 
   public ArrowFileDataStream() {
     DataStreamPlugin annotation = getClass().getAnnotation(DataStreamPlugin.class);
@@ -151,7 +156,7 @@ public class ArrowFileDataStream implements IDataStream {
       emptyBuffer();
     }
     try {
-      arrowFileWriter.end();
+      arrowStreamWriter.end();
     } catch (Exception e) {
       throw new HopException("Error ending arrow file stream", e);
     }
@@ -159,22 +164,10 @@ public class ArrowFileDataStream implements IDataStream {
 
   @Override
   public void close() {
-    vectorSchemaRoot.close();
-    rootAllocator.close();
-    if (arrowFileWriter != null) {
-      arrowFileWriter.close();
-    }
-    if (arrowFileReader != null) {
+    if (arrowStreamReader != null) {
       try {
-        arrowFileReader.close();
+        arrowStreamReader.close();
       } catch (IOException e) {
-        // Ignore
-      }
-    }
-    if (fileOutputStream != null) {
-      try {
-        fileOutputStream.close();
-      } catch (Exception e) {
         // Ignore
       }
     }
@@ -185,6 +178,23 @@ public class ArrowFileDataStream implements IDataStream {
         // Ignore
       }
     }
+    if (vectorSchemaRoot != null) {
+      vectorSchemaRoot.close();
+    }
+    if (arrowStreamWriter != null) {
+      arrowStreamWriter.close();
+    }
+    if (fileOutputStream != null) {
+      try {
+        fileOutputStream.close();
+      } catch (IOException e) {
+        // Ignore
+      }
+    }
+
+    if (rootAllocator != null) {
+      rootAllocator.close();
+    }
   }
 
   @Override
@@ -194,6 +204,10 @@ public class ArrowFileDataStream implements IDataStream {
     }
     this.rowMeta = rowMeta;
 
+    initializeStreamWriting();
+  }
+
+  private void initializeStreamWriting() throws HopException {
     List<Field> fields = new ArrayList<>();
     for (IValueMeta valueMeta : rowMeta.getValueMetaList()) {
       String name = valueMeta.getName();
@@ -219,14 +233,20 @@ public class ArrowFileDataStream implements IDataStream {
     }
     Schema writeSchema = new Schema(fields);
     vectorSchemaRoot = VectorSchemaRoot.create(writeSchema, rootAllocator);
+
+    // Allocate room in the field vectors
+    //
+    allocateFieldVectorsSpace();
+
     try {
       fileOutputStream = new FileOutputStream(variables.resolve(filename));
     } catch (Exception e) {
       throw new HopException("Error writing to file output stream", e);
     }
-    arrowFileWriter = new ArrowStreamWriter(vectorSchemaRoot, null, fileOutputStream.getChannel());
+    arrowStreamWriter =
+        new ArrowStreamWriter(vectorSchemaRoot, null, fileOutputStream.getChannel());
     try {
-      arrowFileWriter.start();
+      arrowStreamWriter.start();
     } catch (Exception e) {
       throw new HopException("Error startig to write to file output stream", e);
     }
@@ -242,39 +262,70 @@ public class ArrowFileDataStream implements IDataStream {
       return rowMeta;
     }
     try {
-      fileInputStream = new FileInputStream(realFilename);
-      arrowFileReader = new ArrowFileReader(fileInputStream.getChannel(), rootAllocator);
-      VectorSchemaRoot rootSchema = arrowFileReader.getVectorSchemaRoot();
-      readSchema = rootSchema.getSchema();
-      this.rowMeta = new RowMeta();
-      for (Field field : readSchema.getFields()) {
-        int hopType =
-            switch (field.getType().getTypeID()) {
-              case Utf8 -> IValueMeta.TYPE_STRING;
-              case Int -> IValueMeta.TYPE_INTEGER;
-              case Bool -> IValueMeta.TYPE_BOOLEAN;
-              case Timestamp -> IValueMeta.TYPE_DATE;
-              case Decimal -> IValueMeta.TYPE_BIGNUMBER;
-              case FloatingPoint -> IValueMeta.TYPE_NUMBER;
-              default ->
-                  throw new HopException(
-                      "Unsupported data type ID found in stream for field "
-                          + field.getName()
-                          + " : "
-                          + field.getType().getTypeID().name());
-            };
-        IValueMeta valueMeta = ValueMetaFactory.createValueMeta(field.getName(), hopType);
-        this.rowMeta.addValueMeta(valueMeta);
-
-        // Create a read batch.  This batch will be filled regularly.
-        readBatch = arrowFileReader.getVectorSchemaRoot();
-        readRowIndex = 0;
-      }
+      initializeStreamReading();
     } catch (Exception e) {
       throw new HopException(
           "Error reading row metadata from Apache Arrow streaming file " + realFilename, e);
     }
     return this.rowMeta;
+  }
+
+  private void initializeStreamReading() throws HopException, IOException {
+    File file = new File(realFilename);
+    if (!file.exists()) {
+      throw new HopException("The Arrow stream file to read from doesn't exist: " + realFilename);
+    }
+
+    fileInputStream = new FileInputStream(realFilename);
+    arrowStreamReader = new ArrowStreamReader(fileInputStream, rootAllocator);
+    readRootSchema = arrowStreamReader.getVectorSchemaRoot();
+    readSchema = readRootSchema.getSchema();
+
+    this.rowMeta = new RowMeta();
+    for (Field field : readSchema.getFields()) {
+      int hopType =
+          switch (field.getType().getTypeID()) {
+            case Utf8 -> IValueMeta.TYPE_STRING;
+            case Int -> IValueMeta.TYPE_INTEGER;
+            case Bool -> IValueMeta.TYPE_BOOLEAN;
+            case Timestamp -> IValueMeta.TYPE_DATE;
+            case Decimal -> IValueMeta.TYPE_BIGNUMBER;
+            case FloatingPoint -> IValueMeta.TYPE_NUMBER;
+            default ->
+                throw new HopException(
+                    "Unsupported data type ID found in stream for field "
+                        + field.getName()
+                        + " : "
+                        + field.getType().getTypeID().name());
+          };
+      IValueMeta valueMeta = ValueMetaFactory.createValueMeta(field.getName(), hopType);
+      this.rowMeta.addValueMeta(valueMeta);
+
+      // Create a read batch.  This batch will be filled regularly.
+      readRowIndex = 0;
+    }
+  }
+
+  private void allocateFieldVectorsSpace() throws HopException {
+    for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
+      IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
+      FieldVector fieldVector = vectorSchemaRoot.getVector(fieldIndex);
+
+      // Set all values for the field vector
+      //
+      switch (valueMeta.getType()) {
+        case IValueMeta.TYPE_STRING -> ((VarCharVector) fieldVector).allocateNew(realBufferSize);
+        case IValueMeta.TYPE_INTEGER -> ((BigIntVector) fieldVector).allocateNew(realBufferSize);
+        case IValueMeta.TYPE_NUMBER -> ((Float8Vector) fieldVector).allocateNew(realBufferSize);
+        case IValueMeta.TYPE_BIGNUMBER -> ((DecimalVector) fieldVector).allocateNew(realBufferSize);
+        case IValueMeta.TYPE_BOOLEAN -> ((BitVector) fieldVector).allocateNew(realBufferSize);
+        case IValueMeta.TYPE_DATE -> ((TimeStampVector) fieldVector).allocateNew(realBufferSize);
+        default ->
+            throw new HopException(
+                "Allocating space for field vector isn't supported yet for data type "
+                    + valueMeta.getTypeDesc());
+      }
+    }
   }
 
   @Override
@@ -287,23 +338,28 @@ public class ArrowFileDataStream implements IDataStream {
 
   private void emptyBuffer() throws HopException {
     try {
+      vectorSchemaRoot.setRowCount(rowBuffer.size());
+
+      // Set the data in the field vectors for the rows in the buffer
+      //
       for (int rowIndex = 0; rowIndex < rowBuffer.size(); rowIndex++) {
         Object[] rowData = rowBuffer.get(rowIndex);
+
         for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
           IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
+          FieldVector fieldVector = vectorSchemaRoot.getVector(fieldIndex);
+
+          // Set all values for the field vector
+          //
           Object valueData = valueMeta.getNativeDataType(rowData[fieldIndex]);
-          if (valueMeta.isNull(valueData)) {
-            vectorSchemaRoot.getVector(fieldIndex).setNull(fieldIndex);
-            continue;
-          }
           switch (valueMeta.getType()) {
-            case IValueMeta.TYPE_STRING, IValueMeta.TYPE_JSON ->
-                addString(rowIndex, fieldIndex, valueMeta, valueData);
-            case IValueMeta.TYPE_INTEGER -> addInteger(rowIndex, fieldIndex, valueMeta, valueData);
-            case IValueMeta.TYPE_NUMBER, IValueMeta.TYPE_BIGNUMBER ->
-                addBigNumber(rowIndex, fieldIndex, valueMeta, valueData);
-            case IValueMeta.TYPE_BOOLEAN -> addBoolean(rowIndex, fieldIndex, valueMeta, valueData);
-            case IValueMeta.TYPE_DATE -> addDate(rowIndex, fieldIndex, valueMeta, valueData);
+            case IValueMeta.TYPE_STRING -> addString(rowIndex, fieldVector, valueMeta, valueData);
+            case IValueMeta.TYPE_INTEGER -> addInteger(rowIndex, fieldVector, valueMeta, valueData);
+            case IValueMeta.TYPE_NUMBER -> addNumber(rowIndex, fieldVector, valueMeta, valueData);
+            case IValueMeta.TYPE_BIGNUMBER ->
+                addBigNumber(rowIndex, fieldVector, valueMeta, valueData);
+            case IValueMeta.TYPE_BOOLEAN -> addBoolean(rowIndex, fieldVector, valueMeta, valueData);
+            case IValueMeta.TYPE_DATE -> addDate(rowIndex, fieldVector, valueMeta, valueData);
             default ->
                 throw new HopException(
                     "Data streaming to an Apache Arrow stream file isn't yet supported for Hop data type "
@@ -311,7 +367,9 @@ public class ArrowFileDataStream implements IDataStream {
           }
         }
       }
-      arrowFileWriter.writeBatch();
+      // With values set on all field vectors, we can now write the batch.
+      //
+      arrowStreamWriter.writeBatch();
     } catch (Exception e) {
       throw new HopException("Error writing row to Apache Arrow stream file " + filename, e);
     } finally {
@@ -320,49 +378,76 @@ public class ArrowFileDataStream implements IDataStream {
     }
   }
 
-  private void addString(int rowIndex, int fieldIndex, IValueMeta valueMeta, Object valueData)
+  private void addString(
+      int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
-    VarCharVector vector = (VarCharVector) vectorSchemaRoot.getVector(fieldIndex);
-    if (rowIndex == 0) {
-      vector.allocateNew(rowBuffer.size());
+    VarCharVector vector = (VarCharVector) fieldVector;
+    // Check the size of the vector
+    //
+    if (valueMeta.isNull(valueData)) {
+      vector.setNull(rowIndex);
+    } else {
+      try {
+        vector.set(rowIndex, valueMeta.getString(valueData).getBytes());
+      } catch (Exception e) {
+        throw new HopException(e.getMessage());
+      }
     }
-    vector.set(rowIndex, valueMeta.getString(valueData).getBytes());
   }
 
-  private void addInteger(int rowIndex, int fieldIndex, IValueMeta valueMeta, Object valueData)
+  private void addInteger(
+      int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
-    BigIntVector vector = (BigIntVector) vectorSchemaRoot.getVector(fieldIndex);
-    if (rowIndex == 0) {
-      vector.allocateNew(rowBuffer.size());
+    BigIntVector vector = (BigIntVector) fieldVector;
+    if (valueMeta.isNull(valueData)) {
+      vector.setNull(rowIndex);
+    } else {
+      vector.set(rowIndex, valueMeta.getInteger(valueData));
     }
-    vector.set(rowIndex, valueMeta.getInteger(valueData));
   }
 
-  private void addBigNumber(int rowIndex, int fieldIndex, IValueMeta valueMeta, Object valueData)
+  private void addNumber(
+      int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
-    DecimalVector vector = (DecimalVector) vectorSchemaRoot.getVector(fieldIndex);
-    if (rowIndex == 0) {
-      vector.allocateNew(rowBuffer.size());
+    Float8Vector vector = (Float8Vector) fieldVector;
+    if (valueMeta.isNull(valueData)) {
+      vector.setNull(rowIndex);
+    } else {
+      vector.set(rowIndex, valueMeta.getNumber(valueData));
     }
-    vector.set(rowIndex, valueMeta.getBigNumber(valueData));
   }
 
-  private void addBoolean(int rowIndex, int fieldIndex, IValueMeta valueMeta, Object valueData)
+  private void addBigNumber(
+      int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
-    BitVector vector = (BitVector) vectorSchemaRoot.getVector(fieldIndex);
-    if (rowIndex == 0) {
-      vector.allocateNew(rowBuffer.size());
+    DecimalVector vector = (DecimalVector) fieldVector;
+    if (valueMeta.isNull(valueData)) {
+      vector.setNull(rowIndex);
+    } else {
+      vector.set(rowIndex, valueMeta.getBigNumber(valueData));
     }
-    vector.set(rowIndex, Boolean.TRUE.equals(valueMeta.getBoolean(valueData)) ? 1 : 0);
   }
 
-  private void addDate(int rowIndex, int fieldIndex, IValueMeta valueMeta, Object valueData)
+  private void addBoolean(
+      int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
-    BigIntVector vector = (BigIntVector) vectorSchemaRoot.getVector(fieldIndex);
-    if (rowIndex == 0) {
-      vector.allocateNew(rowBuffer.size());
+    BitVector vector = (BitVector) fieldVector;
+    if (valueMeta.isNull(valueData)) {
+      vector.setNull(rowIndex);
+    } else {
+      vector.set(rowIndex, Boolean.TRUE.equals(valueMeta.getBoolean(valueData)) ? 1 : 0);
     }
-    vector.set(rowIndex, valueMeta.getDate(valueData).getTime());
+  }
+
+  private void addDate(
+      int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
+      throws HopException {
+    TimeStampMilliTZVector vector = (TimeStampMilliTZVector) fieldVector;
+    if (valueMeta.isNull(valueData)) {
+      vector.setNull(rowIndex);
+    } else {
+      vector.set(rowIndex, valueMeta.getDate(valueData).getTime());
+    }
   }
 
   @Override
@@ -374,13 +459,13 @@ public class ArrowFileDataStream implements IDataStream {
     try {
       // See if there are more rows to populate.
       //
-      int batchSize = readBatch.getRowCount();
+      int batchSize = readRootSchema.getRowCount();
       if (readRowIndex < batchSize) {
         return buildReadRow(readRowIndex++);
       }
       // Read another batch
       readRowIndex = 0;
-      if (arrowFileReader.loadNextBatch()) {
+      if (readNextBatch()) {
         return buildReadRow(readRowIndex++);
       } else {
         // No more data to be expected
@@ -392,23 +477,38 @@ public class ArrowFileDataStream implements IDataStream {
     }
   }
 
+  private boolean readNextBatch() throws IOException {
+    boolean readNext = arrowStreamReader.loadNextBatch();
+    batchReads++;
+    readRootSchema = arrowStreamReader.getVectorSchemaRoot();
+    while (readRootSchema.getRowCount() == 0 && readNext) {
+      readNext = arrowStreamReader.loadNextBatch();
+      batchReads++;
+      readRootSchema = arrowStreamReader.getVectorSchemaRoot();
+    }
+    readFieldVectors = readRootSchema.getFieldVectors();
+
+    return readNext;
+  }
+
   private Object[] buildReadRow(int rowIndex) throws HopException {
     Object[] rowData = RowDataUtil.allocateRowData(rowBuffer.size());
+
     for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
       IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
       Object valueData;
-      FieldVector fieldVector = readBatch.getFieldVectors().get(fieldIndex);
+      FieldVector fieldVector = readFieldVectors.get(fieldIndex);
       if (fieldVector.isNull(rowIndex)) {
         valueData = null;
       } else {
         valueData =
             switch (valueMeta.getType()) {
-              case IValueMeta.TYPE_STRING -> getString(rowIndex, fieldIndex);
-              case IValueMeta.TYPE_BOOLEAN -> getBoolean(rowIndex, fieldIndex);
-              case IValueMeta.TYPE_INTEGER -> getInteger(rowIndex, fieldIndex);
-              case IValueMeta.TYPE_NUMBER -> getNumber(rowIndex, fieldIndex);
-              case IValueMeta.TYPE_BIGNUMBER -> getBigNumber(rowIndex, fieldIndex);
-              case IValueMeta.TYPE_DATE -> getDate(rowIndex, fieldIndex);
+              case IValueMeta.TYPE_STRING -> getString(rowIndex, fieldVector);
+              case IValueMeta.TYPE_BOOLEAN -> getBoolean(rowIndex, fieldVector);
+              case IValueMeta.TYPE_INTEGER -> getInteger(rowIndex, fieldVector);
+              case IValueMeta.TYPE_NUMBER -> getNumber(rowIndex, fieldVector);
+              case IValueMeta.TYPE_BIGNUMBER -> getBigNumber(rowIndex, fieldVector);
+              case IValueMeta.TYPE_DATE -> getDate(rowIndex, fieldVector);
               default ->
                   throw new HopException(
                       "Reading value "
@@ -423,33 +523,33 @@ public class ArrowFileDataStream implements IDataStream {
     return rowData;
   }
 
-  private String getString(int rowIndex, int fieldIndex) {
-    VarCharVector vector = (VarCharVector) readBatch.getFieldVectors().get(fieldIndex);
+  private String getString(int rowIndex, FieldVector fieldVector) {
+    VarCharVector vector = (VarCharVector) fieldVector;
     return new String(vector.get(rowIndex));
   }
 
-  private Boolean getBoolean(int rowIndex, int fieldIndex) {
-    BitVector vector = (BitVector) readBatch.getFieldVectors().get(fieldIndex);
+  private Boolean getBoolean(int rowIndex, FieldVector fieldVector) {
+    BitVector vector = (BitVector) fieldVector;
     return vector.get(rowIndex) == 1;
   }
 
-  private Long getInteger(int rowIndex, int fieldIndex) {
-    BigIntVector vector = (BigIntVector) readBatch.getFieldVectors().get(fieldIndex);
+  private Long getInteger(int rowIndex, FieldVector fieldVector) {
+    BigIntVector vector = (BigIntVector) fieldVector;
     return vector.get(rowIndex);
   }
 
-  private Double getNumber(int rowIndex, int fieldIndex) {
-    FloatingPointVector vector = (FloatingPointVector) readBatch.getFieldVectors().get(fieldIndex);
+  private Double getNumber(int rowIndex, FieldVector fieldVector) {
+    FloatingPointVector vector = (FloatingPointVector) fieldVector;
     return vector.getValueAsDouble(rowIndex);
   }
 
-  private Date getDate(int rowIndex, int fieldIndex) {
-    TimeStampVector vector = (TimeStampVector) readBatch.getFieldVectors().get(fieldIndex);
+  private Date getDate(int rowIndex, FieldVector fieldVector) {
+    TimeStampVector vector = (TimeStampVector) fieldVector;
     return new Date(vector.get(rowIndex));
   }
 
-  private BigDecimal getBigNumber(int rowIndex, int fieldIndex) {
-    DecimalVector vector = (DecimalVector) readBatch.getFieldVectors().get(fieldIndex);
+  private BigDecimal getBigNumber(int rowIndex, FieldVector fieldVector) {
+    DecimalVector vector = (DecimalVector) fieldVector;
     return vector.getObject(rowIndex);
   }
 }

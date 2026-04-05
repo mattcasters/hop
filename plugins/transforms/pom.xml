@@ -53,6 +53,7 @@
         <module>databasejoin</module>
         <module>databaselookup</module>
         <module>datagrid</module>
+        <module>datastream</module>
         <module>dbimpact</module>
         <module>dbproc</module>
         <module>ddl</module>
@@ -152,7 +153,6 @@
         <module>ssh</module>
         <module>standardizephonenumber</module>
         <module>stanfordnlp</module>
-        <module>datastream</module>
         <module>streamlookup</module>
         <module>streamschemamerge</module>
         <module>stringcut</module>

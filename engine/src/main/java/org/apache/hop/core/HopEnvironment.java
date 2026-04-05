@@ -41,6 +41,7 @@ import org.apache.hop.core.plugins.TransformPluginType;
 import org.apache.hop.core.variables.DescribedVariable;
 import org.apache.hop.core.variables.VariableRegistry;
 import org.apache.hop.core.variables.VariableScope;
+import org.apache.hop.datastream.plugin.DataStreamPluginType;
 import org.apache.hop.execution.plugin.ExecutionInfoLocationPluginType;
 import org.apache.hop.execution.sampler.ExecutionDataSamplerPluginType;
 import org.apache.hop.hop.plugin.HopCommandPluginType;
@@ -48,7 +49,6 @@ import org.apache.hop.imp.ImportPluginType;
 import org.apache.hop.metadata.plugin.MetadataPluginType;
 import org.apache.hop.pipeline.engine.PipelineEnginePluginType;
 import org.apache.hop.pipeline.transform.RowDistributionPluginType;
-import org.apache.hop.stream.plugin.DataStreamPluginType;
 import org.apache.hop.workflow.engine.WorkflowEnginePluginType;
 
 /**

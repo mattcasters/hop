@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.hop.pipeline.transforms.streaminput;
+package org.apache.hop.pipeline.transforms.streamoutput;
 
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
@@ -26,16 +26,16 @@ import org.apache.hop.ui.core.gui.GuiCompositeWidgets;
 import org.apache.hop.ui.pipeline.transform.BaseTransformDialog;
 import org.eclipse.swt.widgets.Shell;
 
-public class DataStreamInputDialog extends BaseTransformDialog {
-  private static final Class<?> PKG = DataStreamInputDialog.class;
+public class DataStreamOutputDialog extends BaseTransformDialog {
+  private static final Class<?> PKG = DataStreamOutputDialog.class;
 
-  private final DataStreamInputMeta input;
+  private final DataStreamOutputMeta input;
   private GuiCompositeWidgets widgets;
 
-  public DataStreamInputDialog(
+  public DataStreamOutputDialog(
       Shell parent,
       IVariables variables,
-      DataStreamInputMeta transformMeta,
+      DataStreamOutputMeta transformMeta,
       PipelineMeta pipelineMeta) {
     super(parent, variables, transformMeta, pipelineMeta);
     input = transformMeta;
@@ -43,7 +43,7 @@ public class DataStreamInputDialog extends BaseTransformDialog {
 
   @Override
   public String open() {
-    createShell(BaseMessages.getString(PKG, "DataStreamInputMeta.Name"));
+    createShell(BaseMessages.getString(PKG, "DataStreamOutputMeta.Name"));
 
     buildButtonBar().ok(e -> ok()).cancel(e -> cancel()).build();
 
@@ -54,7 +54,7 @@ public class DataStreamInputDialog extends BaseTransformDialog {
             variables,
             wTransformName,
             wOk,
-            DataStreamInputMeta.GUI_PLUGIN_ELEMENT_PARENT_ID,
+            DataStreamOutputMeta.GUI_PLUGIN_ELEMENT_PARENT_ID,
             input);
 
     focusTransformName();
@@ -74,7 +74,7 @@ public class DataStreamInputDialog extends BaseTransformDialog {
       return;
     }
 
-    widgets.getWidgetsContents(input, DataStreamInputMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
+    widgets.getWidgetsContents(input, DataStreamOutputMeta.GUI_PLUGIN_ELEMENT_PARENT_ID);
 
     // return value
     transformName = wTransformName.getText();

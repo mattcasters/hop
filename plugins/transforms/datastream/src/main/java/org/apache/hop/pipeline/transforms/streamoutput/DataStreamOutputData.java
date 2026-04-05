@@ -16,15 +16,13 @@
  *
  */
 
-package org.apache.hop.pipeline.transforms.streaminput;
+package org.apache.hop.pipeline.transforms.streamoutput;
 
-import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.datastream.plugin.IDataStream;
 import org.apache.hop.pipeline.transform.BaseTransformData;
 import org.jspecify.annotations.NonNull;
 
-public class DataStreamInputData extends BaseTransformData {
+public class DataStreamOutputData extends BaseTransformData {
   public String dataStreamName;
   public @NonNull IDataStream dataStream;
-  public IRowMeta streamRowMeta;
 }

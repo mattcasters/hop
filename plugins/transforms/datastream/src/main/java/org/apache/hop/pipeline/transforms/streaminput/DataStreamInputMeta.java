@@ -24,28 +24,31 @@ import org.apache.hop.core.annotations.Transform;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopTransformException;
 import org.apache.hop.core.gui.plugin.GuiElementType;
+import org.apache.hop.core.gui.plugin.GuiPlugin;
 import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.variables.IVariables;
+import org.apache.hop.datastream.metadata.DataStreamMeta;
+import org.apache.hop.datastream.plugin.IDataStream;
 import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.metadata.api.IHopMetadataSerializer;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.apache.hop.stream.metadata.DataStreamMeta;
-import org.apache.hop.stream.plugin.IDataStream;
 import org.jspecify.annotations.NonNull;
 
+@Getter
+@Setter
 @Transform(
     id = "DataStreamInput",
-    name = "i18::DataStreamInputMeta.Name",
-    description = "i18::DataStreamInputMeta.Description",
+    name = "i18:org.apache.hop.pipeline.transforms.streaminput:DataStreamInputMeta.Name",
+    description =
+        "i18:org.apache.hop.pipeline.transforms.streaminput:DataStreamInputMeta.Description",
     image = "stream-input.svg",
     categoryDescription = "i18n:org.apache.hop.pipeline.transform:BaseTransform.Category.Input",
     keywords = "i18n::DataStreamInputMeta.keyword",
     documentationUrl = "/pipeline/transforms/data-stream-input.html")
-@Getter
-@Setter
+@GuiPlugin
 public class DataStreamInputMeta extends BaseTransformMeta<DataStreamInput, DataStreamInputData> {
   public static final String GUI_PLUGIN_ELEMENT_PARENT_ID = "DATA_STREAM_INPUT_DIALOG_OPTIONS";
   public static final String WIDGET_COLUMN_NAME_FIELD = "COLUMN_NAME_FIELD";

@@ -28,11 +28,11 @@ import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.gui.plugin.GuiPlugin;
 import org.apache.hop.core.plugins.IPlugin;
 import org.apache.hop.core.plugins.PluginRegistry;
+import org.apache.hop.datastream.metadata.DataStreamMeta;
+import org.apache.hop.datastream.plugin.DataStreamPlugin;
+import org.apache.hop.datastream.plugin.DataStreamPluginType;
+import org.apache.hop.datastream.plugin.IDataStream;
 import org.apache.hop.i18n.BaseMessages;
-import org.apache.hop.stream.metadata.DataStreamMeta;
-import org.apache.hop.stream.plugin.DataStreamPlugin;
-import org.apache.hop.stream.plugin.DataStreamPluginType;
-import org.apache.hop.stream.plugin.IDataStream;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgets;
 import org.apache.hop.ui.core.gui.GuiCompositeWidgetsAdapter;
@@ -43,7 +43,6 @@ import org.apache.hop.ui.hopgui.HopGui;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
@@ -138,8 +137,7 @@ public class DataStreamMetaEditor extends MetadataEditor<DataStreamMeta> {
     fdlPluginType.left = new FormAttachment(0, 0); // First one in the left top corner
     fdlPluginType.right = new FormAttachment(middle, -margin);
     wlPluginType.setLayoutData(fdlPluginType);
-    wPluginType =
-        new ComboVar(manager.getVariables(), parent, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+    wPluginType = new ComboVar(manager.getVariables(), parent, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
     PropsUi.setLook(wPluginType);
     wPluginType.setItems(getPluginTypes());
     FormData fdPluginType = new FormData();

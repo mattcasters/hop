@@ -16,7 +16,7 @@
  *
  */
 
-package org.apache.hop.stream.plugin;
+package org.apache.hop.datastream.plugin;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

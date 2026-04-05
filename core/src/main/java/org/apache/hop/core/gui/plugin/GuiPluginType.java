@@ -18,7 +18,6 @@
 package org.apache.hop.core.gui.plugin;
 
 import java.util.Map;
-import org.apache.hop.core.exception.HopRuntimeException;
 import org.apache.hop.core.plugins.BasePluginType;
 import org.apache.hop.core.plugins.PluginAnnotationType;
 

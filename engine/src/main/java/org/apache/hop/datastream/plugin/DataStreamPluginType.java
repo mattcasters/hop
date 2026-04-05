@@ -16,7 +16,7 @@
  *
  */
 
-package org.apache.hop.stream.plugin;
+package org.apache.hop.datastream.plugin;
 
 import org.apache.hop.core.plugins.BasePluginType;
 import org.apache.hop.core.plugins.IPluginType;
