@@ -16,7 +16,7 @@
  *
  */
 
-package org.apache.hop.ui.stream.metadata;
+package org.apache.hop.ui.datastream.metadata;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -66,7 +66,6 @@ public class DataStreamMetaEditor extends MetadataEditor<DataStreamMeta> {
 
   // Then come the plugin specific fields from the data stream plugin
   //
-  private ScrolledComposite wsPluginComp;
   private Composite wPluginComp;
   private GuiCompositeWidgets guiPluginWidgets;
   private Map<String, IDataStream> metaMap;
@@ -86,7 +85,18 @@ public class DataStreamMetaEditor extends MetadataEditor<DataStreamMeta> {
   }
 
   @Override
+  public boolean equals(Object o) {
+    return super.equals(o);
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
   public void createControl(Composite parent) {
+    ScrolledComposite wsPluginComp;
     PropsUi props = PropsUi.getInstance();
     int middle = props.getMiddlePct();
     int margin = PropsUi.getMargin() + 2;

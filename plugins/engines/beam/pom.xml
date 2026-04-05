@@ -590,6 +590,10 @@
                     <artifactId>joda-time</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.beam</groupId>
                     <artifactId>beam-model-fn-execution</artifactId>
                 </exclusion>

@@ -16,7 +16,7 @@
  *
  */
 
-package org.apache.hop.arrow.datastream.file;
+package org.apache.hop.arrow.datastream.streamfile;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,8 +28,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowFileReader;
-import org.apache.arrow.vector.ipc.ArrowFileWriter;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
+import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.hop.arrow.datastream.shared.ArrowBaseDataStream;
 import org.apache.hop.core.exception.HopException;
@@ -41,39 +41,39 @@ import org.apache.hop.datastream.plugin.DataStreamPlugin;
 
 @GuiPlugin
 @DataStreamPlugin(
-    id = "ArrowRandomAccessFile",
-    name = "Apache Arrow random access file",
-    description = "Stream rows of data to an Apache Arrow random access file")
+    id = "ArrowStreamFile",
+    name = "Apache Arrow File Stream",
+    description = "Stream rows of data to an Apache Arrow stream file")
 @Getter
 @Setter
-public class ArrowFileDataStream extends ArrowBaseDataStream {
-  private ArrowFileWriter arrowFileWriter;
-  private ArrowFileReader arrowFileReader;
+public class ArrowFileStreamDataStream extends ArrowBaseDataStream {
+  private ArrowStreamWriter arrowStreamWriter;
+  private ArrowStreamReader arrowStreamReader;
   private VectorSchemaRoot readRootSchema;
   private Schema readSchema;
   private int readRowIndex;
   private List<FieldVector> readFieldVectors;
   private int batchReads;
 
-  public ArrowFileDataStream() {
+  public ArrowFileStreamDataStream() {
     DataStreamPlugin annotation = getClass().getAnnotation(DataStreamPlugin.class);
     this.pluginId = annotation.id();
     this.pluginName = annotation.name();
     rowBuffer = new ArrayList<>();
     bufferSize = "500";
-    filename = "${java.io.tmpdir}/file.arrow";
+    filename = "${java.io.tmpdir}/file-stream.arrow";
   }
 
   @SuppressWarnings("CopyConstructorMissesField")
-  public ArrowFileDataStream(ArrowFileDataStream s) {
+  public ArrowFileStreamDataStream(ArrowFileStreamDataStream s) {
     this();
     this.filename = s.filename;
     this.bufferSize = s.bufferSize;
   }
 
   @Override
-  public ArrowFileDataStream clone() {
-    return new ArrowFileDataStream(this);
+  public ArrowFileStreamDataStream clone() {
+    return new ArrowFileStreamDataStream(this);
   }
 
   @Override
@@ -82,17 +82,17 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
       emptyBuffer();
     }
     try {
-      arrowFileWriter.end();
+      arrowStreamWriter.end();
     } catch (Exception e) {
-      throw new HopException("Error ending Arrow random access file data stream", e);
+      throw new HopException("Error ending arrow file stream", e);
     }
   }
 
   @Override
   public void close() {
-    if (arrowFileReader != null) {
+    if (arrowStreamReader != null) {
       try {
-        arrowFileReader.close();
+        arrowStreamReader.close();
       } catch (IOException e) {
         // Ignore
       }
@@ -107,8 +107,8 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
     if (vectorSchemaRoot != null) {
       vectorSchemaRoot.close();
     }
-    if (arrowFileWriter != null) {
-      arrowFileWriter.close();
+    if (arrowStreamWriter != null) {
+      arrowStreamWriter.close();
     }
     if (fileOutputStream != null) {
       try {
@@ -130,10 +130,10 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
     }
     this.rowMeta = rowMeta;
 
-    initializeFileWriting();
+    initializeStreamWriting();
   }
 
-  private void initializeFileWriting() throws HopException {
+  private void initializeStreamWriting() throws HopException {
     Schema writeSchema = buildSchema(rowMeta);
     vectorSchemaRoot = VectorSchemaRoot.create(writeSchema, rootAllocator);
 
@@ -144,13 +144,14 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
     try {
       fileOutputStream = new FileOutputStream(variables.resolve(filename));
     } catch (Exception e) {
-      throw new HopException("Error writing to Arrow random access file data stream", e);
+      throw new HopException("Error writing to file output stream", e);
     }
-    arrowFileWriter = new ArrowFileWriter(vectorSchemaRoot, null, fileOutputStream.getChannel());
+    arrowStreamWriter =
+        new ArrowStreamWriter(vectorSchemaRoot, null, fileOutputStream.getChannel());
     try {
-      arrowFileWriter.start();
+      arrowStreamWriter.start();
     } catch (Exception e) {
-      throw new HopException("Error starting to write to Arrow random access file data stream", e);
+      throw new HopException("Error starting to write to file output stream", e);
     }
   }
 
@@ -168,8 +169,7 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
       initializeStreamReading();
     } catch (Exception e) {
       throw new HopException(
-          "Error reading row metadata from Arrow random access file data stream " + realFilename,
-          e);
+          "Error reading row metadata from Apache Arrow streaming file " + realFilename, e);
     }
     return this.rowMeta;
   }
@@ -177,13 +177,12 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
   private void initializeStreamReading() throws HopException, IOException {
     File file = new File(realFilename);
     if (!file.exists()) {
-      throw new HopException(
-          "The Arrow random access file to read from doesn't exist: " + realFilename);
+      throw new HopException("The Arrow stream file to read from doesn't exist: " + realFilename);
     }
 
     fileInputStream = new FileInputStream(realFilename);
-    arrowFileReader = new ArrowFileReader(fileInputStream.getChannel(), rootAllocator);
-    readRootSchema = arrowFileReader.getVectorSchemaRoot();
+    arrowStreamReader = new ArrowStreamReader(fileInputStream, rootAllocator);
+    readRootSchema = arrowStreamReader.getVectorSchemaRoot();
     readSchema = readRootSchema.getSchema();
 
     this.rowMeta = buildRowMeta(readSchema);
@@ -217,10 +216,9 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
       }
       // With values set on all field vectors, we can now write the batch.
       //
-      arrowFileWriter.writeBatch();
+      arrowStreamWriter.writeBatch();
     } catch (Exception e) {
-      throw new HopException(
-          "Error writing row to Arrow random access file data stream" + filename, e);
+      throw new HopException("Error writing row to Apache Arrow stream file " + filename, e);
     } finally {
       // We're done. Fill the buffer up again.
       rowBuffer.clear();
@@ -249,18 +247,18 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
       }
     } catch (Exception e) {
       throw new HopException(
-          "Error while reading a batch of rows from an Arrow random access file data stream", e);
+          "Error while reading a batch of rows from an Apache Arrow file stream", e);
     }
   }
 
   protected boolean readNextBatch() throws IOException {
-    boolean readNext = arrowFileReader.loadNextBatch();
+    boolean readNext = arrowStreamReader.loadNextBatch();
     batchReads++;
-    readRootSchema = arrowFileReader.getVectorSchemaRoot();
+    readRootSchema = arrowStreamReader.getVectorSchemaRoot();
     while (readRootSchema.getRowCount() == 0 && readNext) {
-      readNext = arrowFileReader.loadNextBatch();
+      readNext = arrowStreamReader.loadNextBatch();
       batchReads++;
-      readRootSchema = arrowFileReader.getVectorSchemaRoot();
+      readRootSchema = arrowStreamReader.getVectorSchemaRoot();
     }
     readFieldVectors = readRootSchema.getFieldVectors();
     readRowIndex = 0;
