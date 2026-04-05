@@ -141,22 +141,22 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     for (IValueMeta valueMeta : writeRowMeta.getValueMetaList()) {
       String name = valueMeta.getName();
       FieldType fieldType =
-              switch (valueMeta.getType()) {
-                case IValueMeta.TYPE_STRING -> FieldType.nullable(new ArrowType.Utf8());
-                case IValueMeta.TYPE_BOOLEAN -> FieldType.nullable(new ArrowType.Bool());
-                case IValueMeta.TYPE_INTEGER -> FieldType.nullable(new ArrowType.Int(64, true));
-                case IValueMeta.TYPE_NUMBER ->
-                        FieldType.nullable(new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE));
-                case IValueMeta.TYPE_BIGNUMBER ->
-                        FieldType.nullable(
-                                new ArrowType.Decimal(valueMeta.getLength(), valueMeta.getPrecision(), 64));
-                case IValueMeta.TYPE_DATE ->
-                        FieldType.nullable(new ArrowType.Timestamp(TimeUnit.MILLISECOND, "UTC"));
-                default ->
-                        throw new HopException(
-                                "Data streaming to a file with Apache Arrow isn't yet supported for Hop data type "
-                                        + valueMeta.getTypeDesc());
-              };
+          switch (valueMeta.getType()) {
+            case IValueMeta.TYPE_STRING -> FieldType.nullable(new ArrowType.Utf8());
+            case IValueMeta.TYPE_BOOLEAN -> FieldType.nullable(new ArrowType.Bool());
+            case IValueMeta.TYPE_INTEGER -> FieldType.nullable(new ArrowType.Int(64, true));
+            case IValueMeta.TYPE_NUMBER ->
+                FieldType.nullable(new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE));
+            case IValueMeta.TYPE_BIGNUMBER ->
+                FieldType.nullable(
+                    new ArrowType.Decimal(valueMeta.getLength(), valueMeta.getPrecision(), 64));
+            case IValueMeta.TYPE_DATE ->
+                FieldType.nullable(new ArrowType.Timestamp(TimeUnit.MILLISECOND, "UTC"));
+            default ->
+                throw new HopException(
+                    "Data streaming to a file with Apache Arrow isn't yet supported for Hop data type "
+                        + valueMeta.getTypeDesc());
+          };
       Field field = new Field(name, fieldType, null);
       fields.add(field);
     }
@@ -167,20 +167,20 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     IRowMeta readRowMeta = new RowMeta();
     for (Field field : schema.getFields()) {
       int hopType =
-              switch (field.getType().getTypeID()) {
-                case Utf8 -> IValueMeta.TYPE_STRING;
-                case Int -> IValueMeta.TYPE_INTEGER;
-                case Bool -> IValueMeta.TYPE_BOOLEAN;
-                case Timestamp -> IValueMeta.TYPE_DATE;
-                case Decimal -> IValueMeta.TYPE_BIGNUMBER;
-                case FloatingPoint -> IValueMeta.TYPE_NUMBER;
-                default ->
-                        throw new HopException(
-                                "Unsupported data type ID found in stream for field "
-                                        + field.getName()
-                                        + " : "
-                                        + field.getType().getTypeID().name());
-              };
+          switch (field.getType().getTypeID()) {
+            case Utf8 -> IValueMeta.TYPE_STRING;
+            case Int -> IValueMeta.TYPE_INTEGER;
+            case Bool -> IValueMeta.TYPE_BOOLEAN;
+            case Timestamp -> IValueMeta.TYPE_DATE;
+            case Decimal -> IValueMeta.TYPE_BIGNUMBER;
+            case FloatingPoint -> IValueMeta.TYPE_NUMBER;
+            default ->
+                throw new HopException(
+                    "Unsupported data type ID found in stream for field "
+                        + field.getName()
+                        + " : "
+                        + field.getType().getTypeID().name());
+          };
       IValueMeta valueMeta = ValueMetaFactory.createValueMeta(field.getName(), hopType);
       readRowMeta.addValueMeta(valueMeta);
     }
