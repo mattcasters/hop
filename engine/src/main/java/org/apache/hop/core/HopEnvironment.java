@@ -48,6 +48,7 @@ import org.apache.hop.imp.ImportPluginType;
 import org.apache.hop.metadata.plugin.MetadataPluginType;
 import org.apache.hop.pipeline.engine.PipelineEnginePluginType;
 import org.apache.hop.pipeline.transform.RowDistributionPluginType;
+import org.apache.hop.stream.plugin.DataStreamPluginType;
 import org.apache.hop.workflow.engine.WorkflowEnginePluginType;
 
 /**
@@ -94,7 +95,8 @@ public class HopEnvironment {
         ImportPluginType.getInstance(),
         ExecutionDataSamplerPluginType.getInstance(),
         ExecutionInfoLocationPluginType.getInstance(),
-        HopCommandPluginType.getInstance());
+        HopCommandPluginType.getInstance(),
+        DataStreamPluginType.getInstance());
   }
 
   public static void init(List<IPluginType> pluginTypes) throws HopException {

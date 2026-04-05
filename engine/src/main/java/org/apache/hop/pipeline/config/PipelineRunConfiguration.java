@@ -96,6 +96,11 @@ public class PipelineRunConfiguration extends HopMetadataBase implements Cloneab
     this.defaultSelection = runConfiguration.defaultSelection;
   }
 
+  @Override
+  protected PipelineRunConfiguration clone() throws CloneNotSupportedException {
+    return new PipelineRunConfiguration(this);
+  }
+
   /**
    * Gets description
    *

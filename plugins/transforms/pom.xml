@@ -152,6 +152,7 @@
         <module>ssh</module>
         <module>standardizephonenumber</module>
         <module>stanfordnlp</module>
+        <module>datastream</module>
         <module>streamlookup</module>
         <module>streamschemamerge</module>
         <module>stringcut</module>
