@@ -44,20 +44,15 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
-import org.apache.hop.core.Const;
 import org.apache.hop.core.exception.HopException;
-import org.apache.hop.core.gui.plugin.GuiElementType;
 import org.apache.hop.core.gui.plugin.GuiPlugin;
-import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.variables.IVariables;
-import org.apache.hop.datastream.metadata.DataStreamMeta;
 import org.apache.hop.datastream.plugin.IDataStream;
-import org.apache.hop.metadata.api.HopMetadataProperty;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -89,7 +84,8 @@ public abstract class ArrowBaseDataStream implements IDataStream {
 
   @Override
   public void initialize(
-      IVariables variables, IHopMetadataProvider metadataProvider, boolean writing) throws HopException{
+      IVariables variables, IHopMetadataProvider metadataProvider, boolean writing)
+      throws HopException {
     this.variables = variables;
     this.metadataProvider = metadataProvider;
     this.writing = writing;

@@ -56,11 +56,11 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
+                    <groupId>io.netty</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>io.netty</groupId>
+                    <groupId>org.slf4j</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
@@ -101,6 +101,10 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-lang3</artifactId>
                 </exclusion>
@@ -127,10 +131,6 @@
                 <exclusion>
                     <groupId>org.yaml</groupId>
                     <artifactId>snakeyaml</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.netty</groupId>
-                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

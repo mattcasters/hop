@@ -16,8 +16,7 @@
   ~ limitations under the License.
   ~
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -111,11 +110,11 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
+                    <groupId>io.netty</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>io.netty</groupId>
+                    <groupId>org.slf4j</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
@@ -146,6 +145,10 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>net.minidev</groupId>
                     <artifactId>json-smart</artifactId>
                 </exclusion>
@@ -155,10 +158,6 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.netty</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
@@ -181,15 +180,15 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-lang3</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.netty</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
