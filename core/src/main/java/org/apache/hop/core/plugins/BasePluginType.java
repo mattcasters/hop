@@ -521,8 +521,6 @@ public abstract class BasePluginType<T extends Annotation> implements IPluginTyp
           for (File libFile : jarCache.findJarFiles(dependenciesFolder)) {
             Matcher matcher = pattern.matcher(libFile.getName());
             if (matcher.matches()) {
-              System.out.println(
-                  "------ Filename " + libFile.getName() + " matches wildcard " + wildcard);
               urls.add(libFile.toURI().toURL());
             }
           }
