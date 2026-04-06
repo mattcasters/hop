@@ -39,9 +39,9 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.hop.arrow.datastream.flight.ArrowFlightDataStream;
 import org.apache.hop.arrow.datastream.shared.ArrowBaseDataStream;
-import org.apache.hop.core.BlockingRowSet;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.IRowSet;
+import org.apache.hop.core.QueueRowSet;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.variables.IVariables;
@@ -54,6 +54,8 @@ public class HopFlightProducer extends NoOpFlightProducer {
   private final IHopMetadataProvider metadataProvider;
   private final RootAllocator rootAllocator;
   private final Map<String, FlightStreamBuffer> streamMap;
+  private int rowsRead;
+  private int rowsWritten;
 
   public HopFlightProducer(
       IVariables variables, IHopMetadataProvider metadataProvider, RootAllocator rootAllocator) {
@@ -91,7 +93,7 @@ public class HopFlightProducer extends NoOpFlightProducer {
       //
       IRowMeta rowMeta = streamBuffer.rowMeta();
       IRowSet rowSet = streamBuffer.rowSet();
-
+      rowsWritten = 0;
       while (flightStream.next()) {
         VectorSchemaRoot vectorSchemaRoot = flightStream.getRoot();
         List<FieldVector> fieldVectors = vectorSchemaRoot.getFieldVectors();
@@ -106,15 +108,16 @@ public class HopFlightProducer extends NoOpFlightProducer {
           Object[] rowData =
               ArrowBaseDataStream.convertFieldVectorsToHopRow(fieldVectors, rowMeta, rowIndex);
           rowSet.putRow(rowMeta, rowData);
+          rowsWritten++;
         }
       }
 
-      // Signal the end of affairs to the row set
-      //
-      streamBuffer.rowSet().setDone();
-
       // Acknowledge successful receipt
       ackStream.onCompleted();
+
+      // Signal the end of affairs to the row set
+      //
+      rowSet.setDone();
     } catch (Exception e) {
       ackStream.onError(CallStatus.INTERNAL.withCause(e).toRuntimeException());
     }
@@ -142,9 +145,13 @@ public class HopFlightProducer extends NoOpFlightProducer {
       IRowMeta rowMeta = flightDataStream.buildExpectedRowMeta();
       Schema expectedSchema = flightDataStream.buildExpectedSchema();
 
-      int bufferSize = Const.toInt(variables.resolve(flightDataStream.getBufferSize()), 10000);
+      // int bufferSize = Const.toInt(variables.resolve(flightDataStream.getBufferSize()), 10000);
       int batchSize = Const.toInt(variables.resolve(flightDataStream.getBatchSize()), 500);
-      IRowSet rowSet = new BlockingRowSet(bufferSize);
+
+      // Figure out why blocking rows isn't a good idea.
+      // Are we receiving rows in parallel if we block?
+      //
+      IRowSet rowSet = new QueueRowSet();
 
       String hostname = Const.NVL(variables.resolve(flightDataStream.getHostname()), "0.0.0.0");
       int port = Const.toInt(variables.resolve(flightDataStream.getPort()), 33333);
@@ -177,9 +184,12 @@ public class HopFlightProducer extends NoOpFlightProducer {
         //
         listener.start(vectorSchemaRoot);
 
+        rowsRead = 0;
         // Example: Pull rows from a readable RowSet and send them back as Arrow batches
         Object[] hopRow = rowSet.getRow();
         while (hopRow != null) {
+          rowsRead++;
+
           // Add the row to a batch row buffer:
           //
           rowBuffer.add(hopRow);
@@ -192,6 +202,13 @@ public class HopFlightProducer extends NoOpFlightProducer {
           }
           hopRow = rowSet.getRow();
         }
+        // Do we have any rows in the buffer left?
+        //
+        if (!rowBuffer.isEmpty()) {
+          fillBatch(rowBuffer, rowMeta, vectorSchemaRoot);
+          listener.putNext();
+        }
+
         listener.completed();
       }
     } catch (Exception e) {

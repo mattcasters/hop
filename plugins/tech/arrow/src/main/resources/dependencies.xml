@@ -18,4 +18,12 @@
 
 <dependencies>
     <folder>../../misc/static-schema</folder>
+    <libs>
+        <folder>../../../lib/core</folder>
+        <wildcard>grpc-.*\.jar</wildcard>
+    </libs>
+    <libs>
+        <folder>../../../lib/core</folder>
+        <wildcard>netty-.*\.jar</wildcard>
+    </libs>
 </dependencies>
