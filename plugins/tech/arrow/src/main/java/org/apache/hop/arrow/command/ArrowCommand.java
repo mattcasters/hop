@@ -16,15 +16,13 @@
  *
  */
 
-package org.apache.hop.py4j;
+package org.apache.hop.arrow.command;
 
-import static java.lang.Thread.sleep;
-
-import java.net.InetAddress;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.hop.arrow.flight.ArrowFlightServer;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.config.plugin.ConfigPlugin;
 import org.apache.hop.core.config.plugin.IConfigOptions;
@@ -38,36 +36,37 @@ import org.apache.hop.hop.plugin.IHopCommand;
 import org.apache.hop.metadata.api.IHasHopMetadataProvider;
 import org.apache.hop.metadata.serializer.multi.MultiMetadataProvider;
 import picocli.CommandLine;
-import py4j.GatewayServer;
 
 @Getter
 @Setter
 @CommandLine.Command(
     mixinStandardHelpOptions = true,
-    name = "python",
-    description = "Run the Hop Python gateway (py4j)")
-@HopCommand(id = "python", description = "Run the Hop Python gateway")
-public class PythonCommand implements Runnable, IHopCommand, IHasHopMetadataProvider {
+    name = "arrow",
+    description = "Run the hop arrow command to start a flight or socket server")
+@HopCommand(
+    id = "arrow",
+    description = "Run the hop arrow command to start a flight or socket server")
+public class ArrowCommand implements Runnable, IHopCommand, IHasHopMetadataProvider {
   private ILogChannel log;
   private CommandLine cmd;
   private IVariables variables;
   private MultiMetadataProvider metadataProvider;
 
   @CommandLine.Option(
-      names = {"--gateway-port"},
+      names = {"--arrow-flight-host"},
       description =
-          "The port on which to run the Hop Python (py4j) gateway service.  The default port is 25333.")
-  private String gatewayPort;
+          "The hostname on which the Apache Arrow Flight server will listen, defaults to 0.0.0.0")
+  private String hostname = "0.0.0.0";
 
   @CommandLine.Option(
-      names = {"--gateway-ip-address"},
+      names = {"--arrow-flight-port"},
       description =
-          "The server on which to run the Hop Python (py4j) gateway service.  The default is 127.0.0.1 (localhost).  Use 0.0.0.0 to make the service widely available.")
-  private String gatewayAddress;
+          "The port on which the Apache Arrow Flight server will listen, defaults to 33333")
+  private String port = "33333";
 
-  private PyHop pyHop;
-
-  public PythonCommand() {}
+  public ArrowCommand() {
+    // Nothing specific to set
+  }
 
   @Override
   public void initialize(
@@ -78,31 +77,8 @@ public class PythonCommand implements Runnable, IHopCommand, IHasHopMetadataProv
     this.metadataProvider = metadataProvider;
     this.log = new LogChannel("HopPython");
 
-    pyHop = new PyHop();
-    pyHop.initialize(variables, metadataProvider, log);
-
     // Same plugins as for RUN,DOC, etc. It's mainly for loading projects etc.
-    Hop.addMixinPlugins(cmd, ConfigPlugin.CATEGORY_PYTHON);
-  }
-
-  /**
-   * Sets metadataProvider
-   *
-   * @param metadataProvider value of metadataProvider
-   */
-  public void setMetadataProvider(MultiMetadataProvider metadataProvider) {
-    this.metadataProvider = metadataProvider;
-    this.pyHop.setMetadataProvider(metadataProvider);
-  }
-
-  /**
-   * Sets variables
-   *
-   * @param variables value of variables
-   */
-  public void setVariables(IVariables variables) {
-    this.variables = variables;
-    this.pyHop.setVariables(variables);
+    Hop.addMixinPlugins(cmd, ConfigPlugin.CATEGORY_DOC);
   }
 
   protected void handleMixinActions() throws HopException {
@@ -122,31 +98,25 @@ public class PythonCommand implements Runnable, IHopCommand, IHasHopMetadataProv
     // Check a few variables...
     //
     try {
-      System.setProperty(Const.HOP_PLATFORM_RUNTIME, "PYTHON");
+      System.setProperty(Const.HOP_PLATFORM_RUNTIME, "ARROW");
       handleMixinActions();
 
-      int port = Const.toInt(variables.resolve(gatewayPort), 25333);
-      String ipAddress = variables.resolve(gatewayAddress);
-      if (StringUtils.isEmpty(ipAddress)) {
-        ipAddress = "127.0.0.1";
-      }
+      String realHostname = Const.NVL(variables.resolve(hostname), "0.0.0.0");
+      int realPort = Const.toInt(variables.resolve(port), 33333);
 
-      // Run the gateway
+      // Start the flight server
+      ArrowFlightServer server =
+          new ArrowFlightServer(realHostname, realPort, variables, metadataProvider, log);
+      server.start();
+
+      // For now, we'll wait indefinitely
       //
-      GatewayServer.GatewayServerBuilder builder = new GatewayServer.GatewayServerBuilder();
-      GatewayServer gatewayServer =
-          builder
-              .entryPoint(this)
-              .javaPort(port)
-              .javaAddress(InetAddress.getByName(ipAddress))
-              .build();
-      gatewayServer.start();
-      log.logBasic("The Hop Python Gateway server was started on " + ipAddress + ":" + port);
-
-      do sleep(100);
-      while (true);
+      //noinspection StatementWithEmptyBody
+      while (server.getFlightServer().awaitTermination(100, TimeUnit.MILLISECONDS)) {
+        // Just wait, nothing else
+      }
     } catch (Exception e) {
-      log.logError("Error running the Hop Python Gateway server (py4j)", e);
+      log.logError("Error running a Hop Arrow Flight server", e);
     }
   }
 }

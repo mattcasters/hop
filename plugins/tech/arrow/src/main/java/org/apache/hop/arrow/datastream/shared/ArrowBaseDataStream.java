@@ -51,6 +51,7 @@ import org.apache.hop.core.gui.plugin.GuiPlugin;
 import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
+import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.variables.IVariables;
@@ -65,24 +66,6 @@ import org.jspecify.annotations.Nullable;
 @Setter
 @GuiPlugin
 public abstract class ArrowBaseDataStream implements IDataStream {
-  @GuiWidgetElement(
-      order = "20000-arrow-file-data-stream-filename",
-      parentId = DataStreamMeta.GUI_WIDGETS_PARENT_ID,
-      type = GuiElementType.FILENAME,
-      label = "i18n::ArrowBaseDataStream.Filename.Label",
-      toolTip = "i18n::ArrowBaseDataStream.Filename.Tooltip")
-  @HopMetadataProperty
-  protected String filename;
-
-  @GuiWidgetElement(
-      order = "20100-arrow-file-data-stream-buffer-size",
-      parentId = DataStreamMeta.GUI_WIDGETS_PARENT_ID,
-      type = GuiElementType.TEXT,
-      label = "i18n::ArrowBaseDataStream.BufferSize.Label",
-      toolTip = "i18n::ArrowBaseDataStream.BufferSize.Tooltip")
-  @HopMetadataProperty
-  protected String bufferSize;
-
   protected String pluginId;
   protected String pluginName;
 
@@ -94,8 +77,6 @@ public abstract class ArrowBaseDataStream implements IDataStream {
   protected VectorSchemaRoot vectorSchemaRoot;
   protected IRowMeta rowMeta;
   protected List<Object[]> rowBuffer;
-  protected String realFilename;
-  protected int realBufferSize;
 
   protected FileOutputStream fileOutputStream;
   protected FileInputStream fileInputStream;
@@ -108,16 +89,13 @@ public abstract class ArrowBaseDataStream implements IDataStream {
 
   @Override
   public void initialize(
-      IVariables variables, IHopMetadataProvider metadataProvider, boolean writing) {
+      IVariables variables, IHopMetadataProvider metadataProvider, boolean writing) throws HopException{
     this.variables = variables;
     this.metadataProvider = metadataProvider;
     this.writing = writing;
 
     rowBuffer = new ArrayList<>();
     rootAllocator = new RootAllocator();
-
-    realFilename = variables.resolve(filename);
-    realBufferSize = Const.toInt(variables.resolve(bufferSize), 1000);
   }
 
   public IRowMeta getRowMeta() throws HopException {
@@ -136,7 +114,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
    * @return The Arrow schema built using Hop row metadata
    * @throws HopException In case something went wrong, usually with unsupported value types.
    */
-  public @NonNull Schema buildSchema(IRowMeta writeRowMeta) throws HopException {
+  public static @NonNull Schema buildSchema(IRowMeta writeRowMeta) throws HopException {
     List<Field> fields = new ArrayList<>();
     for (IValueMeta valueMeta : writeRowMeta.getValueMetaList()) {
       String name = valueMeta.getName();
@@ -163,7 +141,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     return new Schema(fields);
   }
 
-  public @NonNull IRowMeta buildRowMeta(Schema schema) throws HopException {
+  public static @NonNull IRowMeta buildRowMeta(Schema schema) throws HopException {
     IRowMeta readRowMeta = new RowMeta();
     for (Field field : schema.getFields()) {
       int hopType =
@@ -187,7 +165,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     return readRowMeta;
   }
 
-  protected void allocateFieldVectorsSpace() throws HopException {
+  protected void allocateFieldVectorsSpace(int bufferSize) throws HopException {
     for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
       IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
       FieldVector fieldVector = vectorSchemaRoot.getVector(fieldIndex);
@@ -195,12 +173,12 @@ public abstract class ArrowBaseDataStream implements IDataStream {
       // Set all values for the field vector
       //
       switch (valueMeta.getType()) {
-        case IValueMeta.TYPE_STRING -> ((VarCharVector) fieldVector).allocateNew(realBufferSize);
-        case IValueMeta.TYPE_INTEGER -> ((BigIntVector) fieldVector).allocateNew(realBufferSize);
-        case IValueMeta.TYPE_NUMBER -> ((Float8Vector) fieldVector).allocateNew(realBufferSize);
-        case IValueMeta.TYPE_BIGNUMBER -> ((DecimalVector) fieldVector).allocateNew(realBufferSize);
-        case IValueMeta.TYPE_BOOLEAN -> ((BitVector) fieldVector).allocateNew(realBufferSize);
-        case IValueMeta.TYPE_DATE -> ((TimeStampVector) fieldVector).allocateNew(realBufferSize);
+        case IValueMeta.TYPE_STRING -> ((VarCharVector) fieldVector).allocateNew(bufferSize);
+        case IValueMeta.TYPE_INTEGER -> ((BigIntVector) fieldVector).allocateNew(bufferSize);
+        case IValueMeta.TYPE_NUMBER -> ((Float8Vector) fieldVector).allocateNew(bufferSize);
+        case IValueMeta.TYPE_BIGNUMBER -> ((DecimalVector) fieldVector).allocateNew(bufferSize);
+        case IValueMeta.TYPE_BOOLEAN -> ((BitVector) fieldVector).allocateNew(bufferSize);
+        case IValueMeta.TYPE_DATE -> ((TimeStampVector) fieldVector).allocateNew(bufferSize);
         default ->
             throw new HopException(
                 "Allocating space for field vector isn't supported yet for data type "
@@ -209,7 +187,20 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     }
   }
 
-  protected void setFieldVectorValueWithHopValue(
+  public static void convertHopRowToFieldVectorIndex(
+      VectorSchemaRoot vectorSchemaRoot, IRowMeta rowMeta, int rowIndex, Object[] rowData)
+      throws HopException {
+    for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
+      IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
+      FieldVector fieldVector = vectorSchemaRoot.getVector(fieldIndex);
+
+      // Set all values for the field vector
+      //
+      setFieldVectorValueWithHopValue(valueMeta, rowIndex, fieldVector, rowData[fieldIndex]);
+    }
+  }
+
+  public static void setFieldVectorValueWithHopValue(
       IValueMeta valueMeta, int rowIndex, FieldVector fieldVector, Object rowData)
       throws HopException {
     Object valueData = valueMeta.getNativeDataType(rowData);
@@ -227,7 +218,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     }
   }
 
-  protected void addString(
+  public static void addString(
       int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
     VarCharVector vector = (VarCharVector) fieldVector;
@@ -236,15 +227,11 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     if (valueMeta.isNull(valueData)) {
       vector.setNull(rowIndex);
     } else {
-      try {
-        vector.set(rowIndex, valueMeta.getString(valueData).getBytes());
-      } catch (Exception e) {
-        throw new HopException(e.getMessage());
-      }
+      vector.set(rowIndex, valueMeta.getString(valueData).getBytes());
     }
   }
 
-  protected void addInteger(
+  public static void addInteger(
       int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
     BigIntVector vector = (BigIntVector) fieldVector;
@@ -255,7 +242,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     }
   }
 
-  protected void addNumber(
+  public static void addNumber(
       int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
     Float8Vector vector = (Float8Vector) fieldVector;
@@ -266,7 +253,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     }
   }
 
-  protected void addBigNumber(
+  public static void addBigNumber(
       int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
     DecimalVector vector = (DecimalVector) fieldVector;
@@ -277,7 +264,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     }
   }
 
-  protected void addBoolean(
+  public static void addBoolean(
       int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
     BitVector vector = (BitVector) fieldVector;
@@ -288,7 +275,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     }
   }
 
-  protected void addDate(
+  public static void addDate(
       int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, Object valueData)
       throws HopException {
     TimeStampMilliTZVector vector = (TimeStampMilliTZVector) fieldVector;
@@ -299,7 +286,20 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     }
   }
 
-  protected @Nullable Object getHopValueFromFieldVector(
+  public static Object[] convertFieldVectorsToHopRow(
+      List<FieldVector> readFieldVectors, IRowMeta rowMeta, int rowIndex) throws HopException {
+    Object[] rowData = RowDataUtil.allocateRowData(rowMeta.size());
+
+    for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
+      IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
+      FieldVector fieldVector = readFieldVectors.get(fieldIndex);
+      Object valueData = getHopValueFromFieldVector(rowIndex, fieldVector, valueMeta, fieldIndex);
+      rowData[fieldIndex] = valueData;
+    }
+    return rowData;
+  }
+
+  public static @Nullable Object getHopValueFromFieldVector(
       int rowIndex, FieldVector fieldVector, IValueMeta valueMeta, int fieldIndex)
       throws HopException {
     Object valueData;
@@ -326,32 +326,32 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     return valueData;
   }
 
-  private String getString(int rowIndex, FieldVector fieldVector) {
+  public static String getString(int rowIndex, FieldVector fieldVector) {
     VarCharVector vector = (VarCharVector) fieldVector;
     return new String(vector.get(rowIndex));
   }
 
-  private Boolean getBoolean(int rowIndex, FieldVector fieldVector) {
+  public static Boolean getBoolean(int rowIndex, FieldVector fieldVector) {
     BitVector vector = (BitVector) fieldVector;
     return vector.get(rowIndex) == 1;
   }
 
-  private Long getInteger(int rowIndex, FieldVector fieldVector) {
+  public static Long getInteger(int rowIndex, FieldVector fieldVector) {
     BigIntVector vector = (BigIntVector) fieldVector;
     return vector.get(rowIndex);
   }
 
-  private Double getNumber(int rowIndex, FieldVector fieldVector) {
+  public static Double getNumber(int rowIndex, FieldVector fieldVector) {
     FloatingPointVector vector = (FloatingPointVector) fieldVector;
     return vector.getValueAsDouble(rowIndex);
   }
 
-  private Date getDate(int rowIndex, FieldVector fieldVector) {
+  public static Date getDate(int rowIndex, FieldVector fieldVector) {
     TimeStampVector vector = (TimeStampVector) fieldVector;
     return new Date(vector.get(rowIndex));
   }
 
-  private BigDecimal getBigNumber(int rowIndex, FieldVector fieldVector) {
+  public static BigDecimal getBigNumber(int rowIndex, FieldVector fieldVector) {
     DecimalVector vector = (DecimalVector) fieldVector;
     return vector.getObject(rowIndex);
   }

@@ -52,6 +52,12 @@
             <artifactId>azure-storage-blob</artifactId>
             <version>12.26.0</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.hop</groupId>

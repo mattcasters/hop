@@ -33,11 +33,13 @@ import org.apache.arrow.vector.ipc.ArrowFileWriter;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.hop.arrow.datastream.shared.ArrowBaseDataStream;
 import org.apache.hop.core.exception.HopException;
+import org.apache.hop.core.gui.plugin.GuiElementType;
 import org.apache.hop.core.gui.plugin.GuiPlugin;
+import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.row.IRowMeta;
-import org.apache.hop.core.row.IValueMeta;
-import org.apache.hop.core.row.RowDataUtil;
+import org.apache.hop.datastream.metadata.DataStreamMeta;
 import org.apache.hop.datastream.plugin.DataStreamPlugin;
+import org.apache.hop.metadata.api.HopMetadataProperty;
 
 @GuiPlugin
 @DataStreamPlugin(
@@ -47,6 +49,27 @@ import org.apache.hop.datastream.plugin.DataStreamPlugin;
 @Getter
 @Setter
 public class ArrowFileDataStream extends ArrowBaseDataStream {
+  @GuiWidgetElement(
+      order = "20000-arrow-file-data-stream-filename",
+      parentId = DataStreamMeta.GUI_WIDGETS_PARENT_ID,
+      type = GuiElementType.FILENAME,
+      label = "i18n::ArrowBaseDataStream.Filename.Label",
+      toolTip = "i18n::ArrowBaseDataStream.Filename.Tooltip")
+  @HopMetadataProperty
+  protected String filename;
+
+  @GuiWidgetElement(
+      order = "20100-arrow-file-data-stream-batch-size",
+      parentId = DataStreamMeta.GUI_WIDGETS_PARENT_ID,
+      type = GuiElementType.TEXT,
+      label = "i18n::ArrowBaseDataStream.BufferSize.Label",
+      toolTip = "i18n::ArrowBaseDataStream.BufferSize.Tooltip")
+  @HopMetadataProperty
+  protected String batchSize;
+
+  protected String realFilename;
+  protected int realBatchSize;
+
   private ArrowFileWriter arrowFileWriter;
   private ArrowFileReader arrowFileReader;
   private VectorSchemaRoot readRootSchema;
@@ -60,7 +83,7 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
     this.pluginId = annotation.id();
     this.pluginName = annotation.name();
     rowBuffer = new ArrayList<>();
-    bufferSize = "500";
+    batchSize = "500";
     filename = "${java.io.tmpdir}/file.arrow";
   }
 
@@ -68,7 +91,7 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
   public ArrowFileDataStream(ArrowFileDataStream s) {
     this();
     this.filename = s.filename;
-    this.bufferSize = s.bufferSize;
+    this.batchSize = s.batchSize;
   }
 
   @Override
@@ -139,7 +162,7 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
 
     // Allocate room in the field vectors
     //
-    allocateFieldVectorsSpace();
+    allocateFieldVectorsSpace(realBatchSize);
 
     try {
       fileOutputStream = new FileOutputStream(variables.resolve(filename));
@@ -192,7 +215,7 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
   @Override
   public void writeRow(Object[] rowData) throws HopException {
     rowBuffer.add(rowData);
-    if (rowBuffer.size() >= realBufferSize) {
+    if (rowBuffer.size() >= realBatchSize) {
       emptyBuffer();
     }
   }
@@ -204,16 +227,8 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
       // Set the data in the field vectors for the rows in the buffer
       //
       for (int rowIndex = 0; rowIndex < rowBuffer.size(); rowIndex++) {
-        Object[] rowData = rowBuffer.get(rowIndex);
-
-        for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
-          IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
-          FieldVector fieldVector = vectorSchemaRoot.getVector(fieldIndex);
-
-          // Set all values for the field vector
-          //
-          setFieldVectorValueWithHopValue(valueMeta, rowIndex, fieldVector, rowData[fieldIndex]);
-        }
+        convertHopRowToFieldVectorIndex(
+            vectorSchemaRoot, rowMeta, rowIndex, rowBuffer.get(rowIndex));
       }
       // With values set on all field vectors, we can now write the batch.
       //
@@ -236,13 +251,12 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
     try {
       // See if there are more rows to populate.
       //
-      int batchSize = readRootSchema.getRowCount();
-      if (readRowIndex < batchSize) {
-        return buildReadRow(readRowIndex++);
-      }
-      // Read another batch
-      if (readNextBatch()) {
-        return buildReadRow(readRowIndex++);
+      int schemaBatchSize = readRootSchema.getRowCount();
+
+      // If needed, read another batch
+      //
+      if (readRowIndex < schemaBatchSize || readNextBatch()) {
+        return convertFieldVectorsToHopRow(readFieldVectors, rowMeta, readRowIndex++);
       } else {
         // No more data to be expected
         return null;
@@ -257,6 +271,9 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
     boolean readNext = arrowFileReader.loadNextBatch();
     batchReads++;
     readRootSchema = arrowFileReader.getVectorSchemaRoot();
+
+    // This loop is for the rare cases where the batches contain 0 rows each.
+    //
     while (readRootSchema.getRowCount() == 0 && readNext) {
       readNext = arrowFileReader.loadNextBatch();
       batchReads++;
@@ -266,17 +283,5 @@ public class ArrowFileDataStream extends ArrowBaseDataStream {
     readRowIndex = 0;
 
     return readNext;
-  }
-
-  private Object[] buildReadRow(int rowIndex) throws HopException {
-    Object[] rowData = RowDataUtil.allocateRowData(rowBuffer.size());
-
-    for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
-      IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
-      FieldVector fieldVector = readFieldVectors.get(fieldIndex);
-      Object valueData = getHopValueFromFieldVector(rowIndex, fieldVector, valueMeta, fieldIndex);
-      rowData[fieldIndex] = valueData;
-    }
-    return rowData;
   }
 }
