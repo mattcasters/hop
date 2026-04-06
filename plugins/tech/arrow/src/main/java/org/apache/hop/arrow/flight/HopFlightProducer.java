@@ -20,13 +20,16 @@ package org.apache.hop.arrow.flight;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightDescriptor;
+import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.FlightStream;
+import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.NoOpFlightProducer;
 import org.apache.arrow.flight.PutResult;
 import org.apache.arrow.flight.Ticket;
@@ -135,13 +138,18 @@ public class HopFlightProducer extends NoOpFlightProducer {
                 + streamName
                 + "'.");
       }
+      flightDataStream.initialize(variables, metadataProvider, true, dataStreamMeta);
       IRowMeta rowMeta = flightDataStream.buildExpectedRowMeta();
       Schema expectedSchema = flightDataStream.buildExpectedSchema();
 
       int bufferSize = Const.toInt(variables.resolve(flightDataStream.getBufferSize()), 10000);
       int batchSize = Const.toInt(variables.resolve(flightDataStream.getBatchSize()), 500);
       IRowSet rowSet = new BlockingRowSet(bufferSize);
-      buffer = new FlightStreamBuffer(expectedSchema, rowMeta, rowSet, batchSize);
+
+      String hostname = Const.NVL(variables.resolve(flightDataStream.getHostname()), "0.0.0.0");
+      int port = Const.toInt(variables.resolve(flightDataStream.getPort()), 33333);
+      Location location = Location.forGrpcInsecure(hostname, port);
+      buffer = new FlightStreamBuffer(expectedSchema, rowMeta, rowSet, batchSize, location);
       streamMap.put(streamName, buffer);
     }
     return buffer;
@@ -162,6 +170,7 @@ public class HopFlightProducer extends NoOpFlightProducer {
       int batchSize = streamBuffer.batchSize();
       Schema schema = streamBuffer.schema();
       try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema, rootAllocator)) {
+        ArrowBaseDataStream.allocateFieldVectorsSpace(vectorSchemaRoot, rowMeta, batchSize);
         List<Object[]> rowBuffer = new ArrayList<>();
 
         // Send the schema once.
@@ -193,11 +202,14 @@ public class HopFlightProducer extends NoOpFlightProducer {
   private void fillBatch(
       List<Object[]> rowBuffer, IRowMeta rowMeta, VectorSchemaRoot vectorSchemaRoot)
       throws HopException {
+    vectorSchemaRoot.setRowCount(rowBuffer.size());
     for (int rowIndex = 0; rowIndex < rowBuffer.size(); rowIndex++) {
       Object[] rowData = rowBuffer.get(rowIndex);
       ArrowBaseDataStream.convertHopRowToFieldVectorIndex(
           vectorSchemaRoot, rowMeta, rowIndex, rowData);
     }
+    // The data is transferred, we can clear the buffer.
+    rowBuffer.clear();
   }
 
   @Override
@@ -210,8 +222,12 @@ public class HopFlightProducer extends NoOpFlightProducer {
       //
       FlightStreamBuffer streamBuffer = lookupArrowStreamBuffer(streamName);
 
+      FlightEndpoint flightEndpoint =
+          new FlightEndpoint(
+              new Ticket(descriptor.getPath().get(0).getBytes(StandardCharsets.UTF_8)),
+              streamBuffer.location());
       return new FlightInfo(
-          streamBuffer.schema(), descriptor, java.util.Collections.emptyList(), -1, -1);
+          streamBuffer.schema(), descriptor, Collections.singletonList(flightEndpoint), -1, -1);
     } catch (Exception e) {
       return new FlightInfo(null, descriptor, java.util.Collections.emptyList(), -1, -1);
     }

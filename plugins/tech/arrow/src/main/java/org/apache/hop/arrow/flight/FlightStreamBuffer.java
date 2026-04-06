@@ -18,8 +18,10 @@
 
 package org.apache.hop.arrow.flight;
 
+import org.apache.arrow.flight.Location;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.hop.core.IRowSet;
 import org.apache.hop.core.row.IRowMeta;
 
-public record FlightStreamBuffer(Schema schema, IRowMeta rowMeta, IRowSet rowSet, int batchSize) {}
+public record FlightStreamBuffer(
+    Schema schema, IRowMeta rowMeta, IRowSet rowSet, int batchSize, Location location) {}

@@ -18,11 +18,13 @@
 
 package org.apache.hop.pipeline.transforms.streamoutput;
 
+import org.apache.hop.datastream.metadata.DataStreamMeta;
 import org.apache.hop.datastream.plugin.IDataStream;
 import org.apache.hop.pipeline.transform.BaseTransformData;
 import org.jspecify.annotations.NonNull;
 
 public class DataStreamOutputData extends BaseTransformData {
   public String dataStreamName;
+  public @NonNull DataStreamMeta dataStreamMeta;
   public @NonNull IDataStream dataStream;
 }

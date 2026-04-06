@@ -32,14 +32,17 @@ import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.hop.arrow.datastream.shared.ArrowBaseDataStream;
+import org.apache.hop.core.Const;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.gui.plugin.GuiElementType;
 import org.apache.hop.core.gui.plugin.GuiPlugin;
 import org.apache.hop.core.gui.plugin.GuiWidgetElement;
 import org.apache.hop.core.row.IRowMeta;
+import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.datastream.metadata.DataStreamMeta;
 import org.apache.hop.datastream.plugin.DataStreamPlugin;
 import org.apache.hop.metadata.api.HopMetadataProperty;
+import org.apache.hop.metadata.api.IHopMetadataProvider;
 
 @GuiPlugin
 @DataStreamPlugin(
@@ -53,8 +56,8 @@ public class ArrowFileStreamDataStream extends ArrowBaseDataStream {
       order = "20000-arrow-file-data-stream-filename",
       parentId = DataStreamMeta.GUI_WIDGETS_PARENT_ID,
       type = GuiElementType.FILENAME,
-      label = "i18n::ArrowBaseDataStream.Filename.Label",
-      toolTip = "i18n::ArrowBaseDataStream.Filename.Tooltip")
+      label = "i18n::ArrowFileStreamDataStream.Filename.Label",
+      toolTip = "i18n::ArrowFileStreamDataStream.Filename.Tooltip")
   @HopMetadataProperty
   protected String filename;
 
@@ -62,8 +65,8 @@ public class ArrowFileStreamDataStream extends ArrowBaseDataStream {
       order = "20100-arrow-file-data-stream-buffer-size",
       parentId = DataStreamMeta.GUI_WIDGETS_PARENT_ID,
       type = GuiElementType.TEXT,
-      label = "i18n::ArrowBaseDataStream.BufferSize.Label",
-      toolTip = "i18n::ArrowBaseDataStream.BufferSize.Tooltip")
+      label = "i18n::ArrowFileStreamDataStream.BufferSize.Label",
+      toolTip = "i18n::ArrowFileStreamDataStream.BufferSize.Tooltip")
   @HopMetadataProperty
   protected String batchSize;
 
@@ -97,6 +100,18 @@ public class ArrowFileStreamDataStream extends ArrowBaseDataStream {
   @Override
   public ArrowFileStreamDataStream clone() {
     return new ArrowFileStreamDataStream(this);
+  }
+
+  @Override
+  public void initialize(
+      IVariables variables,
+      IHopMetadataProvider metadataProvider,
+      boolean writing,
+      DataStreamMeta dataStreamMeta)
+      throws HopException {
+    super.initialize(variables, metadataProvider, writing, dataStreamMeta);
+    realFilename = variables.resolve(filename);
+    realBatchSize = Const.toInt(variables.resolve(batchSize), 500);
   }
 
   @Override
@@ -162,7 +177,7 @@ public class ArrowFileStreamDataStream extends ArrowBaseDataStream {
 
     // Allocate room in the field vectors
     //
-    allocateFieldVectorsSpace(realBatchSize);
+    allocateFieldVectorsSpace(vectorSchemaRoot, rowMeta, realBatchSize);
 
     try {
       fileOutputStream = new FileOutputStream(variables.resolve(filename));

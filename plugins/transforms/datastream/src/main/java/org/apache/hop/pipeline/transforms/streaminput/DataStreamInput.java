@@ -54,9 +54,10 @@ public class DataStreamInput extends BaseTransform<DataStreamInputMeta, DataStre
     }
     try {
       data.dataStreamName = resolve(meta.getDataStreamName());
-      data.dataStream =
+      data.dataStreamMeta =
           DataStreamInputMeta.getAndValidateDataStream(metadataProvider, data.dataStreamName);
-      data.dataStream.initialize(variables, metadataProvider, false);
+      data.dataStream = data.dataStreamMeta.getDataStream();
+      data.dataStream.initialize(variables, metadataProvider, false, data.dataStreamMeta);
       data.streamRowMeta = data.dataStream.getRowMeta();
     } catch (Exception e) {
       getLogChannel().logError("Error initializing data stream", e);

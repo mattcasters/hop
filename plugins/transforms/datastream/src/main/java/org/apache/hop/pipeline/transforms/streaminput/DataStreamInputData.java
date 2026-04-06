@@ -19,12 +19,14 @@
 package org.apache.hop.pipeline.transforms.streaminput;
 
 import org.apache.hop.core.row.IRowMeta;
+import org.apache.hop.datastream.metadata.DataStreamMeta;
 import org.apache.hop.datastream.plugin.IDataStream;
 import org.apache.hop.pipeline.transform.BaseTransformData;
 import org.jspecify.annotations.NonNull;
 
 public class DataStreamInputData extends BaseTransformData {
   public String dataStreamName;
+  public @NonNull DataStreamMeta dataStreamMeta;
   public @NonNull IDataStream dataStream;
   public IRowMeta streamRowMeta;
 }

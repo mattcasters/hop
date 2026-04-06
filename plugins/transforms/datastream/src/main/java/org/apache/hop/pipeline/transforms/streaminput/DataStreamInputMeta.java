@@ -76,11 +76,14 @@ public class DataStreamInputMeta extends BaseTransformMeta<DataStreamInput, Data
     // Open the data stream, read the metadata and close it again.
     String realDataStreamName = variables.resolve(dataStreamName);
     try {
-      IDataStream dataStream = getAndValidateDataStream(metadataProvider, realDataStreamName);
+      DataStreamMeta dataStreamMeta =
+          getAndValidateDataStream(metadataProvider, realDataStreamName);
+      IDataStream dataStream = dataStreamMeta.getDataStream();
+
       // Initialize the data stream
       //
       try {
-        dataStream.initialize(variables, metadataProvider, false);
+        dataStream.initialize(variables, metadataProvider, false, dataStreamMeta);
         IRowMeta streamRowMeta = dataStream.getRowMeta();
         inputRowMeta.addRowMeta(streamRowMeta);
       } finally {
@@ -92,7 +95,7 @@ public class DataStreamInputMeta extends BaseTransformMeta<DataStreamInput, Data
     }
   }
 
-  public static @NonNull IDataStream getAndValidateDataStream(
+  public static @NonNull DataStreamMeta getAndValidateDataStream(
       IHopMetadataProvider metadataProvider, String realDataStreamName) throws HopException {
     IHopMetadataSerializer<DataStreamMeta> serializer =
         metadataProvider.getSerializer(DataStreamMeta.class);
@@ -105,6 +108,6 @@ public class DataStreamInputMeta extends BaseTransformMeta<DataStreamInput, Data
       throw new HopException(
           "Please specify and configure a data stream type in " + dataStreamMeta.getName());
     }
-    return dataStream;
+    return dataStreamMeta;
   }
 }

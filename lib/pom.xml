@@ -129,7 +129,7 @@
         <perfmark.version>0.26.0</perfmark.version>
         <picocli-version>4.7.7</picocli-version>
         <poi.version>5.5.1</poi.version>
-        <protobuf-java.version>3.25.5</protobuf-java.version>
+        <protobuf-java.version>4.34.1</protobuf-java.version>
         <re2j.version>1.8</re2j.version>
         <reactive-streams.version>1.0.4</reactive-streams.version>
         <reactor-core.version>3.4.41</reactor-core.version>
@@ -153,6 +153,16 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-classes-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.google.re2j</groupId>
                 <artifactId>re2j</artifactId>

@@ -52,6 +52,7 @@ import org.apache.hop.core.row.RowDataUtil;
 import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.row.value.ValueMetaFactory;
 import org.apache.hop.core.variables.IVariables;
+import org.apache.hop.datastream.metadata.DataStreamMeta;
 import org.apache.hop.datastream.plugin.IDataStream;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.jspecify.annotations.NonNull;
@@ -75,6 +76,7 @@ public abstract class ArrowBaseDataStream implements IDataStream {
 
   protected FileOutputStream fileOutputStream;
   protected FileInputStream fileInputStream;
+  protected DataStreamMeta dataStreamMeta;
 
   protected ArrowBaseDataStream() {
     // Empty
@@ -84,11 +86,15 @@ public abstract class ArrowBaseDataStream implements IDataStream {
 
   @Override
   public void initialize(
-      IVariables variables, IHopMetadataProvider metadataProvider, boolean writing)
+      IVariables variables,
+      IHopMetadataProvider metadataProvider,
+      boolean writing,
+      DataStreamMeta dataStreamMeta)
       throws HopException {
     this.variables = variables;
     this.metadataProvider = metadataProvider;
     this.writing = writing;
+    this.dataStreamMeta = dataStreamMeta;
 
     rowBuffer = new ArrayList<>();
     rootAllocator = new RootAllocator();
@@ -161,7 +167,8 @@ public abstract class ArrowBaseDataStream implements IDataStream {
     return readRowMeta;
   }
 
-  protected void allocateFieldVectorsSpace(int bufferSize) throws HopException {
+  public static void allocateFieldVectorsSpace(
+      VectorSchemaRoot vectorSchemaRoot, IRowMeta rowMeta, int bufferSize) throws HopException {
     for (int fieldIndex = 0; fieldIndex < rowMeta.size(); fieldIndex++) {
       IValueMeta valueMeta = rowMeta.getValueMeta(fieldIndex);
       FieldVector fieldVector = vectorSchemaRoot.getVector(fieldIndex);

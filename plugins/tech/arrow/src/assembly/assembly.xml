@@ -53,7 +53,7 @@
         <dependencySet>
             <scope>runtime</scope>
             <excludes>
-                <exclude>org.apache.hop:hop-tech-minio:jar</exclude>
+                <exclude>org.apache.hop:hop-tech-arrow:jar</exclude>
                 <exclude>com.squareup.okio::jar</exclude>
                 <exclude>org.apache.commons:commons-compress:jar</exclude>
                 <exclude>org.apache.commons:commons-lang3:jar</exclude>
@@ -73,15 +73,5 @@
             </excludes>
             <outputDirectory>plugins/tech/arrow/lib</outputDirectory>
         </dependencySet>
-        <!--
-        TODO: FIXME
-        <dependencySet>
-            <scope>runtime</scope>
-            <includes>
-                <include>org.bouncycastle::jar</include>
-            </includes>
-            <outputDirectory>lib/core</outputDirectory>
-        </dependencySet>
-        -->
     </dependencySets>
 </assembly>

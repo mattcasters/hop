@@ -23,6 +23,7 @@ import org.apache.hop.core.plugins.IPlugin;
 import org.apache.hop.core.plugins.PluginRegistry;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.variables.IVariables;
+import org.apache.hop.datastream.metadata.DataStreamMeta;
 import org.apache.hop.metadata.api.HopMetadataObject;
 import org.apache.hop.metadata.api.IHopMetadataObjectFactory;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
@@ -36,9 +37,14 @@ public interface IDataStream extends Cloneable {
    * @param variables The variables that this plugin can use
    * @param metadataProvider References to other metadata objects can be found here.
    * @param writing Set to true if you're writing and false if you're reading.
+   * @param dataStreamMeta The data stream metadata to reference
    * @throws HopException In case there was an error setting up this data stream.
    */
-  void initialize(IVariables variables, IHopMetadataProvider metadataProvider, boolean writing)
+  void initialize(
+      IVariables variables,
+      IHopMetadataProvider metadataProvider,
+      boolean writing,
+      DataStreamMeta dataStreamMeta)
       throws HopException;
 
   /**

@@ -93,6 +93,10 @@
             <version>1.30.0</version>
             <exclusions>
                 <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>io.opencensus</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
@@ -152,6 +156,10 @@
                 </exclusion>
                 <exclusion>
                     <groupId>commons-codec</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
@@ -231,6 +239,10 @@
                 <exclusion>
                     <groupId>commons-codec</groupId>
                     <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.opencensus</groupId>
@@ -367,6 +379,10 @@
                     <artifactId>commons-io</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>io.opencensus</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
@@ -478,6 +494,10 @@
                 </exclusion>
                 <exclusion>
                     <groupId>commons-codec</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
@@ -993,6 +1013,10 @@
                 <exclusion>
                     <groupId>commons-codec</groupId>
                     <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.opencensus</groupId>
