@@ -474,6 +474,7 @@ under the License.
 ** xref:technology/memgraph/index.adoc[Memgraph]
 ** xref:technology/neo4j/index.adoc[Neo4j]
 *** xref:technology/neo4j/working-with-neo4j-data.adoc[Working with Neo4j data]
+*** xref:technology/neo4j/neo4j-logging-schema.adoc[Neo4j Logging Schema]
 ** xref:technology/google/index.adoc[Google]
 * xref:hop-server/index.adoc[Hop Server]
 ** xref:hop-server/rest-api.adoc[REST api]

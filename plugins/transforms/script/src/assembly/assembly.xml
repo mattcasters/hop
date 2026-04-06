@@ -56,7 +56,6 @@
                 <include>org.graalvm.regex:regex:jar</include>
                 <include>org.graalvm.truffle:truffle-api:jar</include>
                 <include>org.graalvm.sdk:graal-sdk:jar</include>
-                <include>com.ibm.icu:icu4j:jar</include>
             </includes>
             <outputDirectory>plugins/transforms/script/lib</outputDirectory>
         </dependencySet>
@@ -66,6 +65,7 @@
                 <include>org.ow2.asm:asm-commons:jar</include>
                 <include>org.ow2.asm:asm-tree:jar</include>
                 <include>org.ow2.asm:asm-util:jar</include>
+                <include>com.ibm.icu:icu4j:jar</include>
             </includes>
             <outputDirectory>lib/core</outputDirectory>
         </dependencySet>

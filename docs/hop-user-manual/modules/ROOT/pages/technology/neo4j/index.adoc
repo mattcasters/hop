@@ -68,3 +68,5 @@ The Neo4j examples included in the release downloads is described in document:
 
 xref:technology/neo4j/working-with-neo4j-data.adoc[Working with Neo4j data]
 
+xref:technology/neo4j/neo4j-logging-schema.adoc[Neo4j Logging Schema] describes the graph schema used when logging executions to Neo4j.
+

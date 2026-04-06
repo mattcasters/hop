@@ -149,14 +149,19 @@ public class GuiMenuWidgets extends BaseGuiWidgets {
             try {
               executeMenuItem(guiMenuItem, instanceId);
             } catch (Exception ex) {
+              Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+              String msg = cause.getMessage();
+              if (msg == null || msg.isEmpty()) {
+                msg = cause.getClass().getSimpleName();
+              }
               LogChannel.UI.logError(
                   "Unable to call method "
                       + guiMenuItem.getListenerMethod()
                       + " in singleton "
                       + guiMenuItem.getListenerClassName()
                       + " : "
-                      + ex.getMessage(),
-                  e);
+                      + msg,
+                  ex);
             }
           });
 

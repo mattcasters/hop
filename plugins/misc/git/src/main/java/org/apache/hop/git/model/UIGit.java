@@ -803,11 +803,44 @@ public class UIGit extends VCS {
     }
   }
 
+  /**
+   * Create a CredentialsProvider for token-based authentication (GitHub, GitLab, etc.).
+   *
+   * @param token Personal access token
+   * @return CredentialsProvider, or null if token is null/empty
+   */
+  public static CredentialsProvider createTokenCredentialsProvider(String token) {
+    if (token == null || token.trim().isEmpty()) {
+      return null;
+    }
+    return new UsernamePasswordCredentialsProvider("x-oauth-basic", token.trim());
+  }
+
   public boolean cloneRepo(String directory, String uri) {
+    return cloneRepo(directory, uri, null, 0);
+  }
+
+  /**
+   * Clone a repository with optional credentials and shallow clone depth.
+   *
+   * @param directory Local directory to clone into
+   * @param uri Repository URI (e.g. https://github.com/user/repo.git)
+   * @param credentialsProvider Optional credentials for authentication (e.g. token). If null and
+   *     auth fails, user will be prompted.
+   * @param depth Shallow clone depth (0 = full clone, 1+ = shallow with that many commits)
+   * @return true if clone succeeded
+   */
+  public boolean cloneRepo(
+      String directory, String uri, CredentialsProvider credentialsProvider, int depth) {
+    CredentialsProvider provider =
+        credentialsProvider != null ? credentialsProvider : this.credentialsProvider;
     CloneCommand cmd = Git.cloneRepository();
     cmd.setDirectory(new File(directory));
     cmd.setURI(uri);
-    cmd.setCredentialsProvider(credentialsProvider);
+    cmd.setCredentialsProvider(provider);
+    if (depth > 0) {
+      cmd.setDepth(depth);
+    }
     try {
       Git gitClone = cmd.call();
       gitClone.close();
@@ -818,12 +851,11 @@ public class UIGit extends VCS {
                   .contains(
                       CONST_AUTHENTICATION_IS_REQUIRED_BUT_NO_CREDENTIALS_PROVIDER_HAS_BEEN_REGISTERED)
               || e.getMessage().contains(CONST_NOT_AUTHORIZED))) {
-        if (promptUsernamePassword()) {
-          return cloneRepo(directory, uri);
+        if (provider == null && promptUsernamePassword()) {
+          return cloneRepo(directory, uri, null, depth);
         }
-      } else {
-        showMessageBox(BaseMessages.getString(PKG, CONST_DIALOG_ERROR), e.getMessage());
       }
+      showMessageBox(BaseMessages.getString(PKG, CONST_DIALOG_ERROR), e.getMessage());
     }
     return false;
   }

@@ -91,6 +91,7 @@ public class LocationMouseDoubleClickExtensionPoint
           // Check if this is the flask...
           //
           if (DataSetConst.AREA_DRAWN_INPUT_DATA_SET.equals(areaOwner.getParent())) {
+            pipelineGraphExtension.setPreventingDefault(true);
 
             // Open the dataset double-clicked on...
             //
@@ -113,8 +114,9 @@ public class LocationMouseDoubleClickExtensionPoint
               }
             }
           } else if (DataSetConst.AREA_DRAWN_GOLDEN_DATA_SET.equals(areaOwner.getParent())) {
+            pipelineGraphExtension.setPreventingDefault(true);
 
-            // Open the dataset double clicked on...
+            // Open the dataset double-clicked on...
             //
             String transformName = (String) areaOwner.getOwner();
 
@@ -136,8 +138,9 @@ public class LocationMouseDoubleClickExtensionPoint
               }
             }
           } else if (DataSetConst.AREA_DRAWN_GOLDEN_DATA_RESULT.equals(areaOwner.getParent())) {
+            pipelineGraphExtension.setPreventingDefault(true);
 
-            // Open the dataset double clicked on...
+            // Open the dataset double-clicked on...
             //
             String transformName = (String) areaOwner.getOwner();
 

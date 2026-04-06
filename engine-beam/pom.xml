@@ -31,16 +31,16 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.apache.beam</groupId>
-                <artifactId>beam-sdks-java-google-cloud-platform-bom</artifactId>
-                <version>${apache-beam.version}</version>
+                <groupId>org.apache.hop</groupId>
+                <artifactId>hop-libs</artifactId>
+                <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.apache.hop</groupId>
-                <artifactId>hop-libs</artifactId>
-                <version>${project.version}</version>
+                <groupId>org.apache.beam</groupId>
+                <artifactId>beam-sdks-java-google-cloud-platform-bom</artifactId>
+                <version>${apache-beam.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

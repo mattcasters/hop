@@ -21,7 +21,9 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.hop.core.changed.ChangedFlag;
+import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopRuntimeException;
+import org.apache.hop.core.exception.HopXmlException;
 import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.RowMeta;
@@ -31,6 +33,8 @@ import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.metadata.api.HopMetadataProperty;
+import org.apache.hop.metadata.serializer.memory.MemoryMetadataProvider;
+import org.apache.hop.metadata.serializer.xml.XmlMetadataUtil;
 import org.w3c.dom.Node;
 
 /** This class contains the metadata to handle proper error handling on a transform level. */
@@ -155,40 +159,25 @@ public class TransformErrorMeta extends ChangedFlag implements Cloneable {
     }
   }
 
-  public String getXml() {
-    return XmlHandler.openTag(TransformErrorMeta.XML_ERROR_TAG)
-        + XmlHandler.addTagValue(
-            TransformErrorMeta.XML_SOURCE_TRANSFORM_TAG,
-            sourceTransform != null ? sourceTransform.getName() : "")
-        + XmlHandler.addTagValue(
-            TransformErrorMeta.XML_TARGET_TRANSFORM_TAG,
-            targetTransform != null ? targetTransform.getName() : "")
-        + XmlHandler.addTagValue("is_enabled", enabled)
-        + XmlHandler.addTagValue("nr_valuename", nrErrorsValueName)
-        + XmlHandler.addTagValue("descriptions_valuename", errorDescriptionsValueName)
-        + XmlHandler.addTagValue("fields_valuename", errorFieldsValueName)
-        + XmlHandler.addTagValue("codes_valuename", errorCodesValueName)
-        + XmlHandler.addTagValue("max_errors", maxErrors)
-        + XmlHandler.addTagValue("max_pct_errors", maxPercentErrors)
-        + XmlHandler.addTagValue("min_pct_rows", minPercentRows)
-        + XmlHandler.closeTag(TransformErrorMeta.XML_ERROR_TAG);
+  public String getXml() throws HopException {
+    return XmlHandler.aroundTag(XML_ERROR_TAG, XmlMetadataUtil.serializeObjectToXml(this));
   }
 
-  public TransformErrorMeta(Node node, List<TransformMeta> transforms) {
-    sourceTransform =
-        TransformMeta.findTransform(
-            transforms, XmlHandler.getTagValue(node, TransformErrorMeta.XML_SOURCE_TRANSFORM_TAG));
-    targetTransform =
-        TransformMeta.findTransform(
-            transforms, XmlHandler.getTagValue(node, TransformErrorMeta.XML_TARGET_TRANSFORM_TAG));
-    enabled = "Y".equals(XmlHandler.getTagValue(node, "is_enabled"));
-    nrErrorsValueName = XmlHandler.getTagValue(node, "nr_valuename");
-    errorDescriptionsValueName = XmlHandler.getTagValue(node, "descriptions_valuename");
-    errorFieldsValueName = XmlHandler.getTagValue(node, "fields_valuename");
-    errorCodesValueName = XmlHandler.getTagValue(node, "codes_valuename");
-    maxErrors = XmlHandler.getTagValue(node, "max_errors");
-    maxPercentErrors = XmlHandler.getTagValue(node, "max_pct_errors");
-    minPercentRows = XmlHandler.getTagValue(node, "min_pct_rows");
+  @Getter
+  public static class Transforms {
+    private List<TransformMeta> transforms;
+  }
+
+  public TransformErrorMeta(Node node, List<TransformMeta> transforms) throws HopXmlException {
+    // The deSerializeFromXml call searches for a List field called 'transforms' in the provided
+    // Object.
+    // Normally this is the transform metadata but here we wrap it a tiny class.
+    //
+    Transforms parentObject = new Transforms();
+    parentObject.transforms = transforms;
+
+    XmlMetadataUtil.deSerializeFromXml(
+        parentObject, null, node, TransformErrorMeta.class, this, new MemoryMetadataProvider());
   }
 
   public IRowMeta getErrorRowMeta(IVariables variables) {

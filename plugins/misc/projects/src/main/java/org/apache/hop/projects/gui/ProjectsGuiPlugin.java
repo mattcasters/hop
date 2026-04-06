@@ -116,6 +116,12 @@ public class ProjectsGuiPlugin {
   public static final String ID_TOOLBAR_ITEM_PROJECT = "toolbar-item-10000-project";
   public static final String ID_CONTEXT_MENU_PROJECT = "context-menu-project";
   public static final String ID_CONTEXT_MENU_PROJECT_ADD = "context-menu-project-40010-add";
+  public static final String ID_CONTEXT_MENU_PROJECT_ADD_FROM_VC =
+      "context-menu-project-40011-add-from-vc";
+  public static final String ID_CONTEXT_MENU_PROJECT_ADD_FROM_EXISTING =
+      "context-menu-project-40012-add-from-existing";
+  public static final String ID_CONTEXT_MENU_PROJECT_ADD_FROM_TEMPLATE =
+      "context-menu-project-40013-add-from-template";
   public static final String ID_CONTEXT_MENU_PROJECT_EDIT = "context-menu-project-40020-edit";
   public static final String ID_CONTEXT_MENU_PROJECT_DELETE = "context-menu-project-40030-delete";
 
@@ -363,7 +369,7 @@ public class ProjectsGuiPlugin {
     return info != null ? info.path : null;
   }
 
-  private static void updateProjectToolItem(String projectName) {
+  public static void updateProjectToolItem(String projectName) {
     GuiToolbarWidgets statusWidgets = HopGui.getInstance().getStatusToolbarWidgets();
     if (projectName == null || StringUtils.isEmpty(projectName)) {
       statusWidgets.setToolbarItemText(ID_TOOLBAR_ITEM_PROJECT, "");
@@ -916,7 +922,77 @@ public class ProjectsGuiPlugin {
       label = "i18n::HopGui.Toolbar.Project.Add.Label",
       toolTip = "i18n::HopGui.Toolbar.Project.Add.Tooltip",
       image = "ui/images/add.svg")
-  public void addNewProject() {
+  public void addProjectMenu() {
+    // Cascade menu - no action, submenu opens on hover
+  }
+
+  @GuiMenuElement(
+      root = ID_CONTEXT_MENU_PROJECT,
+      parentId = ID_CONTEXT_MENU_PROJECT_ADD,
+      id = ID_CONTEXT_MENU_PROJECT_ADD_FROM_VC,
+      label = "i18n::HopGui.Toolbar.Project.Add.FromVersionControl.Label",
+      toolTip = "i18n::HopGui.Toolbar.Project.Add.FromVersionControl.Tooltip",
+      image = "ui/images/add.svg")
+  public void addProjectFromVersionControl() {
+    addProjectFromVersionControlInternal();
+  }
+
+  @GuiMenuElement(
+      root = ID_CONTEXT_MENU_PROJECT,
+      parentId = ID_CONTEXT_MENU_PROJECT_ADD,
+      id = ID_CONTEXT_MENU_PROJECT_ADD_FROM_EXISTING,
+      label = "i18n::HopGui.Toolbar.Project.Add.FromExisting.Label",
+      toolTip = "i18n::HopGui.Toolbar.Project.Add.FromExisting.Tooltip",
+      image = "ui/images/add.svg")
+  public void addProjectFromExistingSources() {
+    addProjectFromExistingSourcesInternal();
+  }
+
+  private void addProjectFromVersionControlInternal() {
+    try {
+      HopGui hopGui = HopGui.getInstance();
+      if (hopGui == null) {
+        LogChannel.GENERAL.logError("HopGui is not available");
+        return;
+      }
+      Shell shell = hopGui.getActiveShell();
+      if (shell == null) {
+        shell = hopGui.getShell();
+      }
+      if (shell == null) {
+        org.eclipse.swt.widgets.Display display = org.eclipse.swt.widgets.Display.getCurrent();
+        if (display != null) {
+          shell = display.getActiveShell();
+        }
+      }
+      if (shell == null || shell.isDisposed()) {
+        LogChannel.GENERAL.logError(
+            "No valid shell available for dialog. HopGui may not be fully initialized.");
+        return;
+      }
+      IVariables variables = hopGui.getVariables();
+      if (variables == null) {
+        variables = Variables.getADefaultVariableSpace();
+      }
+      CloneFromVersionControlDialog dialog = new CloneFromVersionControlDialog(shell, variables);
+      dialog.open();
+    } catch (Exception e) {
+      LogChannel.GENERAL.logError("Error opening 'Add project from version control' dialog", e);
+      HopGui hopGui = HopGui.getInstance();
+      if (hopGui != null) {
+        Shell shell = hopGui.getShell();
+        if (shell != null && !shell.isDisposed()) {
+          new ErrorDialog(
+              shell,
+              BaseMessages.getString(PKG, "ProjectGuiPlugin.AddProject.Error.Dialog.Header"),
+              BaseMessages.getString(PKG, "ProjectGuiPlugin.AddProject.Error.Dialog.Message"),
+              e);
+        }
+      }
+    }
+  }
+
+  private void addProjectFromExistingSourcesInternal() {
     HopGui hopGui = HopGui.getInstance();
     IVariables variables = hopGui.getVariables();
 

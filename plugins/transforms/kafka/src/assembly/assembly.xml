@@ -58,6 +58,8 @@
                 <exclude>io.confluent:common-utils:jar</exclude>
                 <exclude>org.yaml:snakeyaml:jar</exclude>
                 <exclude>io.confluent::jar</exclude>
+                <exclude>com.eclipsesource.minimal-json:minimal-json:jar</exclude>
+                <exclude>com.google.re2j:re2j:jar</exclude>
             </excludes>
             <outputDirectory>plugins/transforms/kafka/lib</outputDirectory>
         </dependencySet>
@@ -73,6 +75,8 @@
                 <include>io.confluent:common-utils:jar</include>
                 <include>org.yaml:snakeyaml:jar</include>
                 <include>io.confluent::jar</include>
+                <include>com.eclipsesource.minimal-json:minimal-json:jar</include>
+                <include>com.google.re2j:re2j:jar</include>
             </includes>
             <outputDirectory>lib/core</outputDirectory>
         </dependencySet>

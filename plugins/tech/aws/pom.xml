@@ -30,7 +30,6 @@
     <name>Hop Plugins Technology AWS</name>
 
     <properties>
-        <!-- AWS SDK v2: aligned with Apache Beam 2.71.0 (see lib/pom.xml) -->
         <aws-java-sdk.version>2.20.162</aws-java-sdk.version>
     </properties>
 

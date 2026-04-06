@@ -51,7 +51,7 @@
             <includes>
                 <include>org.glassfish.jersey.connectors:jersey-apache5-connector:jar</include>
             </includes>
-            <outputDirectory>plugins/misc/rest/lib</outputDirectory>
+            <outputDirectory>lib/core</outputDirectory>
         </dependencySet>
     </dependencySets>
 </assembly>
