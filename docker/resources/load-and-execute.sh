@@ -239,13 +239,22 @@ else
     HOP_EXEC_OPTIONS="${HOP_EXEC_OPTIONS} --startaction=${HOP_START_ACTION}"
   fi
 
-  log "Running a single hop workflow / pipeline (${HOP_FILE_PATH})"
-  "${DEPLOYMENT_PATH}"/hop-run.sh \
-    --file="${HOP_FILE_PATH}" \
-    --runconfig="${HOP_RUN_CONFIG}" \
-    --parameters="${HOP_RUN_PARAMETERS}" \
-    ${HOP_EXEC_OPTIONS} \
-    2>&1 | tee "${HOP_LOG_PATH}"
-
+  # Optionally execute a hop command instead of hop-run.sh
+  #
+  if [ -n "${HOP_COMMAND}" ]; then
+    log "Executing command: hop ${HOP_COMMAND}"
+    "${DEPLOYMENT_PATH}"/hop "${HOP_COMMAND}" \
+      "${HOP_EXEC_OPTIONS}" \
+      "${HOP_COMMAND_PARAMETERS}" \
+      2>&1 | tee "${HOP_LOG_PATH}"
+  else
+    log "Running a single hop workflow / pipeline (${HOP_FILE_PATH})"
+    "${DEPLOYMENT_PATH}"/hop-run.sh \
+      --file="${HOP_FILE_PATH}" \
+      --runconfig="${HOP_RUN_CONFIG}" \
+      --parameters="${HOP_RUN_PARAMETERS}" \
+      ${HOP_EXEC_OPTIONS} \
+      2>&1 | tee "${HOP_LOG_PATH}"
+  fi
   exitWithCode "${PIPESTATUS[0]}"
 fi

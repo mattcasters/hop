@@ -48,6 +48,11 @@ ENV HOP_ENVIRONMENT_NAME=environment1
 ENV HOP_ENVIRONMENT_CONFIG_FILE_NAME_PATHS=
 # hop run configuration to use
 ENV HOP_RUN_CONFIG=
+# The optional hop command to execute instread of hop run
+# with command options to run
+#
+ENV HOP_COMMAND=
+ENV HOP_COMMAND_PARAMETERS=
 # parameters that should be passed on to the hop-run command
 # specify as comma separated list, e.g. PARAM_1=aaa,PARAM_2=bbb
 ENV HOP_RUN_PARAMETERS=
