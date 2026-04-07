@@ -433,7 +433,7 @@ if result.getNrErrors() != 0:
 
 If you have a pipeline that generates data and you want to read from it in Python, you can do so by using a data stream for the inter-process communication (IPC). In this example we're using the xref:metadata-types/data-stream/arrow-file-stream.adoc[Apache Arrow file stream] data stream type to pass data from Hop to Python.
 
-NOTE: You'll notice in the script that we wait until the pipeline has finished. It is possible to read batches of data from a stream file, just not the whole file as described in the example.  An alternative is touse an xref:metadata-types/data-stream/arrow-file-stream.adoc[Apache Arrow Flight] data stream type.
+NOTE: You'll notice in the script that we wait until the pipeline has finished. It is possible to read batches of data from a stream file, just not the whole file as described in the example.  An alternative is to use an xref:metadata-types/data-stream/arrow-file-stream.adoc[Apache Arrow Flight] data stream type.
 
 .The example
 [%collapsible]
