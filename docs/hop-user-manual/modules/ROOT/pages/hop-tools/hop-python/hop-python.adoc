@@ -494,7 +494,7 @@ with pa.memory_map(file_path, 'r') as source:
 
     df = df.reset_index()
 
-    print(df.to_csv())----
+    print(df.to_csv())
 ----
 ====
 
