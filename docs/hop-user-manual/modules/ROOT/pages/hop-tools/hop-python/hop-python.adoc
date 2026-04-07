@@ -386,7 +386,7 @@ pipelineMeta.addPipelineHop(hop.newPipelineHopMeta(generate, dummy))
 # The "local" pipeline run configuration is picked up from the project metadata.
 # This project is specified with the "--project" option when you run "hop python".
 #
-pipeline = hop.newPipeline(pipelineMeta, "local", "Basic")
+pipeline = hop.newPipelineEngine(pipelineMeta, "local", "Basic")
 
 # Execute this pipeline
 #
@@ -428,4 +428,73 @@ if result.getNrErrors() != 0:
 ----
 ====
 
+
+=== Read rows from a data stream
+
+If you have a pipeline that generates data and you want to read from it in Python, you can do so by using a data stream for the inter-process communication (IPC). In this example we're using the xref:metadata-types/data-stream/arrow-file-stream.adoc[Apache Arrow file stream] data stream type to pass data from Hop to Python.
+
+NOTE: You'll notice in the script that we wait until the pipeline has finished. It is possible to read batches of data from a stream file, just not the whole file as described in the example.  An alternative is touse an xref:metadata-types/data-stream/arrow-file-stream.adoc[Apache Arrow Flight] data stream type.
+
+.The example
+[%collapsible]
+====
+[source,python]
+----
+import os
+import sys
+import time
+import xml.dom.minidom
+import pyarrow as pa
+import pyarrow.ipc as ipc
+
+from py4j.java_gateway import JavaGateway
+gateway = JavaGateway()
+hop = gateway.entry_point.getPyHop()
+vars = hop.getVariables()
+
+# Load the pipeline metadata to stream rows to a file
+#
+pipelineMeta = hop.loadPipelineMeta('${PROJECT_HOME}/data-stream-output.hpl')
+
+# Execute this pipeline
+#
+pipeline = hop.newPipelineEngine(pipelineMeta, "local", "Basic")
+
+pipeline.execute()
+
+print("Pipeline started: "+pipelineMeta.getName())
+
+# While the data streaming is done, the pipeline could be doing other things.
+# Because of that we wait until the pipeline is done.
+
+pipeline.waitUntilFinished()
+
+print("Pipeline finished: "+pipelineMeta.getName())
+
+# We use the same variable in the Hop environment as here:
+#
+file_path = vars.resolve("${STREAM_FILENAME}")
+
+print("Reading from stream file: "+file_path);
+
+# Open the data stream and read from it
+#
+with pa.memory_map(file_path, 'r') as source:
+    reader = ipc.open_stream(source)
+
+    schema = reader.schema
+    print("Schema:", schema)
+
+    # Read everything into one Table (simple & efficient for most cases)
+    table = pa.Table.from_batches(reader)
+    print(f"Total rows: {len(table)}")
+
+    # Convert to pandas (or Polars) if needed
+    df = table.to_pandas()
+
+    df = df.reset_index()
+
+    print(df.to_csv())----
+----
+====
 
