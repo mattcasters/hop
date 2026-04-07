@@ -46,7 +46,7 @@ limitations under the License.
       <attributes_hac/>
     </action>
     <action>
-      <filename>${PROJECT_HOME}/main-0096-data-stream-stream-file-write.hpl</filename>
+      <filename>${PROJECT_HOME}/0096-data-stream-stream-file-write.hpl</filename>
       <params_from_previous>N</params_from_previous>
       <exec_per_row>N</exec_per_row>
       <clear_rows>N</clear_rows>
@@ -73,10 +73,11 @@ limitations under the License.
     <action>
       <test_names>
         <test_name>
-          <name>main-0096-data-stream-stream-file-read UNIT</name>
+          <name>0096-data-stream-stream-file-read UNIT</name>
         </test_name>
       </test_names>
-      <name>main-0096-data-stream-stream-file-read UNIT</name>
+      <name>0096-data-stream-stream-file-read UNIT</name>
+      <description/>
       <type>RunPipelineTests</type>
       <attributes/>
       <xloc>336</xloc>
@@ -95,7 +96,7 @@ limitations under the License.
     </hop>
     <hop>
       <from>main-0096-data-stream-stream-file-write</from>
-      <to>main-0096-data-stream-stream-file-read UNIT</to>
+      <to>0096-data-stream-stream-file-read UNIT</to>
       <evaluation>Y</evaluation>
       <unconditional>N</unconditional>
       <enabled>Y</enabled>

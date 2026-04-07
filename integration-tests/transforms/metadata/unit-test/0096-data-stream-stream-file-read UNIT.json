@@ -42,7 +42,7 @@
     }
   ],
   "input_data_sets": [],
-  "name": "main-0096-data-stream-stream-file-read UNIT",
+  "name": "0096-data-stream-stream-file-read UNIT",
   "trans_test_tweaks": [],
-  "pipeline_filename": "./main-0096-data-stream-stream-file-read.hpl"
+  "pipeline_filename": "./0096-data-stream-stream-file-read.hpl"
 }
