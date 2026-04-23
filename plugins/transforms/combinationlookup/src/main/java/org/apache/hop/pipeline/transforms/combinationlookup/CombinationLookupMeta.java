@@ -736,5 +736,10 @@ public class CombinationLookupMeta
     if (StringUtils.isNotEmpty(sequenceName)) {
       this.fields.setSequenceFrom(sequenceName);
     }
+    Node lastUpdateFieldNode = XmlHandler.getSubNode(transformNode, "last_update_field");
+    String lastUpdateField = XmlHandler.getNodeValue(lastUpdateFieldNode);
+    if (StringUtils.isNotEmpty(lastUpdateField)) {
+      this.fields.getReturnFields().setLastUpdateField(lastUpdateField);
+    }
   }
 }
