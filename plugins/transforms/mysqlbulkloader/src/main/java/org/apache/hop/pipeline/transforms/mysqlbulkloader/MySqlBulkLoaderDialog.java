@@ -523,7 +523,7 @@ public class MySqlBulkLoaderDialog extends BaseTransformDialog {
     wTabFolder.addListener(
         SWT.Selection,
         e -> {
-          if (wTabFolder != null && !wTabFolder.isDisposed()) {
+          if (!wTabFolder.isDisposed()) {
             wTabFolder.layout(true, true);
           }
         });
@@ -630,16 +630,11 @@ public class MySqlBulkLoaderDialog extends BaseTransformDialog {
       return;
     }
 
-    String[] inputNames = new String[sourceFields.size()];
-    for (int i = 0; i < sourceFields.size(); i++) {
-      IValueMeta value = sourceFields.getValueMeta(i);
-      inputNames[i] = value.getName() + "-" + value.getOrigin() + ")";
-    }
-
     // Create the existing mapping list...
     //
     List<SourceToTargetMapping> mappings = new ArrayList<>();
     StringBuilder missingSourceFields = new StringBuilder();
+    //noinspection MismatchedQueryAndUpdateOfStringBuilder
     StringBuilder missingTargetFields = new StringBuilder();
 
     int nrFields = wReturn.nrNonEmpty();
@@ -727,14 +722,11 @@ public class MySqlBulkLoaderDialog extends BaseTransformDialog {
       wReturn.table.setItemCount(mappings.size());
       for (int i = 0; i < mappings.size(); i++) {
         SourceToTargetMapping mapping = mappings.get(i);
+        MySqlBulkLoaderMeta.Field field = input.getFields().get(i);
         TableItem item = wReturn.table.getItem(i);
-        item.setText(2, sourceFields.getValueMeta(mapping.getSourcePosition()).getName());
         item.setText(1, targetFields.getValueMeta(mapping.getTargetPosition()).getName());
-        item.setText(
-            3,
-            MySqlBulkLoaderMeta.getFieldFormatTypeDescription(
-                MySqlBulkLoaderMeta.getFieldFormatType(
-                    input.getFields().get(i).getFieldFormatType())));
+        item.setText(2, sourceFields.getValueMeta(mapping.getSourcePosition()).getName());
+        item.setText(3, field.getFieldFormatType().getDescription());
       }
       wReturn.setRowNums();
       wReturn.optWidth(true);
@@ -760,17 +752,13 @@ public class MySqlBulkLoaderDialog extends BaseTransformDialog {
     if (input.getFields() != null) {
       for (int i = 0; i < input.getFields().size(); i++) {
         TableItem item = wReturn.table.getItem(i);
-        if (input.getFields().get(i).getFieldTable() != null) {
-          item.setText(1, input.getFields().get(i).getFieldTable());
+        MySqlBulkLoaderMeta.Field field = input.getFields().get(i);
+        if (field == null) {
+          continue;
         }
-        if (input.getFields().get(i).getFieldStream() != null) {
-          item.setText(2, input.getFields().get(i).getFieldStream());
-        }
-        item.setText(
-            3,
-            MySqlBulkLoaderMeta.getFieldFormatTypeDescription(
-                MySqlBulkLoaderMeta.getFieldFormatType(
-                    input.getFields().get(i).getFieldFormatType())));
+        item.setText(1, Const.NVL(field.getFieldTable(), ""));
+        item.setText(2, Const.NVL(field.getFieldStream(), ""));
+        item.setText(3, field.getFieldFormatType().getDescription());
       }
     }
 
@@ -793,18 +781,15 @@ public class MySqlBulkLoaderDialog extends BaseTransformDialog {
 
   protected void setComboBoxes() {
     // Something was changed in the row.
-    //
-    final Map<String, Integer> fields = new HashMap<>();
-
     // Add the currentMeta fields...
-    fields.putAll(inputFields);
+    final Map<String, Integer> fields = new HashMap<>(inputFields);
 
     Set<String> keySet = fields.keySet();
     List<String> entries = new ArrayList<>(keySet);
 
-    String[] fieldNames = entries.toArray(new String[entries.size()]);
+    String[] fieldNames = entries.toArray(new String[0]);
     Const.sortStrings(fieldNames);
-    // return fields
+    // Set the field names
     ciReturn[1].setComboValues(fieldNames);
   }
 
@@ -815,7 +800,6 @@ public class MySqlBulkLoaderDialog extends BaseTransformDialog {
   }
 
   private void getInfo(MySqlBulkLoaderMeta inf) {
-    int nrfields = wReturn.nrNonEmpty();
 
     inf.setEnclosure(wEnclosure.getText());
     inf.setDelimiter(wDelimiter.getText());
@@ -827,22 +811,14 @@ public class MySqlBulkLoaderDialog extends BaseTransformDialog {
     inf.setLocalFile(wLocal.getSelection());
     inf.setBulkSize(wBulkSize.getText());
 
-    if (log.isDebug()) {
-      logDebug(BaseMessages.getString(PKG, "MySqlBulkLoaderDialog.Log.FoundFields", "" + nrfields));
-    }
-    // CHECKSTYLE:Indentation:OFF
-    List<MySqlBulkLoaderMeta.Field> fields = new ArrayList<>();
-    for (int i = 0; i < nrfields; i++) {
-      TableItem item = wReturn.getNonEmpty(i);
+    inf.getFields().clear();
+    for (TableItem item : wReturn.getNonEmptyItems()) {
       MySqlBulkLoaderMeta.Field field = new MySqlBulkLoaderMeta.Field();
       field.setFieldTable(item.getText(1));
       field.setFieldStream(item.getText(2));
-      field.setFieldFormatType(
-          MySqlBulkLoaderMeta.getFieldFormatTypeCode(
-              MySqlBulkLoaderMeta.getFieldFormatType(item.getText(3))));
-      fields.add(field);
+      field.setFieldFormatTypeWithDescription(item.getText(3));
+      inf.getFields().add(field);
     }
-    inf.setFields(fields);
     inf.setSchemaName(wSchema.getText());
     inf.setTableName(wTable.getText());
     inf.setConnection(wConnection.getText());
@@ -872,22 +848,16 @@ public class MySqlBulkLoaderDialog extends BaseTransformDialog {
   }
 
   private void getTableName() {
-    DatabaseMeta inf = null;
+    DatabaseMeta databaseMeta = null;
 
     if (!wConnection.getText().isEmpty()) {
-      inf = pipelineMeta.findDatabase(wConnection.getText(), variables);
+      databaseMeta = pipelineMeta.findDatabase(wConnection.getText(), variables);
     }
 
-    if (inf != null) {
-      if (log.isDebug()) {
-        logDebug(
-            BaseMessages.getString(PKG, "MySqlBulkLoaderDialog.Log.LookingAtConnection")
-                + inf.toString());
-      }
-
+    if (databaseMeta != null) {
       DatabaseExplorerDialog std =
           new DatabaseExplorerDialog(
-              shell, SWT.NONE, variables, inf, pipelineMeta.getDatabases(), false, true);
+              shell, SWT.NONE, variables, databaseMeta, pipelineMeta.getDatabases(), false, true);
       std.setSelectedSchemaAndTable(wSchema.getText(), wTable.getText());
       if (std.open()) {
         wSchema.setText(Const.NVL(std.getSchemaName(), ""));

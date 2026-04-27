@@ -17,6 +17,9 @@
 
 package org.apache.hop.pipeline.transforms.mysqlbulkloader;
 
+import static org.apache.hop.pipeline.transforms.mysqlbulkloader.MySqlBulkLoaderMeta.Field;
+import static org.apache.hop.pipeline.transforms.mysqlbulkloader.MySqlBulkLoaderMeta.FieldFormatType;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -24,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.Date;
 import org.apache.hop.core.Const;
 import org.apache.hop.core.database.Database;
@@ -33,6 +37,7 @@ import org.apache.hop.core.row.IRowMeta;
 import org.apache.hop.core.row.IValueMeta;
 import org.apache.hop.core.row.value.ValueMetaDate;
 import org.apache.hop.core.row.value.ValueMetaNumber;
+import org.apache.hop.core.row.value.ValueMetaTimestamp;
 import org.apache.hop.core.util.StreamLogger;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.i18n.BaseMessages;
@@ -263,19 +268,24 @@ public class MySqlBulkLoader extends BaseTransform<MySqlBulkLoaderMeta, MySqlBul
         data.bulkFormatMeta = new IValueMeta[data.keynrs.length];
         for (int i = 0; i < data.keynrs.length; i++) {
           IValueMeta sourceMeta = getInputRowMeta().getValueMeta(data.keynrs[i]);
-          if (sourceMeta.isDate()) {
-            if (MySqlBulkLoaderMeta.getFieldFormatType(meta.getFields().get(i).getFieldFormatType())
-                == MySqlBulkLoaderMeta.FIELD_FORMAT_TYPE_DATE) {
+          Field field = meta.getFields().get(i);
+
+          if (field.getFieldFormatType() == FieldFormatType.AUTO_FORMAT) {
+            data.bulkFormatMeta[i] =
+                switch (sourceMeta.getType()) {
+                  case IValueMeta.TYPE_DATE -> data.bulkDateMeta.clone();
+                  case IValueMeta.TYPE_TIMESTAMP -> data.bulkTimestampMeta.clone();
+                  case IValueMeta.TYPE_NUMBER -> data.bulkNumberMeta.clone();
+                  default -> null;
+                };
+          } else if (sourceMeta.isDate()) {
+            if (field.getFieldFormatType() == FieldFormatType.DATE) {
               data.bulkFormatMeta[i] = data.bulkDateMeta.clone();
-            } else if (MySqlBulkLoaderMeta.getFieldFormatType(
-                    meta.getFields().get(i).getFieldFormatType())
-                == MySqlBulkLoaderMeta.FIELD_FORMAT_TYPE_TIMESTAMP) {
+            } else if (field.getFieldFormatType() == FieldFormatType.TIMESTAMP) {
               data.bulkFormatMeta[i] = data.bulkTimestampMeta.clone(); // default to timestamp
             }
           } else if (sourceMeta.isNumeric()
-              && MySqlBulkLoaderMeta.getFieldFormatType(
-                      meta.getFields().get(i).getFieldFormatType())
-                  == MySqlBulkLoaderMeta.FIELD_FORMAT_TYPE_NUMBER) {
+              && field.getFieldFormatType() == FieldFormatType.NUMBER) {
             data.bulkFormatMeta[i] = data.bulkNumberMeta.clone();
           }
 
@@ -357,6 +367,7 @@ public class MySqlBulkLoader extends BaseTransform<MySqlBulkLoaderMeta, MySqlBul
         int index = data.keynrs[i];
         IValueMeta valueMeta = rowMeta.getValueMeta(index);
         Object valueData = r[index];
+        Field field = meta.getFields().get(i);
 
         if (valueData == null) {
           data.fifoStream.write("NULL".getBytes());
@@ -365,17 +376,14 @@ public class MySqlBulkLoader extends BaseTransform<MySqlBulkLoaderMeta, MySqlBul
             case IValueMeta.TYPE_STRING:
               data.fifoStream.write(data.quote);
               if (valueMeta.isStorageBinaryString()
-                  && MySqlBulkLoaderMeta.getFieldFormatType(
-                          meta.getFields().get(i).getFieldFormatType())
-                      == MySqlBulkLoaderMeta.FIELD_FORMAT_TYPE_OK) {
+                  && field.getFieldFormatType() == FieldFormatType.OK) {
                 // We had a string, just dump it back.
                 data.fifoStream.write((byte[]) valueData);
               } else {
                 String string = valueMeta.getString(valueData);
                 if (string != null) {
-                  if (MySqlBulkLoaderMeta.getFieldFormatType(
-                          meta.getFields().get(i).getFieldFormatType())
-                      == MySqlBulkLoaderMeta.FIELD_FORMAT_TYPE_STRING_ESCAPE) {
+                  if (field.getFieldFormatType() == FieldFormatType.STRING_ESCAPE
+                      || field.getFieldFormatType() == FieldFormatType.AUTO_FORMAT) {
                     string =
                         Const.replace(
                             string,
@@ -412,13 +420,33 @@ public class MySqlBulkLoader extends BaseTransform<MySqlBulkLoaderMeta, MySqlBul
                 }
               }
               break;
+            case IValueMeta.TYPE_TIMESTAMP:
+              if (valueMeta.isStorageBinaryString() && data.bulkFormatMeta[i] == null) {
+                data.fifoStream.write(valueMeta.getBinaryString(valueData));
+              } else {
+                Timestamp timestamp = ((ValueMetaTimestamp) valueMeta).getTimestamp(valueData);
+                if (timestamp != null) {
+                  data.fifoStream.write(data.bulkFormatMeta[i].getString(timestamp).getBytes());
+                }
+              }
+              break;
             case IValueMeta.TYPE_BOOLEAN:
               if (valueMeta.isStorageBinaryString() && data.bulkFormatMeta[i] == null) {
                 data.fifoStream.write(valueMeta.getBinaryString(valueData));
               } else {
-                Boolean b = valueMeta.getBoolean(valueData);
-                if (b != null) {
-                  data.fifoStream.write(data.bulkFormatMeta[i].getString(b).getBytes());
+                if (data.db.getDatabaseMeta().supportsBooleanDataType()) {
+                  // For MySQL this is the bit data type so 1, 0 or null
+                  //
+                  Long bit = valueMeta.getInteger(valueData);
+                  if (bit != null) {
+                    data.fifoStream.write(bit.toString().getBytes());
+                  }
+                } else {
+                  // Write Y/N as a character
+                  Boolean b = valueMeta.getBoolean(valueData);
+                  if (b != null) {
+                    data.fifoStream.write(data.bulkFormatMeta[i].getString(b).getBytes());
+                  }
                 }
               }
               break;
@@ -501,54 +529,63 @@ public class MySqlBulkLoader extends BaseTransform<MySqlBulkLoaderMeta, MySqlBul
   @Override
   public boolean init() {
 
-    if (super.init()) {
-
-      // Confirming Database Connection is defined.
-      try {
-        verifyDatabaseConnection();
-      } catch (HopException ex) {
-        logError(ex.getMessage());
-        return false;
-      }
-
-      if (Utils.isEmpty(meta.getEnclosure())) {
-        data.quote = new byte[] {};
-      } else {
-        data.quote = resolve(meta.getEnclosure()).getBytes();
-      }
-      if (Utils.isEmpty(meta.getDelimiter())) {
-        data.separator = "\t".getBytes();
-      } else {
-        data.separator = resolve(meta.getDelimiter()).getBytes();
-      }
-      data.newline = Const.CR.getBytes();
-
-      String realEncoding = resolve(meta.getEncoding());
-      data.bulkTimestampMeta = new ValueMetaDate("timestampMeta");
-      data.bulkTimestampMeta.setConversionMask("yyyy-MM-dd HH:mm:ss");
-      data.bulkTimestampMeta.setStringEncoding(realEncoding);
-
-      data.bulkDateMeta = new ValueMetaDate("dateMeta");
-      data.bulkDateMeta.setConversionMask("yyyy-MM-dd");
-      data.bulkDateMeta.setStringEncoding(realEncoding);
-
-      data.bulkNumberMeta = new ValueMetaNumber("numberMeta");
-      data.bulkNumberMeta.setConversionMask("#.#");
-      data.bulkNumberMeta.setGroupingSymbol(",");
-      data.bulkNumberMeta.setDecimalSymbol(".");
-      data.bulkNumberMeta.setStringEncoding(realEncoding);
-
-      data.bulkSize = Const.toLong(resolve(meta.getBulkSize()), -1L);
-
-      // Schema-table combination...
-      DatabaseMeta databaseMeta = getPipelineMeta().findDatabase(meta.getConnection(), variables);
-      data.schemaTable =
-          databaseMeta.getQuotedSchemaTableCombination(
-              variables, resolve(meta.getSchemaName()), resolve(meta.getTableName()));
-
-      return true;
+    if (!super.init()) {
+      return false;
     }
-    return false;
+
+    // Confirming Database Connection is defined.
+    try {
+      verifyDatabaseConnection();
+    } catch (HopException ex) {
+      logError(ex.getMessage());
+      return false;
+    }
+
+    if (Utils.isEmpty(meta.getEnclosure())) {
+      data.quote = new byte[] {};
+    } else {
+      data.quote = resolve(meta.getEnclosure()).getBytes();
+    }
+    if (Utils.isEmpty(meta.getDelimiter())) {
+      data.separator = "\t".getBytes();
+    } else {
+      data.separator = resolve(meta.getDelimiter()).getBytes();
+    }
+    data.newline = Const.CR.getBytes();
+
+    String realEncoding = resolve(meta.getEncoding());
+
+    data.bulkDateMeta = new ValueMetaDate("dateMeta");
+    data.bulkDateMeta.setConversionMask("yyyy-MM-dd");
+    data.bulkDateMeta.setStringEncoding(realEncoding);
+
+    data.bulkTimestampMeta = new ValueMetaDate("timestampMeta");
+    data.bulkTimestampMeta.setConversionMask("yyyy-MM-dd HH:mm:ss");
+    data.bulkTimestampMeta.setStringEncoding(realEncoding);
+
+    data.bulkTimestampMsMeta = new ValueMetaDate("timestampMsMeta");
+    data.bulkTimestampMsMeta.setConversionMask("yyyy-MM-dd HH:mm:ss.SSS");
+    data.bulkTimestampMsMeta.setStringEncoding(realEncoding);
+
+    data.bulkTimestampNsMeta = new ValueMetaDate("timestampNsMeta");
+    data.bulkTimestampNsMeta.setConversionMask("yyyy-MM-dd HH:mm:ss.SSSSSSSSS");
+    data.bulkTimestampNsMeta.setStringEncoding(realEncoding);
+
+    data.bulkNumberMeta = new ValueMetaNumber("numberMeta");
+    data.bulkNumberMeta.setConversionMask("#.#");
+    data.bulkNumberMeta.setGroupingSymbol(",");
+    data.bulkNumberMeta.setDecimalSymbol(".");
+    data.bulkNumberMeta.setStringEncoding(realEncoding);
+
+    data.bulkSize = Const.toLong(resolve(meta.getBulkSize()), -1L);
+
+    // Schema-table combination...
+    DatabaseMeta databaseMeta = getPipelineMeta().findDatabase(meta.getConnection(), variables);
+    data.schemaTable =
+        databaseMeta.getQuotedSchemaTableCombination(
+            variables, resolve(meta.getSchemaName()), resolve(meta.getTableName()));
+
+    return true;
   }
 
   @Override

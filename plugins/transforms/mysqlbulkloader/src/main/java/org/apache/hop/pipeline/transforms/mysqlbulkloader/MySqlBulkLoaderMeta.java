@@ -17,6 +17,7 @@
 
 package org.apache.hop.pipeline.transforms.mysqlbulkloader;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,6 +38,8 @@ import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.core.xml.XmlHandler;
 import org.apache.hop.i18n.BaseMessages;
 import org.apache.hop.metadata.api.HopMetadataProperty;
+import org.apache.hop.metadata.api.IEnumHasCode;
+import org.apache.hop.metadata.api.IEnumHasCodeAndDescription;
 import org.apache.hop.metadata.api.IHopMetadataProvider;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransformMeta;
@@ -57,23 +60,6 @@ import org.w3c.dom.Node;
 @Setter
 public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySqlBulkLoaderData> {
   private static final Class<?> PKG = MySqlBulkLoaderMeta.class;
-
-  public static final int FIELD_FORMAT_TYPE_OK = 0;
-  public static final int FIELD_FORMAT_TYPE_DATE = 1;
-  public static final int FIELD_FORMAT_TYPE_TIMESTAMP = 2;
-  public static final int FIELD_FORMAT_TYPE_NUMBER = 3;
-  public static final int FIELD_FORMAT_TYPE_STRING_ESCAPE = 4;
-
-  private static final String[] fieldFormatTypeCodes = {
-    "OK", "DATE", "TIMESTAMP", "NUMBER", "STRING_ESC"
-  };
-  private static final String[] fieldFormatTypeDescriptions = {
-    BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.OK.Description"),
-    BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.Date.Description"),
-    BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.Timestamp.Description"),
-    BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.Number.Description"),
-    BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.StringEscape.Description"),
-  };
 
   @HopMetadataProperty(key = "schema")
   private String schemaName;
@@ -117,29 +103,8 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
   @HopMetadataProperty(key = "bulk_size")
   private String bulkSize;
 
-  /** Added for backwards compatibility with older XML "mapping" blocks. */
-  @Override
-  public void convertLegacyXml(Node node) throws HopException {
-    if (node == null) {
-      return;
-    }
-
-    if (fields == null) {
-      fields = new java.util.ArrayList<>();
-    }
-
-    int nrvalues = XmlHandler.countNodes(node, "mapping");
-    for (int i = 0; i < nrvalues; i++) {
-      Node vnode = XmlHandler.getSubNodeByNr(node, "mapping", i);
-      if (vnode == null) {
-        continue;
-      }
-      Field field = new Field();
-      field.setFieldStream(XmlHandler.getTagValue(vnode, "field_name"));
-      field.setFieldTable(XmlHandler.getTagValue(vnode, "stream_name"));
-      field.setFieldFormatType(XmlHandler.getTagValue(vnode, "field_format_ok"));
-      fields.add(field);
-    }
+  public MySqlBulkLoaderMeta() {
+    fields = new ArrayList<>();
   }
 
   @Override
@@ -171,7 +136,7 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
       IVariables variables,
       IHopMetadataProvider metadataProvider) {
     CheckResult cr;
-    String errorMessage = "";
+    StringBuilder errorMessage = new StringBuilder();
 
     if (connection != null) {
       DatabaseMeta databaseMeta =
@@ -189,7 +154,7 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
 
           boolean first = true;
           boolean errorFound = false;
-          errorMessage = "";
+          errorMessage = new StringBuilder();
 
           // Check fields in table
           String schemaTable =
@@ -205,9 +170,7 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
             remarks.add(cr);
 
             // How about the fields to insert/dateMask in the table?
-            first = true;
-            errorFound = false;
-            errorMessage = "";
+            errorMessage = new StringBuilder();
 
             for (Field value : fields) {
               String field = value.getFieldTable();
@@ -216,18 +179,21 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
               if (v == null) {
                 if (first) {
                   first = false;
-                  errorMessage +=
-                      BaseMessages.getString(
+                  errorMessage
+                      .append(
+                          BaseMessages.getString(
                               PKG,
-                              "MySqlBulkLoaderMeta.CheckResult.MissingFieldsToLoadInTargetTable")
-                          + Const.CR;
+                              "MySqlBulkLoaderMeta.CheckResult.MissingFieldsToLoadInTargetTable"))
+                      .append(Const.CR);
                 }
                 errorFound = true;
-                errorMessage += "\t\t" + field + Const.CR;
+                errorMessage.append("\t\t").append(field).append(Const.CR);
               }
             }
             if (errorFound) {
-              cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transformMeta);
+              cr =
+                  new CheckResult(
+                      ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta);
             } else {
               cr =
                   new CheckResult(
@@ -239,9 +205,12 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
             remarks.add(cr);
           } else {
             errorMessage =
-                BaseMessages.getString(
-                    PKG, "MySqlBulkLoaderMeta.CheckResult.CouldNotReadTableInfo");
-            cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transformMeta);
+                new StringBuilder(
+                    BaseMessages.getString(
+                        PKG, "MySqlBulkLoaderMeta.CheckResult.CouldNotReadTableInfo"));
+            cr =
+                new CheckResult(
+                    ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta);
             remarks.add(cr);
           }
         }
@@ -259,7 +228,7 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
           remarks.add(cr);
 
           boolean first = true;
-          errorMessage = "";
+          errorMessage = new StringBuilder();
           boolean errorFound = false;
 
           for (Field field : fields) {
@@ -267,17 +236,20 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
             if (v == null) {
               if (first) {
                 first = false;
-                errorMessage +=
-                    BaseMessages.getString(
-                            PKG, "MySqlBulkLoaderMeta.CheckResult.MissingFieldsInInput")
-                        + Const.CR;
+                errorMessage
+                    .append(
+                        BaseMessages.getString(
+                            PKG, "MySqlBulkLoaderMeta.CheckResult.MissingFieldsInInput"))
+                    .append(Const.CR);
               }
               errorFound = true;
-              errorMessage += "\t\t" + field.getFieldStream() + Const.CR;
+              errorMessage.append("\t\t").append(field.getFieldStream()).append(Const.CR);
             }
           }
           if (errorFound) {
-            cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transformMeta);
+            cr =
+                new CheckResult(
+                    ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta);
           } else {
             cr =
                 new CheckResult(
@@ -289,22 +261,29 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
           remarks.add(cr);
         } else {
           errorMessage =
-              BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.CheckResult.MissingFieldsInInput3")
-                  + Const.CR;
-          cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transformMeta);
+              new StringBuilder(
+                  BaseMessages.getString(
+                          PKG, "MySqlBulkLoaderMeta.CheckResult.MissingFieldsInInput3")
+                      + Const.CR);
+          cr =
+              new CheckResult(
+                  ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta);
           remarks.add(cr);
         }
       } catch (HopException e) {
         errorMessage =
-            BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.CheckResult.DatabaseErrorOccurred")
-                + e.getMessage();
-        cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transformMeta);
+            new StringBuilder(
+                BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.CheckResult.DatabaseErrorOccurred")
+                    + e.getMessage());
+        cr =
+            new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta);
         remarks.add(cr);
       }
     } else {
       errorMessage =
-          BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.CheckResult.InvalidConnection");
-      cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage, transformMeta);
+          new StringBuilder(
+              BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.CheckResult.InvalidConnection"));
+      cr = new CheckResult(ICheckResult.TYPE_RESULT_ERROR, errorMessage.toString(), transformMeta);
       remarks.add(cr);
     }
 
@@ -335,65 +314,67 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
       IHopMetadataProvider metadataProvider)
       throws HopTransformException {
 
-    DatabaseMeta databaseMeta =
-        getParentTransformMeta().getParentPipelineMeta().findDatabase(connection, variables);
+    try {
+      DatabaseMeta databaseMeta =
+          metadataProvider.getSerializer(DatabaseMeta.class).load(variables.resolve(connection));
 
-    SqlStatement retval =
-        new SqlStatement(transformMeta.getName(), databaseMeta, null); // default: nothing to do!
+      SqlStatement sqlStatement =
+          new SqlStatement(transformMeta.getName(), databaseMeta, null); // default: nothing to do!
 
-    if (databaseMeta != null) {
-      if (prev != null && !prev.isEmpty()) {
-        // Copy the row
-        IRowMeta tableFields = new RowMeta();
+      if (databaseMeta != null) {
+        if (prev != null && !prev.isEmpty()) {
+          // Copy the row
+          IRowMeta tableFields = new RowMeta();
 
-        // Now change the field names
-        for (Field field : fields) {
-          IValueMeta v = prev.searchValueMeta(field.getFieldStream());
-          if (v != null) {
-            IValueMeta tableField = v.clone();
-            tableField.setName(field.getFieldStream());
-            tableFields.addValueMeta(tableField);
-          } else {
-            throw new HopTransformException(
-                "Unable to find field [" + field.getFieldStream() + "] in the input rows");
-          }
-        }
-
-        if (!Utils.isEmpty(tableName)) {
-          Database db = new Database(loggingObject, variables, databaseMeta);
-          try {
-            db.connect();
-
-            String schemaTable =
-                databaseMeta.getQuotedSchemaTableCombination(
-                    variables, variables.resolve(schemaName), variables.resolve(tableName));
-            String crTable = db.getDDL(schemaTable, tableFields, null, false, null, true);
-
-            String sql = crTable;
-            if (sql.isEmpty()) {
-              retval.setSql(null);
+          // Now change the field names
+          for (Field field : fields) {
+            IValueMeta v = prev.searchValueMeta(field.getFieldStream());
+            if (v != null) {
+              IValueMeta tableField = v.clone();
+              tableField.setName(field.getFieldStream());
+              tableFields.addValueMeta(tableField);
             } else {
-              retval.setSql(sql);
+              throw new HopTransformException(
+                  "Unable to find field [" + field.getFieldStream() + "] in the input rows");
             }
-          } catch (HopException e) {
-            retval.setError(
-                BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.GetSQL.ErrorOccurred")
-                    + e.getMessage());
+          }
+
+          if (!Utils.isEmpty(tableName)) {
+            try (Database db = new Database(loggingObject, variables, databaseMeta)) {
+              db.connect();
+
+              String schemaTable =
+                  databaseMeta.getQuotedSchemaTableCombination(
+                      variables, variables.resolve(schemaName), variables.resolve(tableName));
+              String sql = db.getDDL(schemaTable, tableFields, null, false, null, true);
+              if (sql.isEmpty()) {
+                sqlStatement.setSql(null);
+              } else {
+                sqlStatement.setSql(sql);
+              }
+            } catch (HopException e) {
+              sqlStatement.setError(
+                  BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.GetSQL.ErrorOccurred")
+                      + e.getMessage());
+            }
+          } else {
+            sqlStatement.setError(
+                BaseMessages.getString(
+                    PKG, "MySqlBulkLoaderMeta.GetSQL.NoTableDefinedOnConnection"));
           }
         } else {
-          retval.setError(
-              BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.GetSQL.NoTableDefinedOnConnection"));
+          sqlStatement.setError(
+              BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.GetSQL.NotReceivingAnyFields"));
         }
       } else {
-        retval.setError(
-            BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.GetSQL.NotReceivingAnyFields"));
+        sqlStatement.setError(
+            BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.GetSQL.NoConnectionDefined"));
       }
-    } else {
-      retval.setError(
-          BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.GetSQL.NoConnectionDefined"));
-    }
 
-    return retval;
+      return sqlStatement;
+    } catch (Exception e) {
+      throw new HopTransformException("Error generating SQL statement", e);
+    }
   }
 
   @Override
@@ -404,8 +385,7 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
     DatabaseMeta databaseMeta =
         getParentTransformMeta().getParentPipelineMeta().findDatabase(connection, variables);
     if (databaseMeta != null) {
-      Database db = new Database(loggingObject, variables, databaseMeta);
-      try {
+      try (Database db = new Database(loggingObject, variables, databaseMeta)) {
         db.connect();
 
         if (!Utils.isEmpty(realTableName)) {
@@ -427,8 +407,6 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
       } catch (Exception e) {
         throw new HopException(
             BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.Exception.ErrorGettingFields"), e);
-      } finally {
-        db.disconnect();
       }
     } else {
       throw new HopException(
@@ -437,29 +415,64 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
   }
 
   public static String[] getFieldFormatTypeDescriptions() {
-    return fieldFormatTypeDescriptions;
+    return IEnumHasCodeAndDescription.getDescriptions(FieldFormatType.class);
   }
 
-  public static String getFieldFormatTypeCode(int type) {
-    return fieldFormatTypeCodes[type];
+  public static String getFieldFormatTypeCode(FieldFormatType type) {
+    if (type == null) return "";
+    return type.getCode();
   }
 
-  public static String getFieldFormatTypeDescription(int type) {
-    return fieldFormatTypeDescriptions[type];
+  public static String getFieldFormatTypeDescription(FieldFormatType type) {
+    if (type == null) return "";
+    return type.getDescription();
   }
 
-  public static int getFieldFormatType(String codeOrDescription) {
-    for (int i = 0; i < fieldFormatTypeCodes.length; i++) {
-      if (fieldFormatTypeCodes[i].equalsIgnoreCase(codeOrDescription)) {
-        return i;
-      }
+  public static FieldFormatType getFieldFormatType(String codeOrDescription) {
+    FieldFormatType type = IEnumHasCode.lookupCode(FieldFormatType.class, codeOrDescription, null);
+    if (type != null) {
+      return type;
     }
-    for (int i = 0; i < fieldFormatTypeDescriptions.length; i++) {
-      if (fieldFormatTypeDescriptions[i].equalsIgnoreCase(codeOrDescription)) {
-        return i;
-      }
+    return IEnumHasCodeAndDescription.lookupDescription(
+        FieldFormatType.class, codeOrDescription, FieldFormatType.OK);
+  }
+
+  @Getter
+  public enum FieldFormatType implements IEnumHasCodeAndDescription {
+    OK("OK", BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.OK.Description")),
+    DATE(
+        "DATE",
+        BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.Date.Description")),
+    TIMESTAMP(
+        "TIMESTAMP",
+        BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.Timestamp.Description")),
+    TIMESTAMP_MS(
+        "TIMESTAMP_MS",
+        BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.TimestampMs.Description")),
+    TIMESTAMP_IS(
+        "TIMESTAMP_IS",
+        BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.TimestampIs.Description")),
+    TIMESTAMP_NS(
+        "TIMESTAMP_NS",
+        BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.TimestampNs.Description")),
+    NUMBER(
+        "NUMBER",
+        BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.Number.Description")),
+    STRING_ESCAPE(
+        "STRING_ESC",
+        BaseMessages.getString(
+            PKG, "MySqlBulkLoaderMeta.FieldFormatType.StringEscape.Description")),
+    AUTO_FORMAT(
+        "AUTO_FORMAT",
+        BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.FieldFormatType.AutoFormat.Description")),
+    ;
+    private final String code;
+    private final String description;
+
+    FieldFormatType(String code, String description) {
+      this.code = code;
+      this.description = description;
     }
-    return FIELD_FORMAT_TYPE_OK;
   }
 
   @Getter
@@ -472,7 +485,42 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
     @HopMetadataProperty(key = "field_name")
     private String fieldStream;
 
-    @HopMetadataProperty(key = "field_format_ok")
-    private String fieldFormatType;
+    @HopMetadataProperty(key = "field_format_ok", storeWithCode = true)
+    private FieldFormatType fieldFormatType;
+
+    public void setFieldFormatTypeWithCode(String code) {
+      fieldFormatType = IEnumHasCode.lookupCode(FieldFormatType.class, code, FieldFormatType.OK);
+    }
+
+    public void setFieldFormatTypeWithDescription(String description) {
+      fieldFormatType =
+          IEnumHasCodeAndDescription.lookupDescription(
+              FieldFormatType.class, description, FieldFormatType.OK);
+    }
+  }
+
+  /** Added for backwards compatibility with older XML "mapping" blocks. */
+  @Override
+  public void convertLegacyXml(Node node) throws HopException {
+    if (node == null) {
+      return;
+    }
+
+    if (fields == null) {
+      fields = new java.util.ArrayList<>();
+    }
+
+    int nrvalues = XmlHandler.countNodes(node, "mapping");
+    for (int i = 0; i < nrvalues; i++) {
+      Node vnode = XmlHandler.getSubNodeByNr(node, "mapping", i);
+      if (vnode == null) {
+        continue;
+      }
+      Field field = new Field();
+      field.setFieldStream(XmlHandler.getTagValue(vnode, "field_name"));
+      field.setFieldTable(XmlHandler.getTagValue(vnode, "stream_name"));
+      field.setFieldFormatTypeWithCode(XmlHandler.getTagValue(vnode, "field_format_ok"));
+      fields.add(field);
+    }
   }
 }

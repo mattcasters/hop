@@ -38,8 +38,11 @@ public class MySqlBulkLoaderData extends BaseTransformData implements ITransform
   public byte[] separator;
   public byte[] newline;
 
-  public IValueMeta bulkTimestampMeta;
   public IValueMeta bulkDateMeta;
+  public IValueMeta bulkTimestampMeta;
+  public IValueMeta bulkTimestampMsMeta;
+  public IValueMeta bulkTimestampIsMeta;
+  public IValueMeta bulkTimestampNsMeta;
   public IValueMeta bulkNumberMeta;
   protected String dbDescription;
 
