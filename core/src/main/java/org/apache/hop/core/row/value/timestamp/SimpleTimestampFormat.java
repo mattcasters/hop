@@ -39,6 +39,7 @@ public class SimpleTimestampFormat extends SimpleDateFormat {
 
   private int endNanosecondPatternPosition;
 
+
   /**
    * Flag noticed that specified pattern can be succesfully operated by parent <code>
    * SimpleDateFormat</code>
@@ -70,10 +71,10 @@ public class SimpleTimestampFormat extends SimpleDateFormat {
 
   private static final String DEFAULT_MILLISECOND_DATE_FORMAT = "SSS";
 
-  private static final SimpleDateFormat defaultTimestampFormat =
+  private final SimpleDateFormat defaultTimestampFormat =
       new SimpleDateFormat(DEFAULT_TIMESTAMP_FORMAT_FOR_TIMESTAMP, Locale.US);
 
-  private static final SimpleDateFormat defaultMillisecondDateFormat =
+  private final SimpleDateFormat defaultMillisecondDateFormat =
       new SimpleDateFormat(DEFAULT_MILLISECOND_DATE_FORMAT, Locale.US);
 
   /**
