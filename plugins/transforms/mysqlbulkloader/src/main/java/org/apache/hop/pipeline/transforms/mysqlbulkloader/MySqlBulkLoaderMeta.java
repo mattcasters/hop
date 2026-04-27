@@ -114,7 +114,7 @@ public class MySqlBulkLoaderMeta extends BaseTransformMeta<MySqlBulkLoader, MySq
     tableName = BaseMessages.getString(PKG, "MySqlBulkLoaderMeta.DefaultTableName");
     encoding = "UTF8";
     loadCharSet = "UTF8MB4";
-    fifoFileName = "/tmp/fifo";
+    fifoFileName = "${java.io.tmpdir}/fifo.${Internal.Transform.CopyNr}";
     delimiter = "\t";
     enclosure = "\"";
     escapeChar = "\\";
