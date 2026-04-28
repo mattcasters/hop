@@ -3478,6 +3478,18 @@ public class ExplorerPerspective implements IHopPerspective, TabClosable, IFileD
     } else {
       sash.setMaximizedControl(tabFolderWrapper);
     }
+
+    // Shift the focus away from the perspective icon onto the active graph.
+    //
+    IHopFileTypeHandler activeHandler = getActiveFileTypeHandler();
+    if (activeHandler != null) {
+      if (activeHandler instanceof HopGuiPipelineGraph graph) {
+        graph.setFocus();
+      }
+      if (activeHandler instanceof HopGuiWorkflowGraph graph) {
+        graph.setFocus();
+      }
+    }
   }
 
   /** Split the editor to show two files side by side. If already split, this is a no-op. */
